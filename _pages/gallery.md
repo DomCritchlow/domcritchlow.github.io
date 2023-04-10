@@ -2,7 +2,7 @@
 layout: page
 permalink: /photography/
 title: Photography
-description: Personnal Photography
+description: 
 nav: true
 nav_order: 3
 ---

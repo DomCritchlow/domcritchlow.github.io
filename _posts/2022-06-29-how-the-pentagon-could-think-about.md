@@ -4,7 +4,7 @@ title: How the Pentagon could think about Software Development
 date: 2022-06-29  21:01:00
 description: An opinion piece on Software Development at the Pentagon
 categories: DoD
-giscus_comments: true
+giscus_comments: false
 ---
 {% include figure.html path="https://storage.googleapis.com/portfolio_images_dominic/portfolio_images/Planes-13.jpg" class="img-fluid rounded z-depth-1" %}
 Deputy Secretary of Defense Dr. Hicks spoke in her announcement of the DOD AI and Data Acceleration initiative (ADA) that, “A key part of an AI-ready department is a strong data foundation.” In the [2020 DOD Data Strategy](https://media.defense.gov/2020/Oct/08/2002514180/-1/-1/0/DOD-DATA-STRATEGY.PDF), the department presented the DOD’s data goals through VAULTS (Visible, Accessible, Understandable, Linked, Trustworthy, Interoperable, and Secure). The key to making both of these happen is software. In this context, software is the entire range from extensive COTS tools, like Microsoft Excel, all the way to a few lines of python code an analyst writes to create a report. Currently, the Pentagon treats both ends of the Software spectrum very differently. In simple terms, data is visible, accessible, understandable, linked, trustworthy, interoperable, and secure by software regardless of the scale. The Pentagon needs to make software production as easy as writing a memo. Risk is inevitable; however, hiding behind the excuses of security is an even greater risk.
@@ -91,6 +91,6 @@ There should be no distinction between job titles for employees that want to par
 
 The department must take significant steps to have a strong software development focus, which sets the foundation for a data-centric department. Focusing on these three areas will kickstart a movement to put the department on track to attract talented developers that can have a tangible impact on the operations across the entire Department of Defense.
 
-_This article is my own opinion and does not reflect the views of the US government or the DoD._
+_This article is my own opinion and does not reflect the views of the US government or the Department of Defense._
 
 Prepublication Link: [https://storage.googleapis.com/dc\_public\_documents/publish\_documents/How%20the%20Pentagon%20could%20think%20about%20Software%20Development.pdf](https://storage.googleapis.com/dc_public_documents/publish_documents/How%20the%20Pentagon%20could%20think%20about%20Software%20Development.pdf)

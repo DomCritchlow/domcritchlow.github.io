@@ -15,7 +15,7 @@ selected_papers: false # includes a list of papers marked as "selected={true}"
 social: false  # includes social icons at the bottom of the page
 ---
 
-I’m working as a Technical Product Manager for the Department of Defense, developing tools and techniques to enable data driven insights for performance and efficiencies.
+I work at Booz Allen Hamilton as a Data Scientist, consulting and developing tools and techniques to advance the use of machine learning outputs.
 
 I studied Physics and Computer Science at Austin Peay State University in Clarksville Tennessee, where I focused my undergraduate research on high altitude balloons. My research later took me to an internship at NASA's Balloon Research and Development Lab on Wallops Island Virginia.
 

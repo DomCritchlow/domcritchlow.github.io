@@ -6,7 +6,7 @@ subtitle: I like making random things on the internet
 
 profile:
   align: right
-  image: prof_pic.jpg
+  image: humbnail_Dom_Headshot.jpg
   image_circular: false # crops the image to make it circular
   address: <p>Washington, DC</p>
 

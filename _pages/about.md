@@ -15,10 +15,12 @@ selected_papers: false # includes a list of papers marked as "selected={true}"
 social: false  # includes social icons at the bottom of the page
 ---
 
-I work at Booz Allen Hamilton as a Data Scientist, consulting and developing tools and techniques to advance the use of machine learning outputs.
+I’m a data scientist and technologist at Booz Allen Hamilton, where I lead teams developing applied AI and data systems for defense and critical infrastructure clients across Europe and Africa. My work centers on making machine learning useful, resilient, and deployable—especially in operational environments where reliability and security are non-negotiable.
 
-I studied Physics and Computer Science at Austin Peay State University in Clarksville Tennessee, where I focused my undergraduate research on high altitude balloons. My research later took me to an internship at NASA's Balloon Research and Development Lab on Wallops Island Virginia.
+I got my start studying Physics and Computer Science at Austin Peay State University in Tennessee. My early research involved launching high-altitude weather balloons to collect atmospheric data, which led to an internship at NASA’s Balloon Research and Development Lab on Wallops Island, Virginia.
 
-My current technical interests are with web-based applications, data visualization, and general fun internet things.
+Since then, I’ve grown into roles that blend engineering, strategy, and technical leadership—helping organizations adopt AI in ways that are practical, ethical, and forward-looking. I’m especially interested in how we can responsibly scale emerging technologies in government and mission-driven settings.
+
+Outside of work, I still enjoy building web tools, experimenting with data visualizations, and chasing down quirky side projects online. I believe that good technology should solve real problems—and, whenever possible, spark a little curiosity too.
 
 

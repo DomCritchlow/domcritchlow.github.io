@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Hire the Model Mission Ready AI for Government
+title: Hire the Model: Mission Ready AI for Government
 date: 2025-08-08  21:01:00
 description: A framework for onboarding government AI like a new civil servant—mission, training, guardrails, and measurable results.
 categories: AI

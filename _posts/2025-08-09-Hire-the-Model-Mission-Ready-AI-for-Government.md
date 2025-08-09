@@ -8,10 +8,6 @@ giscus_comments: false
 ---
 {% include figure.html path="https://storage.googleapis.com/portfolio_images_dominic/portfolio_images/AI-Badge.png" class="img-fluid rounded z-depth-1" %}
 
-
-# Hire the Model — Mission Ready AI for Government
-*By Dominic Critchlow*
-
 **TL;DR:**  
 Government agencies shouldn’t just *install* chat-based AI—they should *hire* it. Treat the model like a new civil servant: define the role, give it vetted data, train it in your SOPs, and measure its performance as you would any probationary employee. This approach speeds adoption, ensures audit-ready accountability, and delivers mission impact without policy drift.
 

@@ -47,4 +47,58 @@ body.sticky-bottom-footer {
 * Projects
 *****************************************************************************/
 
-// TODO: redefine projects layout.
+.project-highlights {
+  display: grid;
+  gap: 1.5rem;
+  margin: 1.5rem 0 0;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.project-card {
+  padding: 1.5rem;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 0.75rem;
+  background-color: var(--global-bg-secondary);
+  box-shadow: 0 0.25rem 0.75rem rgba(15, 23, 42, 0.08);
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    margin-bottom: 0;
+  }
+}
+
+.writing-section {
+  margin-top: 2rem;
+}
+
+.writing-post-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 1.25rem 0 0;
+}
+
+.writing-post-item {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--global-divider-color);
+}
+
+.writing-post-item:last-child {
+  border-bottom: none;
+}
+
+.writing-post-meta {
+  font-size: 0.95rem;
+  color: var(--global-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.writing-archive-link {
+  margin-top: 1.5rem;
+}

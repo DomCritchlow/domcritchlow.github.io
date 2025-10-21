@@ -24,3 +24,17 @@ Since then, I’ve grown into roles that blend engineering, strategy, and techni
 Outside of work, I still enjoy building web tools, experimenting with data visualizations, and chasing down quirky side projects online. I believe that good technology should solve real problems—and, whenever possible, spark a little curiosity too.
 
 
+## Things I've built
+
+<div class="project-highlights">
+  <article class="project-card">
+    <h3><a href="https://hamops.app" target="_blank" rel="noopener">HamOps</a></h3>
+    <p>A lightweight operations dashboard that helps amateur radio teams coordinate frequencies, tasks, and incident updates in the field.</p>
+  </article>
+  <article class="project-card">
+    <h3><a href="https://enneagram.domcritchlow.com" target="_blank" rel="noopener">Enneagram Explorer</a></h3>
+    <p>An interactive tool for mapping Enneagram types, growth paths, and reflections—built to make personality theory more visual and approachable.</p>
+  </article>
+</div>
+
+

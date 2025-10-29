@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About | Dominic Critchlow</title>
+  <meta name="description" content="Data scientist and technologist working on applied AI and data systems.">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="site-title">Dominic Critchlow</a>
+      <ul class="site-nav">
+        <li><a href="/" >Home</a></li>
+        <li><a href="/writing/" >Writing</a></li>
+        <li><a href="/projects/" >Projects</a></li>
+        <li><a href="/about/" class="active">About</a></li>
+        <li><a href="/gallery/" >Photos</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    
+<div class="container">
+  <h1 class="page-title">About</h1>
+  
+  <div class="about-image">
+    <img src="/public/headshot.jpg" alt="Dominic Critchlow" />
+  </div>
+
+  <div class="about-content">
+
+    <p> I build technology that helps people make better decisions when in critical environments. </p>
+    <p>At Booz Allen, I lead applied AI and mission-software work across Europe and Africa, designing systems that connect data, people, and operations for defense and critical-infrastructure clients.</p>
+
+    <p>I started out studying physics and computer science at a small university in Tennessee, where I launched weather balloons and wrote Python scripts to chase them through the sky. That mix of curiosity and practicality, building something, testing it, and improving it, still shapes how I work today.</p>
+
+    <p>Since then I have built software for NASA and the Department of Defense, led engineering teams, and spent a lot of time thinking about how humans and machines learn to trust each other.</p>
+
+    <p>Outside of work I like to experiment. I build web tools, play with data visualizations, mess with radios, and chase side projects that start as a simple question and turn into something useful or just fun. I think good technology should solve real problems and make people a little more curious along the way.</p>
+  </div>
+</div>
+
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container container-narrow">
+      <p>&copy; 2025 Dominic Critchlow</p>
+      <p class="footer-links">
+        <a href="https://github.com/DomCritchlow" target="_blank" rel="noopener">GitHub</a>
+        ·
+        <a href="https://www.linkedin.com/in/dominic-critchlow/" target="_blank" rel="noopener">LinkedIn</a>
+      </p>
+    </div>
+  </footer>
+  
+  <script>
+    // Prevent scroll on lightbox close
+    document.addEventListener('DOMContentLoaded', function() {
+      const closeButtons = document.querySelectorAll('.lightbox-close');
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          const scrollPos = window.scrollY;
+          window.location.hash = '';
+          window.scrollTo(0, scrollPos);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
+

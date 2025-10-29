@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects | Dominic Critchlow</title>
+  <meta name="description" content="Apps, websites, and things I&#39;ve built.">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="site-title">Dominic Critchlow</a>
+      <ul class="site-nav">
+        <li><a href="/" >Home</a></li>
+        <li><a href="/writing/" >Writing</a></li>
+        <li><a href="/projects/" class="active">Projects</a></li>
+        <li><a href="/about/" >About</a></li>
+        <li><a href="/gallery/" >Photos</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    
+<div class="container">
+  <h1 class="page-title">Projects</h1>
+
+  <section class="section">
+    <ul class="posts-list"><li class="post-item" data-type="project">
+        <div class="post-title"><span class="project-logo">📻</span><a href="https://hamops-uiggriujca-uc.a.run.app/" target="_blank" rel="noopener">HamOps</a>
+        </div>
+        <div class="post-meta">
+          api&nbsp;·&nbsp;<a href="https://github.com/DomCritchlow/hamops" target="_blank" rel="noopener">github</a></div><p class="post-description">Comprehensive FastAPI service providing amateur radio utilities through REST APIs and Model Context Protocol. Query FCC callsigns, track real-time APRS location/weather data, and explore US band plans with intelligent frequency parsing. Supports natural language queries via MCP for AI assistants.</p></li><li class="post-item" data-type="project">
+        <div class="post-title"><span class="project-logo">🔷</span><a href="https://enneagram-app-w34l2h6gva-uc.a.run.app" target="_blank" rel="noopener">Enneagram Explorer</a>
+        </div>
+        <div class="post-meta">
+          web&nbsp;·&nbsp;<a href="https://github.com/DomCritchlow/enneagram" target="_blank" rel="noopener">github</a></div><p class="post-description">Interactive web application for exploring Enneagram personality types with visual mapping of growth paths, stress arrows, and integration patterns. Features personal reflection tools and detailed type descriptions to understand motivations and behavioral patterns.</p></li></ul>
+  </section>
+</div>
+
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container container-narrow">
+      <p>&copy; 2025 Dominic Critchlow</p>
+      <p class="footer-links">
+        <a href="https://github.com/DomCritchlow" target="_blank" rel="noopener">GitHub</a>
+        ·
+        <a href="https://www.linkedin.com/in/dominic-critchlow/" target="_blank" rel="noopener">LinkedIn</a>
+      </p>
+    </div>
+  </footer>
+  
+  <script>
+    // Prevent scroll on lightbox close
+    document.addEventListener('DOMContentLoaded', function() {
+      const closeButtons = document.querySelectorAll('.lightbox-close');
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          const scrollPos = window.scrollY;
+          window.location.hash = '';
+          window.scrollTo(0, scrollPos);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
+

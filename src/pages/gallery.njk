@@ -1,0 +1,31 @@
+---
+layout: base.njk
+title: Photos
+description: Photography and moments captured along the way.
+permalink: /gallery/
+---
+
+<div class="container">
+  <h1 class="page-title">Photos</h1>
+
+  <div class="photos-grid" id="photos">
+    {%- for image in photos -%}
+    <div class="photo-item">
+      <a href="#img-{{ loop.index }}">
+        <img src="/public/gallery-thumbs/{{ image }}" 
+             alt="Photo {{ loop.index }}" 
+             width="200" 
+             height="200" 
+             loading="lazy">
+      </a>
+    </div>
+    
+    <div id="img-{{ loop.index }}" class="lightbox">
+      <a href="#" class="lightbox-close">&times;</a>
+      <div class="lightbox-content">
+        <img src="/public/gallery/{{ image }}" alt="Photo {{ loop.index }}">
+      </div>
+    </div>
+    {%- endfor -%}
+  </div>
+</div>

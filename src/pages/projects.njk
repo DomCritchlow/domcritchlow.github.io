@@ -1,0 +1,35 @@
+---
+layout: base.njk
+title: Projects
+description: Apps, websites, and things I've built.
+permalink: /projects/
+---
+
+<div class="container">
+  <h1 class="page-title">Projects</h1>
+
+  <section class="section">
+    <ul class="posts-list">
+      {%- for project in projects -%}
+      <li class="post-item" data-type="project">
+        <div class="post-title">
+          {%- if project.logo -%}
+          <span class="project-logo">{{ project.logo }}</span>
+          {%- endif -%}
+          <a href="{{ project.url }}" target="_blank" rel="noopener">{{ project.title }}</a>
+        </div>
+        <div class="post-meta">
+          {{ project.type }}
+          {%- if project.github -%}
+          &nbsp;·&nbsp;<a href="{{ project.github }}" target="_blank" rel="noopener">github</a>
+          {%- endif -%}
+        </div>
+        {%- if project.description -%}
+        <p class="post-description">{{ project.description }}</p>
+        {%- endif -%}
+      </li>
+      {%- endfor -%}
+    </ul>
+  </section>
+</div>
+

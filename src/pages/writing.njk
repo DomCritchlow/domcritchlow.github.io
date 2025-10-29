@@ -1,0 +1,32 @@
+---
+layout: base.njk
+title: Writing
+description: Stuff I wrote on the internet.
+permalink: /writing/
+---
+
+<div class="container">
+  <h1 class="page-title">Writing</h1>
+
+  <section class="section">
+    {%- if collections.posts.length > 0 -%}
+    <ul class="posts-list">
+      {%- for post in collections.posts -%}
+      <li class="post-item" data-type="writing">
+        <div class="post-title">
+          <a href="{{ post.url }}">{{ post.data.title }}</a>
+        </div>
+        <div class="post-meta">
+          <time datetime="{{ post.date | htmlDateString }}">{{ post.date | readableDate }}</time>
+        </div>
+        {%- if post.data.description -%}
+        <p class="post-description">{{ post.data.description }}</p>
+        {%- endif -%}
+      </li>
+      {%- endfor -%}
+    </ul>
+    {%- else -%}
+    <p>No posts published yet.</p>
+    {%- endif -%}
+  </section>
+</div>

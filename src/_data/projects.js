@@ -9,7 +9,7 @@ module.exports = [
     logo: "📻"
   },
   {
-    title: "Enneagram Explorer",
+    title: "Enneagram",
     url: "https://enneagram-app-w34l2h6gva-uc.a.run.app",
     github: "https://github.com/DomCritchlow/enneagram",
     description: "Interactive web application for exploring Enneagram personality types with visual mapping of growth paths, stress arrows, and integration patterns. Features personal reflection tools and detailed type descriptions to understand motivations and behavioral patterns.",

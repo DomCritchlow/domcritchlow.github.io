@@ -23,6 +23,82 @@ This setup allows you to upload photos to your gallery directly from your iPhone
 
 ### 2. Create iOS Shortcut
 
+#### Quick Steps:
+
+1. Open the **Shortcuts** app on your iPhone (built into iOS)
+2. Tap the **"+"** button (top right) to create a new shortcut
+3. Follow the detailed steps below to add each action
+
+#### Detailed Step-by-Step:
+
+**Step 1: Receive Input**
+1. Search for "Receive" → select **"Receive [Something] input from"**
+2. Tap "Something" → change to **"Images"**
+3. Tap "Nowhere" → change to **"Share Sheet"**
+
+**Step 2: Get Name**
+1. Search for "Get Name" → select **"Get Name"**
+2. Tap the input → select **"Shortcut Input"**
+
+**Step 3: Set Variable (for filename)**
+1. Search for "Set Variable" → select **"Set variable"**
+2. Name it: **"filename"**
+3. Tap the value field → select **"Name"** from previous action
+
+**Step 4: Text (build filename)**
+1. Search for "Text" → select **"Text"**
+2. Build the text: `[filename]-[Current Date].jpg`
+   - Long press to insert variables
+   - For Current Date: tap variables → Current Date → Format: Custom → `yyyyMMdd-HHmmss`
+
+**Step 5: Set Variable (for ImageName)**
+1. Add another "Set variable"
+2. Name it: **"ImageName"**
+3. Value: **Text** from previous action
+
+**Step 6: Encode to Base64**
+1. Search for "Encode" → select **"Encode [Something]"**
+2. Change input to **"Shortcut Input"**
+3. Encoding: **Base64**
+
+**Step 7: Get Contents of URL**
+1. Search for "Get Contents of URL" → select it
+2. Configure:
+   - **URL**: `https://api.github.com/repos/DomCritchlow/domcritchlow.github.io/dispatches`
+   - Tap "Show More" ▼
+   - **Method**: POST
+   - **Headers**: Add 3 headers:
+     - `Authorization`: `Bearer YOUR_TOKEN_HERE` (replace with your actual GitHub token)
+     - `Accept`: `application/vnd.github.v3+json`
+     - `Content-Type`: `application/json`
+   - **Request Body**: JSON
+   - In the JSON body field, enter:
+```json
+{
+  "event_type": "add-photo",
+  "client_payload": {
+    "image_data": "PUT_BASE64_HERE",
+    "image_name": "PUT_IMAGENAME_HERE"
+  }
+}
+```
+   - Replace `PUT_BASE64_HERE` by long-pressing and selecting variable **Base64 Encoded**
+   - Replace `PUT_IMAGENAME_HERE` by long-pressing and selecting variable **ImageName**
+
+**Step 8: Show Notification**
+1. Search for "Show Notification" → select it
+2. Text: **"Photo uploaded to gallery!"**
+
+**Step 9: Configure Shortcut Settings**
+1. Tap the settings icon (⚙️) at top right
+2. Name it: **"Add to Gallery"**
+3. Enable **"Show in Share Sheet"**
+4. Under "Share Sheet Types" → enable **"Images"**
+5. Choose an icon/color if desired
+6. Tap "Done"
+
+#### Legacy Reference (actions list):
+
 1. Open Shortcuts app on iPhone
 2. Create new shortcut with these actions:
 

@@ -278,10 +278,8 @@ a:hover {
    ======================================== */
 
 .about-image {
-  margin: var(--space-lg) 0;
+  margin: var(--space-xl) 0 var(--space-md) var(--space-lg);
   float: right;
-  margin-left: var(--space-lg);
-  margin-bottom: var(--space-md);
 }
 
 .about-image img {
@@ -291,13 +289,24 @@ a:hover {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* Smaller image for homepage intro */
+/* Homepage intro section with image */
+.section:first-child {
+  font-size: 1.25rem;
+  line-height: 1.7;
+}
+
+.section:first-child::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 .section .about-image {
-  margin: 0 0 var(--space-sm) var(--space-md);
+  margin: 0 0 var(--space-md) var(--space-lg);
 }
 
 .section .about-image img {
-  max-width: 120px;
+  max-width: 200px;
 }
 
 .about-content {
@@ -547,6 +556,21 @@ a:hover {
   .photos-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 0.5rem;
+  }
+  
+  /* Fix about page wrapping on mobile */
+  .about-image {
+    float: none;
+    margin: var(--space-lg) auto;
+    text-align: center;
+  }
+  
+  .about-image img {
+    max-width: 200px !important;
+  }
+  
+  .about-content {
+    clear: both;
   }
 }
 

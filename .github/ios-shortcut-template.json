@@ -1,0 +1,25 @@
+{
+  "shortcut_name": "Add to Gallery",
+  "description": "Upload photo to domcritchlow.github.io gallery",
+  "url": "https://api.github.com/repos/DomCritchlow/domcritchlow.github.io/dispatches",
+  "method": "POST",
+  "headers": {
+    "Authorization": "Bearer YOUR_GITHUB_TOKEN_HERE",
+    "Accept": "application/vnd.github.v3+json",
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "event_type": "add-photo",
+    "client_payload": {
+      "image_data": "{{BASE64_ENCODED_IMAGE}}",
+      "image_name": "{{GENERATED_FILENAME}}.jpg"
+    }
+  },
+  "instructions": [
+    "1. Replace YOUR_GITHUB_TOKEN_HERE with your actual GitHub token",
+    "2. Import this as a shortcut in iOS Shortcuts app",
+    "3. Enable 'Show in Share Sheet'",
+    "4. Configure to accept Images"
+  ]
+}
+

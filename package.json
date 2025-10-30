@@ -11,7 +11,8 @@
   "author": "Dominic Critchlow",
   "license": "MIT",
   "devDependencies": {
-    "@11ty/eleventy": "^2.0.1"
+    "@11ty/eleventy": "^2.0.1",
+    "sharp": "^0.33.0"
   },
   "dependencies": {
     "luxon": "^3.4.4",

@@ -12,7 +12,24 @@ This setup allows you to upload photos to your gallery directly from your iPhone
 
 ## Setup Instructions
 
-### 1. Create GitHub Personal Access Token
+### 1. Create Webhook Secret
+
+First, create a secure random secret for authentication:
+
+1. Generate a random secret (on Mac/Linux):
+   ```bash
+   openssl rand -hex 32
+   ```
+   Or use any password generator to create a long random string (at least 32 characters)
+
+2. Go to your repository on GitHub → Settings → Secrets and variables → Actions
+3. Click "New repository secret"
+4. Name: `WEBHOOK_SECRET`
+5. Value: Paste your generated secret
+6. Click "Add secret"
+7. **Save this secret** - you'll need it for the iOS Shortcut
+
+### 2. Create GitHub Personal Access Token
 
 1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
 2. Click "Generate new token (classic)"
@@ -21,7 +38,7 @@ This setup allows you to upload photos to your gallery directly from your iPhone
    - ✓ `repo` (full control of private repositories)
 5. Generate and **copy the token** (you won't see it again!)
 
-### 2. Create iOS Shortcut
+### 3. Create iOS Shortcut
 
 #### Quick Steps:
 
@@ -77,11 +94,13 @@ This setup allows you to upload photos to your gallery directly from your iPhone
 {
   "event_type": "add-photo",
   "client_payload": {
+    "secret": "YOUR_WEBHOOK_SECRET_HERE",
     "image_data": "PUT_BASE64_HERE",
     "image_name": "PUT_IMAGENAME_HERE"
   }
 }
 ```
+   - Replace `YOUR_WEBHOOK_SECRET_HERE` with the webhook secret you created in Step 1
    - Replace `PUT_BASE64_HERE` by long-pressing and selecting variable **Base64 Encoded**
    - Replace `PUT_IMAGENAME_HERE` by long-pressing and selecting variable **ImageName**
 
@@ -124,6 +143,7 @@ This setup allows you to upload photos to your gallery directly from your iPhone
    {
      "event_type": "add-photo",
      "client_payload": {
+       "secret": "YOUR_WEBHOOK_SECRET",
        "image_data": "[Base64 Encoded]",
        "image_name": "[ImageName]"
      }
@@ -166,6 +186,7 @@ This setup allows you to upload photos to your gallery directly from your iPhone
 {
   "event_type": "add-photo",
   "client_payload": {
+    "secret": "your_webhook_secret_here",
     "image_data": "{{Base64EncodedResult}}",
     "image_name": "{{ImageName}}"
   }
@@ -175,7 +196,7 @@ This setup allows you to upload photos to your gallery directly from your iPhone
 **Action 6: Show Notification**
 - Text: "Photo uploaded successfully!"
 
-### 3. Repository Settings
+### 4. Repository Settings
 
 Make sure GitHub Actions are enabled:
 1. Go to repository Settings → Actions → General
@@ -197,6 +218,17 @@ Make sure GitHub Actions are enabled:
 **Workflow doesn't trigger:**
 - Check your GitHub token is valid and has `repo` scope
 - Verify the repository name in the URL is correct
+- Ensure the webhook secret matches in both the shortcut and GitHub secrets
+
+**Workflow fails with "Invalid webhook secret":**
+- Verify the `WEBHOOK_SECRET` is set in repository Settings → Secrets
+- Ensure the secret in your iOS Shortcut matches exactly
+- Check there are no extra spaces or quotes in either place
+
+**Workflow fails with image validation errors:**
+- Make sure you're uploading an actual image file (not a document or other file type)
+- Check the image is under 10MB
+- Supported formats: JPEG, PNG, WebP
 
 **Workflow fails:**
 - Check GitHub Actions logs for errors

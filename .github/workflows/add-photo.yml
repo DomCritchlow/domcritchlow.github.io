@@ -17,6 +17,13 @@ jobs:
         with:
           node-version: '18'
       
+      - name: Verify webhook secret
+        run: |
+          node .github/scripts/verify-secret.js
+        env:
+          PROVIDED_SECRET: ${{ github.event.client_payload.secret }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+      
       - name: Install dependencies
         run: |
           npm install sharp

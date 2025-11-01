@@ -11,15 +11,18 @@
   "body": {
     "event_type": "add-photo",
     "client_payload": {
+      "secret": "YOUR_WEBHOOK_SECRET_HERE",
       "image_data": "{{BASE64_ENCODED_IMAGE}}",
       "image_name": "{{GENERATED_FILENAME}}.jpg"
     }
   },
   "instructions": [
-    "1. Replace YOUR_GITHUB_TOKEN_HERE with your actual GitHub token",
-    "2. Import this as a shortcut in iOS Shortcuts app",
-    "3. Enable 'Show in Share Sheet'",
-    "4. Configure to accept Images"
+    "1. Generate a webhook secret and add it to GitHub repository secrets as WEBHOOK_SECRET",
+    "2. Replace YOUR_WEBHOOK_SECRET_HERE with your webhook secret",
+    "3. Replace YOUR_GITHUB_TOKEN_HERE with your actual GitHub token",
+    "4. Import this as a shortcut in iOS Shortcuts app",
+    "5. Enable 'Show in Share Sheet'",
+    "6. Configure to accept Images"
   ]
 }
 

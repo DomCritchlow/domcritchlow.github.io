@@ -121,6 +121,12 @@ Upload photos directly from your iPhone's share sheet using a custom shortcut th
 
 📱 **[Setup Guide: Photo Upload from iPhone](.github/PHOTO_UPLOAD_SETUP.md)**
 
+**Security Features:**
+- Webhook secret authentication prevents unauthorized uploads
+- Filename sanitization prevents path traversal attacks
+- Image validation (format, size limits)
+- Only accepts JPEG, PNG, WebP under 10MB
+
 Gallery auto-detects `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp` files and sorts alphabetically.
 
 ## Deployment
@@ -190,6 +196,26 @@ The homepage combines blog posts and projects into a unified "Latest" feed:
 To feature something on the homepage:
 - **Blog post**: Add new post with recent date
 - **Project**: Add to `projects.js` with recent date
+
+## Security
+
+### Photo Upload Security
+- **Webhook Secret Authentication**: All photo uploads require a secret key stored in GitHub Secrets
+- **Filename Sanitization**: Prevents path traversal attacks (e.g., `../../etc/passwd`)
+- **Image Validation**: Verifies uploaded files are actual images (JPEG, PNG, WebP only)
+- **Size Limits**: Maximum 10MB per image
+- **Format Validation**: Uses `sharp` to verify image metadata before processing
+
+### Token Management
+- GitHub Personal Access Token required for uploads (store securely)
+- Webhook secret stored in GitHub repository secrets (never in code)
+- Both should be treated as sensitive credentials
+
+### Best Practices
+- Never commit tokens or secrets to the repository
+- Regularly rotate your GitHub Personal Access Token
+- Monitor GitHub Actions logs for suspicious activity
+- `.env` files are gitignored to prevent accidental commits
 
 ## Notes
 

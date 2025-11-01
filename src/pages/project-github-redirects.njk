@@ -1,0 +1,20 @@
+---
+pagination:
+  data: projects
+  size: 1
+  alias: project
+permalink: "{{ project.shortname }}/github/index.html"
+eleventyExcludeFromCollections: true
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url={{ project.github }}">
+  <link rel="canonical" href="{{ project.github }}">
+  <title>{{ project.title }} - GitHub</title>
+  <script>window.location.replace("{{ project.github }}");</script>
+</head>
+<body></body>
+</html>
+

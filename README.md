@@ -81,6 +81,7 @@ Edit `src/_data/projects.js` and add to the array:
 ```javascript
 {
   title: "Project Name",
+  shortname: "projectname",  // Used for URL: critchlow.us/projectname
   url: "https://live-app-url.com",
   github: "https://github.com/username/repo",  // Optional
   description: "Detailed description of what it does, technologies used, and key features",
@@ -95,15 +96,30 @@ Edit `src/_data/projects.js` and add to the array:
 - Homepage "Latest" section - Mixed with recent blog posts, sorted by date
 - Project links open in new tab, GitHub links included when provided
 
+**Short URL Redirects:**
+Each project automatically gets clean redirect URLs:
+- `critchlow.us/{shortname}` → redirects to project URL
+- `critchlow.us/{shortname}/github` → redirects to GitHub repo
+
 **Current projects:**
 - **HamOps** - Amateur Radio Operations Center (REST APIs + MCP)
+  - `critchlow.us/hamops` → Live app
+  - `critchlow.us/hamops/github` → GitHub repo
 - **Enneagram Explorer** - Personality type mapping tool
+  - `critchlow.us/enneagram` → Live app
+  - `critchlow.us/enneagram/github` → GitHub repo
 
 ### New Photo
 
+**Option 1: Manual Upload**
 1. Add full image to `public/gallery/filename.jpg`
 2. Add thumb to `public/gallery-thumbs/filename.jpg` (200x200px recommended)
 3. Images auto-populate (no code changes needed)
+
+**Option 2: Upload from iPhone** 
+Upload photos directly from your iPhone's share sheet using a custom shortcut that automatically creates thumbnails and deploys to the site.
+
+📱 **[Setup Guide: Photo Upload from iPhone](.github/PHOTO_UPLOAD_SETUP.md)**
 
 Gallery auto-detects `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp` files and sorts alphabetically.
 

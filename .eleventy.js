@@ -28,6 +28,15 @@ module.exports = function(eleventyConfig) {
     });
   });
   
+  // Create projects collection with dates as Date objects
+  eleventyConfig.addCollection("projectsSorted", function(collectionApi) {
+    const projects = require('./src/_data/projects.js');
+    return projects.map(project => ({
+      ...project,
+      date: new Date(project.date)
+    })).sort((a, b) => b.date - a.date);
+  });
+  
   // Create latest collection (combines posts and projects)
   eleventyConfig.addCollection("latest", function(collectionApi) {
     const items = [];

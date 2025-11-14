@@ -18,5 +18,15 @@ module.exports = [
     date: "2025-10-11",
     type: "web",
     logo: "🔷"
+  },
+  {
+    title: "Bleep",
+    shortname: "bleep",
+    url: "https://github.com/DomCritchlow/bleep",
+    github: "https://github.com/DomCritchlow/bleep",
+    description: "Bluetooth Low Energy security scanner for device discovery and penetration testing. Passive scanning with real-time RSSI tracking, comprehensive security auditing without authentication, and deep characteristic analysis. Features vendor identification, automatic device typing (AirTags, fitness trackers, IoT sensors), and read-only safety modes for ethical security research. Built with Python, Flask, and Bleak.",
+    date: "2025-11-13",
+    type: "app",
+    logo: "🔵"
   }
 ];

@@ -1,0 +1,19 @@
+---
+pagination:
+  data: links
+  size: 1
+  alias: link
+permalink: "link/{{ link.slug }}/index.html"
+eleventyExcludeFromCollections: true
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url={{ link.url }}">
+  <link rel="canonical" href="{{ link.url }}">
+  <title>{{ link.label }}</title>
+  <script>window.location.replace("{{ link.url }}");</script>
+</head>
+<body></body>
+</html>

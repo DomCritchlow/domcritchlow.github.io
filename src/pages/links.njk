@@ -1,0 +1,26 @@
+---
+layout: base.njk
+title: Links
+permalink: /link/index.html
+---
+
+<div class="container container-narrow">
+  <h1>Links</h1>
+  <p class="page-subtitle">Shortcuts you can update in <code>src/links.md</code>.</p>
+
+  {% if links.length %}
+  <ul class="links-list">
+    {% for link in links %}
+    <li class="link-item">
+      <div class="link-nickname">/{{ link.slug }}</div>
+      <div class="link-target">
+        <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.label }}</a>
+        <span class="link-url">{{ link.url }}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No links configured yet. Add them in <code>src/links.md</code> to populate this page.</p>
+  {% endif %}
+</div>

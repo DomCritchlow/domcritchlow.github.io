@@ -12,12 +12,25 @@ permalink: /link/index.html
   <ul class="links-list">
     {% for link in links %}
     <li class="link-item">
-      <div class="link-nickname">/{{ link.slug }}</div>
-      <div class="link-target">
-        <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.label }}</a>
-        <span class="link-url">{{ link.url }}</span>
+      <div class="link-content">
+        <div class="link-nickname">/{{ link.slug }}</div>
+        <div class="link-target">
+          <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.label }}</a>
+          <span class="link-url">{{ link.url }}</span>
+        </div>
       </div>
+      <a href="#qr-{{ link.slug }}" class="link-qr-toggle">QR</a>
     </li>
+    
+    <div id="qr-{{ link.slug }}" class="qr-modal">
+      <div class="qr-modal-content">
+        <a href="#" class="qr-modal-close">&times;</a>
+        <h3>{{ link.label }}</h3>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://critchlow.us/link/{{ link.slug }}" 
+             alt="QR code for {{ link.label }}">
+        <p class="qr-modal-url">critchlow.us/link/{{ link.slug }}</p>
+      </div>
+    </div>
     {% endfor %}
   </ul>
   {% else %}

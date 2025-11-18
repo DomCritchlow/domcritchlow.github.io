@@ -11,24 +11,21 @@ const slugify = (value) => {
 };
 
 module.exports = () => {
-  const filePath = path.join(__dirname, '..', 'links.md');
+  const filePath = path.join(__dirname, '..', 'links.json');
 
   if (!fs.existsSync(filePath)) {
     return [];
   }
 
-  const content = fs.readFileSync(filePath, 'utf8');
-  const match = content.match(/```json\s*([\s\S]*?)\s*```/);
-
-  if (!match) {
-    return [];
-  }
-
   try {
-    const parsed = JSON.parse(match[1]);
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
 
     return parsed
-      .filter((link) => link.nickname && link.url)
+      .filter((link) => link && link.nickname && link.url)
       .map((link) => {
         const nickname = link.nickname.toString();
         return {
@@ -39,7 +36,7 @@ module.exports = () => {
         };
       });
   } catch (error) {
-    console.warn('Unable to parse links from src/links.md:', error.message);
+    console.warn('Unable to parse links from src/links.json:', error.message);
     return [];
   }
 };

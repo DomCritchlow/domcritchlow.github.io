@@ -1,4 +1,7 @@
 [
   { "nickname": "linkedin", "label": "LinkedIn", "url": "https://www.linkedin.com/in/dominic-critchlow/" },
-  { "nickname": "github", "label": "GitHub", "url": "https://github.com/DomCritchlow" }
+  { "nickname": "github", "label": "GitHub", "url": "https://github.com/DomCritchlow" },
+  { "nickname": "balloonpop", "label": "Balloon Pop Video", "url": "https://youtu.be/Jl6FXMmi8II" },
+  { "nickname": "nye", "label": "New Years Eve Video", "url": "https://youtu.be/qLNu3f3r_vM" },
+  { "nickname": "balloon", "label": "Balloon Video", "url": "https://youtu.be/Z30EtqZ8Pkw" }
 ]

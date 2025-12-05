@@ -889,3 +889,336 @@ a:hover {
     height: 250px;
   }
 }
+
+/* ========================================
+   Gems
+   ======================================== */
+
+.page-subtitle {
+  color: var(--gray);
+  font-size: 1rem;
+  margin-top: calc(-1 * var(--space-md));
+  margin-bottom: var(--space-md);
+}
+
+/* Filter navbar */
+.gems-filter {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.gems-filter-btn {
+  background: none;
+  border: 1px solid var(--border);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: var(--gray);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.gems-filter-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.gems-filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.gems-section {
+  margin-bottom: var(--space-xl);
+}
+
+.gems-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gray);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.gems-icon {
+  font-size: 1.1rem;
+}
+
+/* Podcast cards */
+.gem-podcast {
+  margin-bottom: var(--space-sm);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.gem-podcast[open] {
+  border-color: var(--accent);
+}
+
+.gem-podcast-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  cursor: pointer;
+  list-style: none;
+  transition: background 0.2s;
+}
+
+.gem-podcast-header::-webkit-details-marker {
+  display: none;
+}
+
+.gem-podcast-header:hover {
+  background: var(--accent-light);
+}
+
+.gem-podcast-image {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.gem-podcast-placeholder {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  background: var(--accent-light);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.gem-podcast-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.gem-podcast-title {
+  font-weight: 600;
+  color: var(--fg);
+  font-size: 1.05rem;
+  text-decoration: none;
+  display: inline;
+}
+
+.gem-podcast-title:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.gem-podcast-desc {
+  font-size: 0.85rem;
+  color: var(--gray);
+  line-height: 1.4;
+}
+
+.gem-podcast-toggle {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--gray-light);
+  border-bottom: 2px solid var(--gray-light);
+  transform: rotate(-45deg);
+  transition: transform 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+  margin-right: var(--space-sm);
+}
+
+.gem-podcast-header:hover .gem-podcast-toggle {
+  border-color: var(--accent);
+}
+
+.gem-podcast[open] .gem-podcast-toggle {
+  transform: rotate(45deg);
+}
+
+/* Episode list inside podcast */
+.gem-podcast-episodes {
+  border-top: 1px solid var(--border);
+  background: #fafafa;
+}
+
+.gem-episode {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  padding-left: calc(var(--space-md) + 56px + var(--space-md));
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+.gem-episode:last-child {
+  border-bottom: none;
+}
+
+.gem-episode:hover {
+  background: var(--accent-light);
+  opacity: 1;
+}
+
+.gem-episode-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-light);
+  flex-shrink: 0;
+  min-width: 70px;
+}
+
+.gem-episode-title {
+  color: var(--fg);
+  font-size: 0.9rem;
+}
+
+.gem-episode:hover .gem-episode-title {
+  color: var(--accent);
+}
+
+
+/* Standalone gems list (videos, websites) */
+.gems-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.gem-item {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.gem-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.gem-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: var(--border);
+}
+
+.gem-thumb-video {
+  width: 120px;
+  height: 68px;
+  border-radius: 4px;
+}
+
+.gem-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.gem-title {
+  font-weight: 500;
+  color: var(--fg);
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline;
+}
+
+.gem-title:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.gem-desc {
+  color: var(--gray);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Source label for writing items */
+.gem-source {
+  font-size: 0.75rem;
+  color: var(--gray-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* App icon */
+.gem-app-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* App meta (platform, developer) */
+.gem-app-meta {
+  font-size: 0.8rem;
+  color: var(--gray-light);
+}
+
+@media (max-width: 640px) {
+  .gem-podcast-image {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .gem-podcast-placeholder {
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
+  }
+  
+  .gem-episode {
+    padding-left: calc(var(--space-md) + 48px + var(--space-md));
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  
+  .gem-episode-label {
+    font-size: 0.7rem;
+  }
+  
+  .gem-thumb {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .gem-thumb-video {
+    width: 100px;
+    height: 56px;
+  }
+}

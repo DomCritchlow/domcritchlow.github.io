@@ -1,0 +1,172 @@
+---
+layout: base.njk
+title: Gems
+description: Things I've found worth sharing.
+permalink: /gems/
+---
+
+<div class="container container-narrow">
+  <h1 class="page-title">Gems</h1>
+  <p class="page-subtitle">Podcasts, videos, articles, and apps I think are worth your time.</p>
+
+  <nav class="gems-filter">
+    <button class="gems-filter-btn active" data-filter="all">All</button>
+    <button class="gems-filter-btn" data-filter="podcasts">Podcasts</button>
+    <button class="gems-filter-btn" data-filter="youtube">Videos</button>
+    <button class="gems-filter-btn" data-filter="writing">Writing</button>
+    <button class="gems-filter-btn" data-filter="apps">Apps</button>
+  </nav>
+
+  {% if gems.podcasts.length or gems.youtube.length or gems.writing.length or gems.apps.length %}
+  
+  {# Podcasts #}
+  {% if gems.podcasts.length %}
+  <section class="gems-section" data-category="podcasts">
+    <h2 class="gems-section-title">
+      <span class="gems-icon">🎙️</span> Podcasts
+    </h2>
+    
+    {% for podcast in gems.podcasts %}
+    <details class="gem-podcast">
+      <summary class="gem-podcast-header">
+        {% if podcast.image %}
+        <img src="{{ podcast.image }}" alt="{{ podcast.title }}" class="gem-podcast-image" loading="lazy">
+        {% else %}
+        <span class="gem-podcast-placeholder">📻</span>
+        {% endif %}
+        <div class="gem-podcast-info">
+          <a href="{{ podcast.url }}" target="_blank" rel="noopener" class="gem-podcast-title" onclick="event.stopPropagation()">{{ podcast.title }}</a>
+          {% if podcast.description %}
+          <span class="gem-podcast-desc">{{ podcast.description }}</span>
+          {% endif %}
+        </div>
+        <span class="gem-podcast-toggle"></span>
+      </summary>
+      
+      {% if podcast.episodes and podcast.episodes.length %}
+      <div class="gem-podcast-episodes">
+        {% for ep in podcast.episodes %}
+        <a href="{{ ep.url }}" target="_blank" rel="noopener" class="gem-episode">
+          <span class="gem-episode-label">{{ ep.label }}</span>
+          <span class="gem-episode-title">{{ ep.title }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </details>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {# YouTube Videos #}
+  {% if gems.youtube.length %}
+  <section class="gems-section" data-category="youtube">
+    <h2 class="gems-section-title">
+      <span class="gems-icon">🎬</span> Videos
+    </h2>
+    
+    <ul class="gems-list">
+      {% for item in gems.youtube %}
+      <li class="gem-item">
+        {% if item.image %}
+        <img src="{{ item.image }}" alt="{{ item.title }}" class="gem-thumb gem-thumb-video" loading="lazy">
+        {% endif %}
+        <div class="gem-content">
+          <a href="{{ item.url }}" target="_blank" rel="noopener" class="gem-title">{{ item.title }}</a>
+          {% if item.description %}
+          <p class="gem-desc">{{ item.description }}</p>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {# Writing #}
+  {% if gems.writing.length %}
+  <section class="gems-section" data-category="writing">
+    <h2 class="gems-section-title">
+      <span class="gems-icon">✍️</span> Writing
+    </h2>
+    
+    <ul class="gems-list">
+      {% for item in gems.writing %}
+      <li class="gem-item gem-item-writing">
+        <div class="gem-content">
+          <a href="{{ item.url }}" target="_blank" rel="noopener" class="gem-title">{{ item.title }}</a>
+          {% if item.source %}
+          <span class="gem-source">{{ item.source }}</span>
+          {% endif %}
+          {% if item.description %}
+          <p class="gem-desc">{{ item.description }}</p>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {# Apps #}
+  {% if gems.apps.length %}
+  <section class="gems-section" data-category="apps">
+    <h2 class="gems-section-title">
+      <span class="gems-icon">📱</span> Apps
+    </h2>
+    
+    <ul class="gems-list">
+      {% for item in gems.apps %}
+      <li class="gem-item">
+        {% if item.image %}
+        <img src="{{ item.image }}" alt="{{ item.title }}" class="gem-app-icon" loading="lazy">
+        {% endif %}
+        <div class="gem-content">
+          <a href="{{ item.url }}" target="_blank" rel="noopener" class="gem-title">{{ item.title }}</a>
+          {% if item.platform or item.developer %}
+          <span class="gem-app-meta">
+            {% if item.platform %}{{ item.platform }}{% endif %}
+            {% if item.platform and item.developer %} · {% endif %}
+            {% if item.developer %}{{ item.developer }}{% endif %}
+          </span>
+          {% endif %}
+          {% if item.description %}
+          <p class="gem-desc">{{ item.description }}</p>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% else %}
+  <p>No gems yet. Add them in <code>src/gems.json</code>.</p>
+  {% endif %}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const filterBtns = document.querySelectorAll('.gems-filter-btn');
+    const sections = document.querySelectorAll('.gems-section');
+    
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        const filter = this.dataset.filter;
+        
+        // Update active button
+        filterBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Show/hide sections
+        sections.forEach(section => {
+          if (filter === 'all' || section.dataset.category === filter) {
+            section.style.display = 'block';
+          } else {
+            section.style.display = 'none';
+          }
+        });
+      });
+    });
+  });
+</script>

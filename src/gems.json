@@ -1,0 +1,117 @@
+[
+  {
+    "id": "serial",
+    "type": "podcast",
+    "title": "Serial",
+    "url": "https://serialpodcast.org/",
+    "rss": "https://feeds.simplecast.com/xl36XBC2",
+    "description": "The podcast that started it all",
+    "episodes": [
+      { "label": "First", "title": "The Alibi", "url": "https://serialpodcast.org/season-one/1/the-alibi" },
+      { "label": "Favorite", "title": "Leakin Park", "url": "https://serialpodcast.org/season-one/3/leakin-park" },
+      { "label": "Best", "title": "What We Know", "url": "https://serialpodcast.org/season-one/12/what-we-know" }
+    ]
+  },
+  {
+    "id": "deepmind",
+    "type": "podcast",
+    "title": "DeepMind: The Podcast",
+    "url": "https://deepmind.google/discover/the-podcast/",
+    "rss": "https://feeds.simplecast.com/JT6pbPkg",
+    "description": "Hannah Fry explores AI research at DeepMind",
+    "episodes": [
+      { "label": "First", "title": "AI and Neuroscience", "url": "https://deepmind.google/discover/the-podcast/" }
+    ]
+  },
+  {
+    "id": "atp",
+    "type": "podcast",
+    "title": "Accidental Tech Podcast",
+    "url": "https://atp.fm/",
+    "rss": "https://atp.fm/rss",
+    "description": "Marco, Casey, and John talk tech"
+  },
+  {
+    "id": "reconcilable-differences",
+    "type": "podcast",
+    "title": "Reconcilable Differences",
+    "url": "https://www.relay.fm/rd",
+    "rss": "https://www.relay.fm/rd/feed",
+    "description": "John Siracusa and Merlin Mann"
+  },
+  {
+    "id": "articles-of-interest",
+    "type": "podcast",
+    "title": "Articles of Interest",
+    "url": "https://99percentinvisible.org/aoi/",
+    "rss": "https://feed.articlesofinterest.club/",
+    "description": "A show about what we wear"
+  },
+  {
+    "id": "99pi",
+    "type": "podcast",
+    "title": "99% Invisible",
+    "url": "https://99percentinvisible.org/",
+    "rss": "https://feeds.simplecast.com/BqbsxVfO",
+    "description": "Design is everywhere",
+    "episodes": [
+      { "label": "Favorite", "title": "Vexillonaire", "url": "https://99percentinvisible.org/episode/vexillonaire/" }
+    ]
+  },
+  {
+    "id": "dolly-partons-america",
+    "type": "podcast",
+    "title": "Dolly Parton's America",
+    "url": "https://www.wnycstudios.org/podcasts/dolly-partons-america",
+    "rss": "https://feeds.simplecast.com/kZ0W9vjc",
+    "description": "WNYC explores the icon who transcends partisanship"
+  },
+  {
+    "id": "trump-con-law",
+    "type": "podcast",
+    "title": "What Trump Can Teach Us About Con Law",
+    "url": "https://trumpconlaw.com/",
+    "rss": "https://feeds.simplecast.com/jZLi00b4",
+    "description": "Roman Mars and Professor Elizabeth Joh on constitutional law"
+  },
+  {
+    "id": "alphago-documentary",
+    "type": "youtube",
+    "title": "AlphaGo - The Movie",
+    "url": "https://www.youtube.com/watch?v=WXuK6gekU1Y",
+    "description": "The story of AlphaGo vs Lee Sedol"
+  },
+  {
+    "id": "cgp-grey-uk",
+    "type": "youtube",
+    "title": "The Difference between UK, Great Britain & England",
+    "url": "https://www.youtube.com/watch?v=rNu8XDBSn10",
+    "description": "CGP Grey explains the UK's confusing geography"
+  },
+  {
+    "id": "pudding-nyt-countries",
+    "type": "writing",
+    "title": "The World Through the Eyes of the US",
+    "url": "https://pudding.cool/2018/12/countries/",
+    "source": "The Pudding",
+    "description": "Which countries the NYT writes about over time"
+  },
+  {
+    "id": "brookings-gamechanger",
+    "type": "writing",
+    "title": "GAMECHANGER: A case study of AI innovation at the Department of Defense",
+    "url": "https://www.brookings.edu/articles/gamechanger-a-case-study-of-ai-innovation-at-the-department-of-defense/",
+    "source": "Brookings",
+    "description": "How the DOD built an LLM-based policy search tool before ChatGPT existed"
+  },
+  {
+    "id": "overcast",
+    "type": "app",
+    "title": "Overcast",
+    "url": "https://overcast.fm/",
+    "appStoreId": "888422857",
+    "platform": "iOS",
+    "developer": "Marco Arment",
+    "description": "The best podcast player, with Smart Speed and Voice Boost"
+  }
+]

@@ -10,7 +10,7 @@ module.exports = [
     logo: "🌍"
   },
   {
-    title: "airwave ML",
+    title: "airwaveml",
     shortname: "airwave-ml",
     url: "https://github.com/DomCritchlow/airwave-ml",
     github: "https://github.com/DomCritchlow/airwave-ml",

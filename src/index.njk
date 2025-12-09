@@ -19,7 +19,7 @@ title: Home
       <li class="post-item" data-type="{{ item.type }}">
         <div class="post-title">
           {%- if item.type == "project" and item.logo -%}
-          <span class="project-logo">{{ item.logo }}</span>
+          <span class="project-logo">{{ item.logo | safe }}</span>
           {%- endif -%}
           {%- if item.type == "project" -%}
           <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}</a>

@@ -14,7 +14,7 @@ permalink: /projects/
       <li class="post-item" data-type="project">
         <div class="post-title">
           {%- if project.logo -%}
-          <span class="project-logo">{{ project.logo }}</span>
+          <span class="project-logo">{{ project.logo | safe }}</span>
           {%- endif -%}
           <a href="{{ project.url }}" target="_blank" rel="noopener">{{ project.title }}</a>
         </div>

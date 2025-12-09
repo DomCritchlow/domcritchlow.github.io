@@ -1,5 +1,15 @@
 module.exports = [
   {
+    title: "Latitude",
+    shortname: "latitude",
+    url: "https://critchlow.us/latitude",
+    github: "https://github.com/DomCritchlow/latitude",
+    description: "A minimal web app that draws your latitude line around the entire Earth, with real-time temperature data showing how warm or cold it is at every point along your parallel. Features geolocation, horizontal panning, and shareable URLs.",
+    date: "2025-12-09",
+    type: "web",
+    logo: "🌍"
+  },
+  {
     title: "airwave ML",
     shortname: "airwave-ml",
     url: "https://github.com/DomCritchlow/airwave-ml",

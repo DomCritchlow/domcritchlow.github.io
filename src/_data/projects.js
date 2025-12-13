@@ -1,5 +1,15 @@
 module.exports = [
   {
+    title: "ForkFeed",
+    shortname: "forkfeed",
+    url: "https://critchlow.us/forkfeed/",
+    github: "https://github.com/DomCritchlow/forkfeed",
+    description: "A minimal, self-hosted microblog with RSS feed aggregation. Post short updates and photos, follow any RSS feed, view everything in one unified timeline. Runs entirely on GitHub Pages—no server, no database, no algorithms.",
+    date: "2025-12-13",
+    type: "web",
+    logo: "🔀"
+  },
+  {
     title: "Latitude",
     shortname: "latitude",
     url: "https://critchlow.us/latitude",

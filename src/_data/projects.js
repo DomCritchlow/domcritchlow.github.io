@@ -1,5 +1,15 @@
 module.exports = [
   {
+    title: "Vibecast",
+    shortname: "vibecast",
+    url: "https://critchlow.us/vibecast/",
+    github: "https://github.com/DomCritchlow/vibecast",
+    description: "A configurable daily podcast engine that generates personalized audio briefings with weather and positive news. Uses AI to write scripts and OpenAI TTS for voice synthesis, runs via GitHub Actions, and publishes a subscribable podcast feed.",
+    date: "2025-12-14",
+    type: "app",
+    logo: "🎙️"
+  },
+  {
     title: "ForkFeed",
     shortname: "forkfeed",
     url: "https://critchlow.us/forkfeed/",

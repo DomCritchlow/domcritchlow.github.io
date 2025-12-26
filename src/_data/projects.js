@@ -4,7 +4,7 @@ module.exports = [
     shortname: "vibecast",
     url: "https://critchlow.us/vibecast/",
     github: "https://github.com/DomCritchlow/vibecast",
-    description: "A configurable daily podcast engine that generates personalized audio briefings with weather and positive news. Uses AI to write scripts and OpenAI TTS for voice synthesis, runs via GitHub Actions, and publishes a subscribable podcast feed.",
+    description: "Automated daily podcast pipeline. Scheduled ingestion → script generation → TTS → podcast RSS, designed to run unattended via GitHub Actions.",
     date: "2025-12-14",
     type: "app",
     logo: "🎙️"
@@ -34,7 +34,7 @@ module.exports = [
     shortname: "airwave-ml",
     url: "https://github.com/DomCritchlow/airwave-ml",
     github: "https://github.com/DomCritchlow/airwave-ml",
-    description: "Machine learning for decoding radio audio—Morse code, digital modes, and beyond. Features CTC and attention-based architectures, synthetic data generation with operator variability, robust audio augmentation, and a universal signal decoder for multi-mode radio transcription.",
+    description: "Deep-learning decoding for radio/audio signals (PyTorch). Reproducible training workflows (CTC + attention variants), dataset tooling, and experiments aimed at small, accurate models.",
     date: "2025-12-09",
     type: "ml",
     logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="32" height="32"><path d="M 24 64 Q 44 24, 64 64 Q 84 104, 104 64" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><circle cx="24" cy="64" r="10" fill="currentColor"/><circle cx="64" cy="64" r="10" fill="currentColor"/><circle cx="104" cy="64" r="10" fill="currentColor"/><circle cx="44" cy="34" r="5" fill="currentColor" opacity="0.5"/><circle cx="84" cy="94" r="5" fill="currentColor" opacity="0.5"/></svg>'
@@ -44,7 +44,7 @@ module.exports = [
     shortname: "hamops",
     url: "https://hamops-uiggriujca-uc.a.run.app/",
     github: "https://github.com/DomCritchlow/hamops",
-    description: "Comprehensive FastAPI service providing amateur radio utilities through REST APIs and Model Context Protocol. Query FCC callsigns, track real-time APRS location/weather data, and explore US band plans with intelligent frequency parsing. Supports natural language queries via MCP for AI assistants.",
+    description: "API-first service for ham-radio operations (FastAPI). Built for integrations and tool use (automation-friendly endpoints; designed to plug into agent/tool workflows).",
     date: "2025-08-12",
     type: "api",
     logo: "📻"

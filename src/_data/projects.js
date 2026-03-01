@@ -1,5 +1,15 @@
 module.exports = [
   {
+    title: "Flags",
+    shortname: "flags",
+    url: "https://critchlow.us/flags/",
+    github: "https://github.com/DomCritchlow/flags",
+    description: "Which countries dominate U.S. congressional language? Tracks every country mention across bills, nominations, amendments, and congressional records.",
+    date: "2026-02-28",
+    type: "data",
+    logo: "🌎"
+  },
+  {
     title: "Vibecast",
     shortname: "vibecast",
     url: "https://critchlow.us/vibecast/",

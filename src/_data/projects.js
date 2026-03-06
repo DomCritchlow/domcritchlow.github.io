@@ -1,5 +1,15 @@
 module.exports = [
   {
+    title: "Helio",
+    shortname: "helio",
+    url: "https://critchlow.us/helio",
+    github: "https://github.com/DomCritchlow/helio",
+    description: "Minimalist solar activity visualizer built on live NOAA data. The sun renders as a pixel grid with sunspot regions at real heliographic coordinates. A 28-day scrubber lets you replay the past month as spots migrate across the disk.",
+    date: "2026-03-05",
+    type: "web",
+    logo: "☀️"
+  },
+  {
     title: "Flags",
     shortname: "flags",
     url: "https://critchlow.us/flags/",

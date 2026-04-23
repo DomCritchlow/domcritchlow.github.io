@@ -1,5 +1,15 @@
 module.exports = [
   {
+    title: "Pins",
+    shortname: "pins",
+    url: "https://critchlow.us/pins/",
+    github: "https://github.com/DomCritchlow/pins",
+    description: "PWA for organizing saved places with tags, filters, a map, and a nearby-now view. Google Sheets is the database, GitHub Pages is the host — no backend, no build step. Invite only.",
+    date: "2026-04-23",
+    type: "app",
+    logo: "📍"
+  },
+  {
     title: "Helio",
     shortname: "helio",
     url: "https://critchlow.us/helio",

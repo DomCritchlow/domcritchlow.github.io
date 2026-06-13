@@ -7,7 +7,7 @@ module.exports = [
     description: "A native iOS app for saving the places you care about. Drop a pin, scan a storefront, or save from a shared link — then organize everything into Collections, filter by tag, and navigate back when you're ready. Built with SwiftUI, SwiftData, MapKit, and private CloudKit sync. No servers, no tracking.",
     date: "2026-06-13",
     type: "iOS app",
-    logo: "📌"
+    logo: '<img src="/public/pinned/icon.png" class="project-app-icon" alt="" />'
   },
   {
     title: "Pins",
@@ -22,7 +22,7 @@ module.exports = [
   {
     title: "Helio",
     shortname: "helio",
-    url: "https://critchlow.us/helio",
+    url: "https://critchlow.us/helio/",
     github: "https://github.com/DomCritchlow/helio",
     description: "Minimalist solar activity visualizer built on live NOAA data. The sun renders as a pixel grid with sunspot regions at real heliographic coordinates. A 28-day scrubber lets you replay the past month as spots migrate across the disk.",
     date: "2026-03-05",
@@ -62,7 +62,7 @@ module.exports = [
   {
     title: "Latitude",
     shortname: "latitude",
-    url: "https://critchlow.us/latitude",
+    url: "https://critchlow.us/latitude/",
     github: "https://github.com/DomCritchlow/latitude",
     description: "A minimal web app that draws your latitude line around the entire Earth, with real-time temperature data showing how warm or cold it is at every point along your parallel. Features geolocation, horizontal panning, and shareable URLs.",
     date: "2025-12-09",

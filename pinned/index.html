@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pinned — Save the places you love | Dominic Critchlow</title>
+  <meta name="description" content="Pinned is a native iOS app for saving, organizing, and navigating back to the places you care about. No servers, no tracking, private iCloud sync.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>👽</text></svg>">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="site-title">Dominic Critchlow</a>
+      <ul class="site-nav">
+        <li><a href="/" >Home</a></li>
+        <li><a href="/writing/" >Writing</a></li>
+        <li><a href="/projects/" >Projects</a></li>
+        <li><a href="/gems/" >Gems</a></li>
+        <li><a href="/about/" >About</a></li>
+        <li><a href="/gallery/" >Photos</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    
+<div class="container">
+  <h1 class="page-title">📌 Pinned</h1>
+  <p class="post-description" style="font-size:1.15rem;max-width:46ch;">Save the places you love. Drop a pin, scan a storefront, or save from a shared link — then find your way back when you're ready.</p>
+
+  <p style="margin:1.5rem 0;">
+    <em>Coming soon to the App Store.</em>
+  </p>
+
+  <section class="section">
+    <h2>What it's for</h2>
+    <ul>
+      <li><strong>I'm standing in front of something I want to save.</strong> Drop a pin or scan the sign with your camera.</li>
+      <li><strong>I heard about a place and want to find it fast.</strong> Search, or save it straight from a shared link.</li>
+      <li><strong>What should I explore around me right now?</strong> See what's nearby on the map.</li>
+      <li><strong>Help me remember, revisit, and navigate.</strong> Notes, visits, and one-tap directions.</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>Features</h2>
+    <ul>
+      <li><strong>Collections</strong> — group places into lists, with smart rules that file new pins automatically</li>
+      <li><strong>Tags &amp; filters</strong> — narrow the map to just what you're looking for</li>
+      <li><strong>Scan to save</strong> — point your camera at a storefront or sign to identify a place</li>
+      <li><strong>Save from anywhere</strong> — a share extension pulls places in from Maps links and the web</li>
+      <li><strong>Private by design</strong> — your data lives on your devices and syncs through your own iCloud. No servers, no analytics, no tracking.</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>Privacy</h2>
+    <p>Pinned collects nothing. Everything you save stays on your device and syncs privately through your personal iCloud account. Read the full <a href="/pinned/privacy/">privacy policy</a>.</p>
+  </section>
+
+  <section class="section">
+    <p class="post-meta">Built with SwiftUI, SwiftData, MapKit, and CloudKit · by <a href="/about/">Dominic Critchlow</a></p>
+  </section>
+</div>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container container-narrow">
+      <p>&copy; 2025 Dominic Critchlow</p>
+      <p class="footer-links">
+        <a href="https://github.com/DomCritchlow" target="_blank" rel="noopener">GitHub</a>
+        ·
+        <a href="https://www.linkedin.com/in/dominic-critchlow/" target="_blank" rel="noopener">LinkedIn</a>
+      </p>
+    </div>
+  </footer>
+  
+  <script>
+    // Prevent scroll on lightbox close
+    document.addEventListener('DOMContentLoaded', function() {
+      const closeButtons = document.querySelectorAll('.lightbox-close');
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          const scrollPos = window.scrollY;
+          window.location.hash = '';
+          window.scrollTo(0, scrollPos);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
+

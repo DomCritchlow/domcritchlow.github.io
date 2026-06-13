@@ -1,5 +1,15 @@
 module.exports = [
   {
+    title: "Pinned",
+    shortname: "pinned",
+    url: "https://critchlow.us/pinned/",
+    internal: true,
+    description: "A native iOS app for saving the places you care about. Drop a pin, scan a storefront, or save from a shared link — then organize everything into Collections, filter by tag, and navigate back when you're ready. Built with SwiftUI, SwiftData, MapKit, and private CloudKit sync. No servers, no tracking.",
+    date: "2026-06-13",
+    type: "iOS app",
+    logo: "📌"
+  },
+  {
     title: "Pins",
     shortname: "pins",
     url: "https://critchlow.us/pins/",

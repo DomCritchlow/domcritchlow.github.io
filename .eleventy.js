@@ -36,7 +36,14 @@ module.exports = function(eleventyConfig) {
       date: new Date(project.date)
     })).sort((a, b) => b.date - a.date);
   });
-  
+
+  // Projects that get short-link / github redirects generated.
+  // Internal projects (those with a real page on this site) are excluded
+  // so their permalink doesn't collide with the page that lives there.
+  eleventyConfig.addCollection("redirectProjects", function() {
+    return require('./src/_data/projects.js').filter(project => !project.internal);
+  });
+
   // Create latest collection (combines posts and projects)
   eleventyConfig.addCollection("latest", function(collectionApi) {
     const items = [];

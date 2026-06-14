@@ -25,13 +25,140 @@
 
   <main>
     
-<div class="container">
-  <h1 class="page-title">📌 Pinned</h1>
-  <p class="post-description" style="font-size:1.15rem;max-width:46ch;">Save the places you love. Drop a pin, scan a storefront, or save from a shared link — then find your way back when you're ready.</p>
+<style>
+  /* Warm, editorial treatment — scoped to the Pinned page only */
+  body { background: #FBF6EC; }
 
-  <p style="margin:1.5rem 0;">
-    <em>Coming soon to the App Store.</em>
-  </p>
+  .pinned-page {
+    --ink: #2B2622;
+    --teal: #2A9D8F;
+    --coral: #E8704F;
+    --muted: #7A7066;
+    --paper: #FFFDF8;
+    color: var(--ink);
+  }
+  .pinned-page .page-title { display: none; } /* using custom hero */
+
+  .pinned-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin: 0.5rem 0 1.75rem;
+  }
+  .pinned-hero .app-icon {
+    width: 104px;
+    height: 104px;
+    border-radius: 23px;
+    box-shadow: 0 6px 20px rgba(43, 38, 34, 0.16);
+    flex-shrink: 0;
+  }
+  .pinned-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2.7rem;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0;
+  }
+  .pinned-tagline {
+    color: var(--muted);
+    font-size: 1.15rem;
+    line-height: 1.5;
+    margin: 0.4rem 0 0;
+    max-width: 42ch;
+  }
+  .pinned-cta {
+    display: inline-block;
+    margin-top: 0.25rem;
+    background: var(--coral);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    letter-spacing: 0.01em;
+  }
+
+  /* Screenshot scroll strip */
+  .shots-strip {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.5rem 0 1.25rem;
+    margin: 0 calc(-1 * var(--space-md));
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+  .shots-strip a {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    line-height: 0;
+  }
+  .shots-strip img {
+    width: 216px;
+    height: auto;
+    border-radius: 26px;
+    box-shadow: 0 8px 24px rgba(43, 38, 34, 0.18);
+    border: 1px solid rgba(43, 38, 34, 0.06);
+  }
+
+  /* Tap-to-enlarge (pure CSS) */
+  .shot-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 38, 34, 0.92);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .shot-lightbox:target { display: flex; }
+  .shot-lightbox img {
+    max-height: 88vh;
+    width: auto;
+    border-radius: 22px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  }
+
+  .pinned-page h2 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.5rem;
+    color: var(--ink);
+    border-bottom: 1px solid rgba(43, 38, 34, 0.12);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
+  }
+  .pinned-page a { color: var(--teal); }
+  .pinned-page strong { color: var(--ink); }
+  .pinned-page .post-meta { color: var(--muted); }
+
+  @media (max-width: 640px) {
+    .pinned-hero { flex-direction: column; align-items: flex-start; gap: 0.85rem; }
+    .pinned-title { font-size: 2.2rem; }
+    .pinned-hero .app-icon { width: 88px; height: 88px; border-radius: 20px; }
+  }
+</style>
+
+<div class="container pinned-page">
+  <div class="pinned-hero">
+    <img class="app-icon" src="/public/pinned/icon.png" alt="Pinned app icon" width="104" height="104" />
+    <div>
+      <h1 class="pinned-title">Pinned</h1>
+      <p class="pinned-tagline">Save the places you love. Drop a pin, scan a storefront, or save from a shared link — then find your way back when you're ready.</p>
+      <span class="pinned-cta">Coming soon to the App Store</span>
+    </div>
+  </div>
+
+  <div class="shots-strip">
+    <a href="#shot-map"><img src="/public/pinned/shots/01_map.png" alt="Map full of saved pins" loading="lazy" /></a>
+    <a href="#shot-save"><img src="/public/pinned/shots/02_save.png" alt="Saving a place" loading="lazy" /></a>
+    <a href="#shot-collection"><img src="/public/pinned/shots/03_collection.png" alt="A Collection of places" loading="lazy" /></a>
+    <a href="#shot-filter"><img src="/public/pinned/shots/04_filter.png" alt="Filtering the map by tag" loading="lazy" /></a>
+    <a href="#shot-scan"><img src="/public/pinned/shots/05_scan.png" alt="Scanning a storefront with the camera" loading="lazy" /></a>
+  </div>
 
   <section class="section">
     <h2>What it's for</h2>
@@ -63,6 +190,13 @@
     <p class="post-meta">Built with SwiftUI, SwiftData, MapKit, and CloudKit · by <a href="/about/">Dominic Critchlow</a></p>
   </section>
 </div>
+
+<!-- Tap-to-enlarge overlays -->
+<a href="#" id="shot-map" class="shot-lightbox"><img src="/public/pinned/shots/01_map.png" alt="Map full of saved pins" /></a>
+<a href="#" id="shot-save" class="shot-lightbox"><img src="/public/pinned/shots/02_save.png" alt="Saving a place" /></a>
+<a href="#" id="shot-collection" class="shot-lightbox"><img src="/public/pinned/shots/03_collection.png" alt="A Collection of places" /></a>
+<a href="#" id="shot-filter" class="shot-lightbox"><img src="/public/pinned/shots/04_filter.png" alt="Filtering the map by tag" /></a>
+<a href="#" id="shot-scan" class="shot-lightbox"><img src="/public/pinned/shots/05_scan.png" alt="Scanning a storefront with the camera" /></a>
 
   </main>
 

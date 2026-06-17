@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>A place shared with you · Pinned</title>
+  <style>
+    :root {
+      --paper: #FBF6EC; --ink: #2B2622; --muted: #7A7066; --coral: #E8704F;
+      --hair: rgba(43,38,34,0.10);
+    }
+    * { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink);
+      font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .card {
+      width: 100%; max-width: 420px; text-align: center;
+      background: #FFFDF8; border: 1px solid var(--hair); border-radius: 22px;
+      padding: 36px 28px 30px; box-shadow: 0 18px 50px rgba(43,38,34,0.10);
+    }
+    .pin {
+      width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 50%;
+      background: rgba(232,112,79,0.12); color: var(--coral);
+      display: flex; align-items: center; justify-content: center; font-size: 28px;
+    }
+    .eyebrow {
+      font-size: 12px; letter-spacing: 0.10em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 8px;
+    }
+    h1 {
+      font-family: ui-serif, "New York", Georgia, serif;
+      font-weight: 700; font-size: 28px; line-height: 1.15; margin: 0 0 6px;
+      overflow-wrap: anywhere;
+    }
+    .addr { color: var(--muted); font-size: 15px; margin: 0 0 26px; overflow-wrap: anywhere; }
+    a.btn {
+      display: block; text-decoration: none; font-weight: 600; font-size: 17px;
+      border-radius: 14px; padding: 15px 18px; margin: 10px 0;
+    }
+    a.primary { background: var(--coral); color: #fff; }
+    a.secondary { background: transparent; color: var(--coral); border: 1px solid rgba(232,112,79,0.35); }
+    .foot { color: var(--muted); font-size: 12px; margin: 22px 0 0; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="pin">&#128205;</div>
+    <p class="eyebrow">A place shared with you</p>
+    <h1 id="name">A saved place</h1>
+    <p class="addr" id="address"></p>
+    <a class="btn primary" id="appstore" href="https://apps.apple.com/us/app/pinned-find-pin-go/id6768069856">Get Pinned</a>
+    <a class="btn secondary" id="maps" href="https://maps.apple.com/">Open in Apple&nbsp;Maps</a>
+    <p class="foot">Have Pinned? This link opens the app to add the pin.</p>
+  </main>
+
+  <script>
+    // Static page: read the same payload the app's share link carries
+    // (coordinate, name, place-id, address) and populate the page + the
+    // Apple Maps fallback. iOS intercepts this URL for users who have the app
+    // (via /.well-known/apple-app-site-association) before this page loads.
+    (function () {
+      var q = new URLSearchParams(window.location.search);
+      var name = (q.get("name") || "").trim();
+      var address = (q.get("address") || "").trim();
+      var coordinate = (q.get("coordinate") || "").trim();
+      var placeId = (q.get("place-id") || "").trim();
+
+      if (name) { document.getElementById("name").textContent = name; document.title = name + " · Pinned"; }
+      var addrEl = document.getElementById("address");
+      if (address) { addrEl.textContent = address; } else { addrEl.style.display = "none"; }
+
+      // Rebuild a working Apple Maps link from the payload so Maps users still
+      // get an exact place (mirrors what the app's link used to point at).
+      var maps;
+      if (placeId) {
+        maps = "https://maps.apple.com/place?place-id=" + encodeURIComponent(placeId);
+        if (name) maps += "&name=" + encodeURIComponent(name);
+        if (coordinate) maps += "&coordinate=" + encodeURIComponent(coordinate);
+        if (address) maps += "&address=" + encodeURIComponent(address);
+      } else {
+        maps = "https://maps.apple.com/?q=" + encodeURIComponent(name || "Shared place");
+        if (coordinate) maps += "&ll=" + encodeURIComponent(coordinate);
+      }
+      document.getElementById("maps").href = maps;
+    })();
+  </script>
+</body>
+</html>

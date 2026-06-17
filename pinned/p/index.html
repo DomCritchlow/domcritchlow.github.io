@@ -4,6 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>A place shared with you · Pinned</title>
+
+  <!-- Link-preview card (Messages, WhatsApp, etc.). Static hosting can't inject
+       the specific place name into og: tags (crawlers don't run the JS below),
+       so these are branded + generic; the page itself fills in the place. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pinned">
+  <meta property="og:title" content="A place shared with you">
+  <meta property="og:description" content="Open in Pinned to save it — or view it in Apple Maps.">
+  <meta property="og:image" content="https://critchlow.us/public/pinned/icon.png">
+  <meta property="og:url" content="https://critchlow.us/pinned/p">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="A place shared with you">
+  <meta name="twitter:description" content="Open in Pinned to save it — or view it in Apple Maps.">
+  <meta name="twitter:image" content="https://critchlow.us/public/pinned/icon.png">
+  <meta name="theme-color" content="#E8704F">
   <style>
     :root {
       --paper: #FBF6EC; --ink: #2B2622; --muted: #7A7066; --coral: #E8704F;

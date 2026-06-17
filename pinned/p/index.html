@@ -66,8 +66,9 @@
     <h1 id="name">A saved place</h1>
     <p class="addr" id="address"></p>
     <a class="btn primary" id="appstore" href="https://apps.apple.com/us/app/pinned-find-pin-go/id6768069856">Download Pinned</a>
+    <a class="btn secondary" id="openapp" href="#" hidden>Open in Pinned</a>
     <a class="btn secondary" id="maps" href="https://maps.apple.com/">Open in Apple&nbsp;Maps</a>
-    <p class="foot">Have Pinned? This link opens the app to add the pin.</p>
+    <p class="foot" id="foot">Already installed? Tap <b>Open in Pinned</b> to add the place.</p>
   </main>
 
   <script>
@@ -99,6 +100,24 @@
         if (coordinate) maps += "&ll=" + encodeURIComponent(coordinate);
       }
       document.getElementById("maps").href = maps;
+
+      // "Open in Pinned" — the custom-scheme twin of the link. Custom schemes
+      // open an installed app reliably (even where Universal Links don't fire),
+      // so this survives the App-Store-install journey: a new user downloads
+      // Pinned, comes back to this still-open page, taps Open in Pinned, and the
+      // place they were sent lands in the "Add this pin?" sheet. Needs the
+      // coordinate (always present on real share links); hidden otherwise.
+      var openBtn = document.getElementById("openapp");
+      if (coordinate) {
+        var scheme = "pins://addpin?coordinate=" + encodeURIComponent(coordinate);
+        if (name)     scheme += "&name="     + encodeURIComponent(name);
+        if (placeId)  scheme += "&place-id=" + encodeURIComponent(placeId);
+        if (address)  scheme += "&address="  + encodeURIComponent(address);
+        openBtn.href = scheme;
+        openBtn.hidden = false;
+      } else {
+        document.getElementById("foot").style.display = "none";
+      }
     })();
   </script>
 </body>

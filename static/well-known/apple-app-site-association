@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["WYU5QYFS2X.dominic.Pins-Map"],
+        "components": [
+          { "/": "/pinned/p", "comment": "Shared pin link" },
+          { "/": "/pinned/p/*", "comment": "Shared pin link with path" }
+        ]
+      }
+    ]
+  }
+}

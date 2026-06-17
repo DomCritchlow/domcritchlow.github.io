@@ -6,6 +6,15 @@ module.exports = function(eleventyConfig) {
   // Copy static assets to output
   eleventyConfig.addPassthroughCopy("public");
   eleventyConfig.addPassthroughCopy("src/css");
+
+  // Pins app — Universal Links. The AASA must sit at the site root under
+  // /.well-known/ (served as-is, no templating); the fallback page answers
+  // /pinned/p for anyone without the app. Both live in static/ (outside the
+  // Eleventy "src" input dir) so they're copied verbatim, never templated.
+  eleventyConfig.addPassthroughCopy({
+    "static/well-known/apple-app-site-association": ".well-known/apple-app-site-association"
+  });
+  eleventyConfig.addPassthroughCopy({ "static/pinned-p": "pinned/p" });
   
   // Date filters
   eleventyConfig.addFilter("readableDate", (dateObj) => {

@@ -48,16 +48,53 @@ permalink: /pinned/
     max-width: 42ch;
   }
   .pinned-cta {
-    display: inline-block;
-    margin-top: 0.25rem;
-    background: var(--coral);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 0.9rem;
+    background: var(--ink);
     color: #fff;
     font-weight: 600;
-    font-size: 0.95rem;
-    padding: 0.5rem 1.1rem;
-    border-radius: 999px;
-    letter-spacing: 0.01em;
+    font-size: 1rem;
+    padding: 0.7rem 1.3rem;
+    border-radius: 14px;
     text-decoration: none;
+    box-shadow: 0 4px 14px rgba(43, 38, 34, 0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .pinned-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(43, 38, 34, 0.26);
+    opacity: 1;
+  }
+  .pinned-cta svg { width: 18px; height: 18px; fill: #fff; flex-shrink: 0; }
+  .pinned-cta-meta {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0.55rem 0 0;
+  }
+
+  /* Content lists — the global reset strips ul padding, so style our own */
+  .pinned-page .section ul {
+    list-style: none;
+    margin: 0.35rem 0 0;
+    padding: 0;
+  }
+  .pinned-page .section li {
+    position: relative;
+    padding-left: 1.4rem;
+    margin-bottom: 0.6rem;
+    line-height: 1.55;
+  }
+  .pinned-page .section li::before {
+    content: "";
+    position: absolute;
+    left: 0.2rem;
+    top: 0.62em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--coral);
   }
 
   /* Screenshot scroll strip */
@@ -83,6 +120,11 @@ permalink: /pinned/
     border-radius: 26px;
     box-shadow: 0 8px 24px rgba(43, 38, 34, 0.18);
     border: 1px solid rgba(43, 38, 34, 0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .shots-strip a:hover img {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 32px rgba(43, 38, 34, 0.24);
   }
 
   /* Tap-to-enlarge (pure CSS) */
@@ -128,25 +170,29 @@ permalink: /pinned/
     <img class="app-icon" src="/public/pinned/icon.png" alt="Pinned app icon" width="104" height="104" />
     <div>
       <h1 class="pinned-title">Pinned</h1>
-      <p class="pinned-tagline">Save the places you love. Drop a pin, scan a storefront, or save from a shared link — then find your way back when you're ready.</p>
-      <a class="pinned-cta" href="https://apps.apple.com/us/app/pinned-find-pin-go/id6768069856">Download on the App&nbsp;Store</a>
+      <p class="pinned-tagline">Save the places you love — from a link, a screenshot, a map, or your camera. Pinned works out the real spot, right on your device, then helps you organize and find your way back.</p>
+      <a class="pinned-cta" href="https://apps.apple.com/us/app/pinned-find-pin-go/id6768069856">
+        <svg viewBox="0 0 384 512" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C71.4 141.1 24 184.3 24 271c0 25.6 4.7 52 14.1 79.3 12.5 36.4 57.7 125.7 105 124.3 24.7-.6 42.1-17.5 74.3-17.5 31.2 0 47.3 17.5 74.8 17.5 47.7-.7 88.6-81.8 100.5-118.3-63.5-29.9-60.4-87.5-60.4-87.4zM256.6 116.4c30.5-36.2 27.7-69.1 26.8-81-26.9 1.6-58 18.4-75.7 39.1-19.5 22.2-31 49.7-28.5 80.4 29.1 2.3 55.7-12.7 77.4-38.5z"/></svg>
+        Download on the App Store
+      </a>
+      <p class="pinned-cta-meta">Free · iPhone &amp; iPad</p>
     </div>
   </div>
 
   <div class="shots-strip">
-    <a href="#shot-map"><img src="/public/pinned/shots/01_map.png" alt="Map full of saved pins" loading="lazy" /></a>
-    <a href="#shot-save"><img src="/public/pinned/shots/02_save.png" alt="Saving a place" loading="lazy" /></a>
-    <a href="#shot-collection"><img src="/public/pinned/shots/03_collection.png" alt="A Collection of places" loading="lazy" /></a>
-    <a href="#shot-filter"><img src="/public/pinned/shots/04_filter.png" alt="Filtering the map by tag" loading="lazy" /></a>
-    <a href="#shot-scan"><img src="/public/pinned/shots/05_scan.png" alt="Scanning a storefront with the camera" loading="lazy" /></a>
+    <a href="#shot-map"><img src="/public/pinned/shots/01_map.png" alt="A map full of saved pins" loading="lazy" /></a>
+    <a href="#shot-save"><img src="/public/pinned/shots/02_save.png" alt="Saving a place from its detail card" loading="lazy" /></a>
+    <a href="#shot-plan"><img src="/public/pinned/shots/03_collection.png" alt="A day planned as ordered stops with times" loading="lazy" /></a>
+    <a href="#shot-filter"><img src="/public/pinned/shots/04_filter.png" alt="Filtering pins by tag" loading="lazy" /></a>
+    <a href="#shot-collections"><img src="/public/pinned/shots/05_collections.png" alt="All your collections, smart and by hand" loading="lazy" /></a>
   </div>
 
   <section class="section">
     <h2>What it's for</h2>
     <ul>
-      <li><strong>I'm standing in front of something I want to save.</strong> Drop a pin or scan the sign with your camera.</li>
-      <li><strong>I heard about a place and want to find it fast.</strong> Search, or save it straight from a shared link.</li>
-      <li><strong>What should I explore around me right now?</strong> See what's nearby on the map.</li>
+      <li><strong>I'm standing in front of something I want to save.</strong> Drop a pin or point your camera at the sign.</li>
+      <li><strong>A friend sent me a place.</strong> Share the link, screenshot, or address to Pinned — it works out the real spot for you.</li>
+      <li><strong>I want to plan a day out.</strong> Build a Plan: ordered stops with times, distances, and ETAs.</li>
       <li><strong>Help me remember, revisit, and navigate.</strong> Notes, visits, and one-tap directions.</li>
     </ul>
   </section>
@@ -154,10 +200,11 @@ permalink: /pinned/
   <section class="section">
     <h2>Features</h2>
     <ul>
+      <li><strong>Place Intelligence</strong> — save from a link, screenshot, address, or your camera, and Pinned resolves it to the real place, right on your device</li>
       <li><strong>Collections</strong> — group places into lists, with smart rules that file new pins automatically</li>
+      <li><strong>Plans</strong> — build a day out as ordered stops with times, distances, and directions</li>
       <li><strong>Tags &amp; filters</strong> — narrow the map to just what you're looking for</li>
-      <li><strong>Scan to save</strong> — point your camera at a storefront or sign to identify a place</li>
-      <li><strong>Save from anywhere</strong> — a share extension pulls places in from Maps links and the web</li>
+      <li><strong>Across iPhone &amp; iPad</strong> — Siri, Shortcuts, Spotlight, Visual Intelligence, and shareable pin links</li>
       <li><strong>Private by design</strong> — your data lives on your devices and syncs through your own iCloud. No servers, no analytics, no tracking.</li>
     </ul>
   </section>
@@ -173,8 +220,8 @@ permalink: /pinned/
 </div>
 
 <!-- Tap-to-enlarge overlays -->
-<a href="#" id="shot-map" class="shot-lightbox"><img src="/public/pinned/shots/01_map.png" alt="Map full of saved pins" /></a>
-<a href="#" id="shot-save" class="shot-lightbox"><img src="/public/pinned/shots/02_save.png" alt="Saving a place" /></a>
-<a href="#" id="shot-collection" class="shot-lightbox"><img src="/public/pinned/shots/03_collection.png" alt="A Collection of places" /></a>
-<a href="#" id="shot-filter" class="shot-lightbox"><img src="/public/pinned/shots/04_filter.png" alt="Filtering the map by tag" /></a>
-<a href="#" id="shot-scan" class="shot-lightbox"><img src="/public/pinned/shots/05_scan.png" alt="Scanning a storefront with the camera" /></a>
+<a href="#" id="shot-map" class="shot-lightbox"><img src="/public/pinned/shots/01_map.png" alt="A map full of saved pins" /></a>
+<a href="#" id="shot-save" class="shot-lightbox"><img src="/public/pinned/shots/02_save.png" alt="Saving a place from its detail card" /></a>
+<a href="#" id="shot-plan" class="shot-lightbox"><img src="/public/pinned/shots/03_collection.png" alt="A day planned as ordered stops with times" /></a>
+<a href="#" id="shot-filter" class="shot-lightbox"><img src="/public/pinned/shots/04_filter.png" alt="Filtering pins by tag" /></a>
+<a href="#" id="shot-collections" class="shot-lightbox"><img src="/public/pinned/shots/05_collections.png" alt="All your collections, smart and by hand" /></a>

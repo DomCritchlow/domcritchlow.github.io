@@ -15,6 +15,9 @@ module.exports = function(eleventyConfig) {
     "static/well-known/apple-app-site-association": ".well-known/apple-app-site-association"
   });
   eleventyConfig.addPassthroughCopy({ "static/pinned-p": "pinned/p" });
+
+  // Current year for the footer copyright
+  eleventyConfig.addGlobalData("year", () => new Date().getFullYear());
   
   // Date filters
   eleventyConfig.addFilter("readableDate", (dateObj) => {

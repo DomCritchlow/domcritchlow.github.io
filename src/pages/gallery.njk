@@ -23,7 +23,7 @@ permalink: /gallery/
     <div id="img-{{ loop.index }}" class="lightbox">
       <a href="#" class="lightbox-close">&times;</a>
       <div class="lightbox-content">
-        <img src="/public/gallery/{{ image }}" alt="Photo {{ loop.index }}">
+        <img src="/public/gallery/{{ image }}" alt="Photo {{ loop.index }}" loading="lazy">
       </div>
     </div>
     {%- endfor -%}

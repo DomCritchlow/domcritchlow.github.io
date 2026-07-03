@@ -11,7 +11,7 @@ I attended Vanderbilt University in the summer of 2015, working in the Pentalide
 
 &nbsp;
 
-<object width="100%" height="600px" data="/assets/pdf/ZnOMgO-Poster.pdf" type='application/pdf'></object>
+<object width="100%" height="600px" data="/public/pdf/ZnOMgO-Poster.pdf" type='application/pdf'></object>
 
 &nbsp;
 

@@ -20,7 +20,7 @@ Our study defines network alignment as an injective (one-to-one) mapping between
 
 &nbsp;
 
-<object width="100%" height="600px" data="/assets/pdf/ND_POSTER_Printed.pdf" type='application/pdf'></object>
+<object width="100%" height="600px" data="/public/pdf/ND_POSTER_Printed.pdf" type='application/pdf'></object>
 
 &nbsp;
 

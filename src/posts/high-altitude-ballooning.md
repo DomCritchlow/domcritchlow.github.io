@@ -7,7 +7,7 @@ categories: Academic
 permalink: /writing/apsu-high-altitude-ballooning/
 ---
 
-During the 2021 Total Solar Ecplise, four years of undergraduate research came to fruition. The Austin Peay State University's (APSU) High Altitude Balloon Research Team hosted several Teams at the APSU Farm to launch balloons to observe the scientific effects of a Solar Ecplise. 
+During the 2017 Total Solar Eclipse, four years of undergraduate research came to fruition. The Austin Peay State University's (APSU) High Altitude Balloon Research Team hosted several teams at the APSU Farm to launch balloons to observe the scientific effects of a Solar Eclipse. 
 Over the four years I spent on and off working on this project, I learned an incredible amount about balloons, electronics, software, science, etc. In this post, I am documenting a few of the projects or steps that lead us to my final launch as a student.
 
 A good summary of such a balloon launch is this video.
@@ -30,7 +30,7 @@ Over the four years, I could present progress on the balloon team's research. We
 
 &nbsp;
 
-<object width="100%" height="600px" data="/assets/pdf/Poster_on_the_hill.pdf" type='application/pdf'></object>
+<object width="100%" height="600px" data="/public/pdf/Poster_on_the_hill.pdf" type='application/pdf'></object>
 
 &nbsp;
 
@@ -38,6 +38,6 @@ During the final months, and as a senior research project, I worked on the way t
 
 &nbsp;
 
-<object width="100%" height="600px" data="/assets/pdf/AdvanLab_Poster.pdf" type='application/pdf'></object>
+<object width="100%" height="600px" data="/public/pdf/AdvanLab_Poster.pdf" type='application/pdf'></object>
 
 

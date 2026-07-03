@@ -4,7 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% if title %}{{ title }} | {% endif %}Dominic Critchlow</title>
-  <meta name="description" content="{{ description or 'Data scientist and technologist building applied AI and data systems.' }}">
+  <meta name="description" content="{{ description or 'AI product and engineering leader building LLM products, iOS apps, and internet experiments.' }}">
+  <link rel="canonical" href="https://critchlow.us{{ page.url }}">
+  <meta property="og:title" content="{% if title %}{{ title }} | {% endif %}Dominic Critchlow">
+  <meta property="og:description" content="{{ description or 'AI product and engineering leader building LLM products, iOS apps, and internet experiments.' }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://critchlow.us{{ page.url }}">
+  <meta property="og:image" content="https://critchlow.us/public/headshot.jpg">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>👽</text></svg>">
   <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -14,8 +20,8 @@
       <a href="/" class="site-title">Dominic Critchlow</a>
       <ul class="site-nav">
         <li><a href="/" {% if page.url == "/" %}class="active"{% endif %}>Home</a></li>
-        <li><a href="/writing/" {% if page.url.startsWith("/writing") %}class="active"{% endif %}>Writing</a></li>
         <li><a href="/projects/" {% if page.url == "/projects/" %}class="active"{% endif %}>Projects</a></li>
+        <li><a href="/writing/" {% if page.url.startsWith("/writing") %}class="active"{% endif %}>Writing</a></li>
         <li><a href="/gems/" {% if page.url == "/gems/" %}class="active"{% endif %}>Gems</a></li>
         <li><a href="/about/" {% if page.url == "/about/" %}class="active"{% endif %}>About</a></li>
         <li><a href="/gallery/" {% if page.url == "/gallery/" %}class="active"{% endif %}>Photos</a></li>
@@ -29,7 +35,7 @@
 
   <footer class="site-footer">
     <div class="container container-narrow">
-      <p>&copy; {{ year or 2025 }} Dominic Critchlow</p>
+      <p>&copy; {{ year or 2026 }} Dominic Critchlow</p>
       <p class="footer-links">
         <a href="https://github.com/DomCritchlow" target="_blank" rel="noopener">GitHub</a>
         ·

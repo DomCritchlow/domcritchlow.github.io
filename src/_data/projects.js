@@ -23,6 +23,16 @@ module.exports = [
     title: "Helio",
     shortname: "helio",
     url: "https://critchlow.us/helio/",
+    internal: true,
+    description: "A native iOS weather app for the sun. Live NASA imagery of the actual star, current conditions from NOAA, aurora forecasts for your sky, and detail screens that teach every number they show. No servers, no tracking.",
+    date: "2026-07-05",
+    type: "iOS app",
+    logo: '<img src="/public/helio/icon.png" class="project-app-icon" alt="" />'
+  },
+  {
+    title: "Helio (web)",
+    shortname: "helio-web",
+    url: "https://github.com/DomCritchlow/helio",
     github: "https://github.com/DomCritchlow/helio",
     description: "Minimalist solar activity visualizer built on live NOAA data. The sun renders as a pixel grid with sunspot regions at real heliographic coordinates. A 28-day scrubber lets you replay the past month as spots migrate across the disk.",
     date: "2026-03-05",

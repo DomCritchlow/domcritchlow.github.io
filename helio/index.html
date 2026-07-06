@@ -2,11 +2,280 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=https://critchlow.us/helio/">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helio — Space weather for your sky | Dominic Critchlow</title>
+  <meta name="description" content="Helio is a native iOS app that shows what the sun is doing right now, whether it matters for your sky, and what is coming next. Live NASA imagery, NOAA data, aurora forecasts. No servers, no tracking.">
   <link rel="canonical" href="https://critchlow.us/helio/">
-  <title>Helio</title>
-  <script>window.location.replace("https://critchlow.us/helio/");</script>
+  <meta property="og:title" content="Helio — Space weather for your sky | Dominic Critchlow">
+  <meta property="og:description" content="Helio is a native iOS app that shows what the sun is doing right now, whether it matters for your sky, and what is coming next. Live NASA imagery, NOAA data, aurora forecasts. No servers, no tracking.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://critchlow.us/helio/">
+  <meta property="og:image" content="https://critchlow.us/public/headshot.jpg">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>👽</text></svg>">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
-<body></body>
+<body>
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="site-title">Dominic Critchlow</a>
+      <ul class="site-nav">
+        <li><a href="/" >Home</a></li>
+        <li><a href="/projects/" >Projects</a></li>
+        <li><a href="/writing/" >Writing</a></li>
+        <li><a href="/gems/" >Gems</a></li>
+        <li><a href="/about/" >About</a></li>
+        <li><a href="/gallery/" >Photos</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    
+<style>
+  /* Solar, after-dark treatment — scoped to the Helio page only */
+  body { background: #0a0a0e; }
+
+  .helio-page {
+    --ink: #ECE8E1;
+    --sun: #FF9533;
+    --earth: #8CB8E0;
+    --muted: #9A938A;
+    --card: #141318;
+    color: var(--ink);
+  }
+  .helio-page .page-title { display: none; } /* using custom hero */
+
+  .helio-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin: 0.5rem 0 1.75rem;
+  }
+  .helio-hero .app-icon {
+    width: 104px;
+    height: 104px;
+    border-radius: 23px;
+    box-shadow: 0 6px 24px rgba(255, 149, 51, 0.22);
+    flex-shrink: 0;
+  }
+  .helio-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2.7rem;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0;
+  }
+  .helio-tagline {
+    color: var(--muted);
+    font-size: 1.15rem;
+    line-height: 1.5;
+    margin: 0.4rem 0 0;
+    max-width: 42ch;
+  }
+  .helio-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 0.9rem;
+    background: var(--sun);
+    color: #16110a;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.7rem 1.3rem;
+    border-radius: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 18px rgba(255, 149, 51, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .helio-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(255, 149, 51, 0.4);
+    opacity: 1;
+  }
+  .helio-cta svg { width: 18px; height: 18px; fill: #16110a; flex-shrink: 0; }
+  .helio-cta-meta {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0.55rem 0 0;
+  }
+
+  .helio-page .section ul {
+    list-style: none;
+    margin: 0.35rem 0 0;
+    padding: 0;
+  }
+  .helio-page .section li {
+    position: relative;
+    padding-left: 1.4rem;
+    margin-bottom: 0.6rem;
+    line-height: 1.55;
+  }
+  .helio-page .section li::before {
+    content: "";
+    position: absolute;
+    left: 0.2rem;
+    top: 0.62em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--sun);
+  }
+
+  .shots-strip {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.5rem 0 1.25rem;
+    margin: 0 calc(-1 * var(--space-md));
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+  .shots-strip a {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    line-height: 0;
+  }
+  .shots-strip img {
+    width: 216px;
+    height: auto;
+    border-radius: 26px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 149, 51, 0.14);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .shots-strip a:hover img {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 36px rgba(255, 149, 51, 0.18);
+  }
+
+  .shot-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 5, 8, 0.94);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .shot-lightbox:target { display: flex; }
+  .shot-lightbox img {
+    max-height: 88vh;
+    width: auto;
+    border-radius: 22px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  }
+
+  .helio-page h2 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.5rem;
+    color: var(--ink);
+    border-bottom: 1px solid rgba(236, 232, 225, 0.14);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
+  }
+  .helio-page a { color: var(--earth); }
+  .helio-page strong { color: var(--ink); }
+  .helio-page .post-meta { color: var(--muted); }
+
+  @media (max-width: 640px) {
+    .helio-hero { flex-direction: column; align-items: flex-start; gap: 0.85rem; }
+    .helio-title { font-size: 2.2rem; }
+    .helio-hero .app-icon { width: 88px; height: 88px; border-radius: 20px; }
+  }
+</style>
+
+<div class="container helio-page">
+  <div class="helio-hero">
+    <img class="app-icon" src="/public/helio/icon.png" alt="Helio app icon" width="104" height="104" />
+    <div>
+      <h1 class="helio-title">Helio</h1>
+      <p class="helio-tagline">A weather app for the sun. See what our star is doing right now, whether it matters for your sky, and what is coming next — on live NASA imagery, with NOAA data underneath.</p>
+      
+      <span class="helio-cta" style="cursor: default;">
+        <svg viewBox="0 0 384 512" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C71.4 141.1 24 184.3 24 271c0 25.6 4.7 52 14.1 79.3 12.5 36.4 57.7 125.7 105 124.3 24.7-.6 42.1-17.5 74.3-17.5 31.2 0 47.3 17.5 74.8 17.5 47.7-.7 88.6-81.8 100.5-118.3-63.5-29.9-60.4-87.5-60.4-87.4zM256.6 116.4c30.5-36.2 27.7-69.1 26.8-81-26.9 1.6-58 18.4-75.7 39.1-19.5 22.2-31 49.7-28.5 80.4 29.1 2.3 55.7-12.7 77.4-38.5z"/></svg>
+        Coming soon to the App Store
+      </span>
+      <p class="helio-cta-meta">Free · iPhone &amp; iPad</p>
+    </div>
+  </div>
+
+  <div class="shots-strip">
+    <a href="#shot-home"><img src="/public/helio/shots/01_home.png" alt="The home screen: live sun imagery with current conditions" loading="lazy" /></a>
+    <a href="#shot-aurora"><img src="/public/helio/shots/02_auroraMap.png" alt="The aurora map with NOAA's forecast bands and viewline" loading="lazy" /></a>
+    <a href="#shot-geometry"><img src="/public/helio/shots/03_geometry.png" alt="Sun and Earth: the day and night globe and orbit view" loading="lazy" /></a>
+    <a href="#shot-kp"><img src="/public/helio/shots/04_kp.png" alt="The Kp index explained with charts and a city ladder" loading="lazy" /></a>
+    <a href="#shot-wind"><img src="/public/helio/shots/05_wind.png" alt="Live solar wind readings with the Bz diagram" loading="lazy" /></a>
+  </div>
+
+  <section class="section">
+    <h2>What it's for</h2>
+    <ul>
+      <li><strong>Is anything happening on the sun right now?</strong> One glance: a condition word, one honest sentence, and the numbers that back it up.</li>
+      <li><strong>Will I see the aurora tonight?</strong> A forecast for your sky: your darkness window, moonlight, and NOAA's aurora map with your dot on it.</li>
+      <li><strong>What does Kp 5 actually mean?</strong> Every number teaches itself — tap any card for a plain-English explanation with diagrams.</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>Features</h2>
+    <ul>
+      <li><strong>The actual sun</strong> — live imagery from NASA's Solar Dynamics Observatory as the app's backdrop</li>
+      <li><strong>Current conditions</strong> — geomagnetic activity, solar wind, flares, and radiation, composed from NOAA data</li>
+      <li><strong>Aurora for your sky</strong> — local darkness, CME arrival forecasts, and the OVATION map with a viewline</li>
+      <li><strong>Learn as you go</strong> — the Kp ladder, Bz explained, flare classes, NOAA scales, a glossary, and Sun &amp; Earth geometry made visual</li>
+      <li><strong>Built like a weather app</strong> — scrubbable charts, a pixel sun with tappable active regions, honest offline behavior</li>
+      <li><strong>Private by design</strong> — no servers, no accounts, no analytics. Your location never leaves your device.</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>Privacy</h2>
+    <p>Helio collects nothing. It reads public NOAA and NASA feeds directly, and location is optional and processed on your device. Read the full <a href="/helio/privacy/">privacy policy</a>.</p>
+  </section>
+
+  <section class="section">
+    <p class="post-meta">Data: NOAA Space Weather Prediction Center and NASA (SDO, DONKI) · Built with SwiftUI, Swift Charts, and MapKit · by <a href="/about/">Dominic Critchlow</a></p>
+  </section>
+</div>
+
+<!-- Tap-to-enlarge overlays -->
+<a href="#" id="shot-home" class="shot-lightbox"><img src="/public/helio/shots/01_home.png" alt="The home screen: live sun imagery with current conditions" /></a>
+<a href="#" id="shot-aurora" class="shot-lightbox"><img src="/public/helio/shots/02_auroraMap.png" alt="The aurora map with NOAA's forecast bands and viewline" /></a>
+<a href="#" id="shot-geometry" class="shot-lightbox"><img src="/public/helio/shots/03_geometry.png" alt="Sun and Earth: the day and night globe and orbit view" /></a>
+<a href="#" id="shot-kp" class="shot-lightbox"><img src="/public/helio/shots/04_kp.png" alt="The Kp index explained with charts and a city ladder" /></a>
+<a href="#" id="shot-wind" class="shot-lightbox"><img src="/public/helio/shots/05_wind.png" alt="Live solar wind readings with the Bz diagram" /></a>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container container-narrow">
+      <p>&copy; 2026 Dominic Critchlow</p>
+      <p class="footer-links">
+        <a href="https://github.com/DomCritchlow" target="_blank" rel="noopener">GitHub</a>
+        ·
+        <a href="https://www.linkedin.com/in/dominic-critchlow/" target="_blank" rel="noopener">LinkedIn</a>
+      </p>
+    </div>
+  </footer>
+  
+  <script>
+    // Prevent scroll on lightbox close
+    document.addEventListener('DOMContentLoaded', function() {
+      const closeButtons = document.querySelectorAll('.lightbox-close');
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          const scrollPos = window.scrollY;
+          window.location.hash = '';
+          window.scrollTo(0, scrollPos);
+        });
+      });
+    });
+  </script>
+</body>
 </html>
 

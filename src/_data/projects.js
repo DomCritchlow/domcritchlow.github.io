@@ -32,8 +32,8 @@ module.exports = [
   {
     title: "Helio (web)",
     shortname: "helio-web",
-    url: "https://github.com/DomCritchlow/helio",
-    github: "https://github.com/DomCritchlow/helio",
+    url: "https://critchlow.us/helio-web/",
+    github: "https://github.com/DomCritchlow/helio-web",
     description: "Minimalist solar activity visualizer built on live NOAA data. The sun renders as a pixel grid with sunspot regions at real heliographic coordinates. A 28-day scrubber lets you replay the past month as spots migrate across the disk.",
     date: "2026-03-05",
     type: "web",

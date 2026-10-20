@@ -19,12 +19,9 @@
     <nav class="nav-container">
       <a href="/" class="site-title">Dominic Critchlow</a>
       <ul class="site-nav">
-        <li><a href="/" >Home</a></li>
         <li><a href="/projects/" >Projects</a></li>
         <li><a href="/writing/" >Writing</a></li>
-        <li><a href="/gems/" >Gems</a></li>
         <li><a href="/about/" >About</a></li>
-        <li><a href="/gallery/" >Photos</a></li>
       </ul>
     </nav>
   </header>
@@ -32,6 +29,8 @@
   <main>
     
 <style>
+  /* Fixed palette: this page keeps its own theme in light and dark mode */
+  :root { color-scheme: dark; --bg: #0a0a0e; --fg: #ECE8E1; --gray: #9A938A; --gray-light: #7A746C; --border: rgba(236, 232, 225, 0.12); --surface: #141318; }
   /* Solar, after-dark treatment, scoped to the Helio page only */
   body { background: #0a0a0e; }
 
@@ -275,9 +274,13 @@
     <div class="container container-narrow">
       <p>&copy; 2026 Dominic Critchlow</p>
       <p class="footer-links">
+        <a href="https://www.linkedin.com/in/dominic-critchlow/" target="_blank" rel="noopener">LinkedIn</a>
+        ·
         <a href="https://github.com/DomCritchlow" target="_blank" rel="noopener">GitHub</a>
         ·
-        <a href="https://www.linkedin.com/in/dominic-critchlow/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="/gems/">Gems</a>
+        ·
+        <a href="/gallery/">Photos</a>
       </p>
     </div>
   </footer>

@@ -322,20 +322,22 @@ a:hover {
   line-height: 0;
 }
 
-.sun:hover {
-  opacity: 1;
-}
-
 .sun canvas {
   width: 252px;
   height: 252px;
   border-radius: 50%;
   filter: drop-shadow(0 0 18px rgba(255, 130, 40, 0.45)) drop-shadow(0 0 60px rgba(255, 110, 30, 0.25));
-  transition: filter 0.4s ease;
 }
 
-.sun:hover canvas {
-  filter: drop-shadow(0 0 22px rgba(255, 150, 50, 0.6)) drop-shadow(0 0 80px rgba(255, 120, 30, 0.35));
+.sun-caption a {
+  color: var(--gray);
+  border-bottom: 1px solid var(--border);
+}
+
+.sun-caption a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  opacity: 1;
 }
 
 .sun-caption {

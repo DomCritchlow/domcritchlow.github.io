@@ -8,22 +8,21 @@
   const caption = document.getElementById('sun-caption');
   const ctx = canvas.getContext('2d');
 
-  const GRID = 40;
-  const RADIUS = 19;
+  const GRID = 56;
+  const RADIUS = 27;
   const C = GRID / 2;
-  // Whole device pixels per cell so every grid gap is the same width
+  // Whole device pixels per cell so the pixels stay crisp
   const dpr = window.devicePixelRatio || 1;
-  const SCALE = Math.max(3, Math.round(3.5 * dpr));
+  const SCALE = Math.max(4, Math.round(4.5 * dpr));
   canvas.width = canvas.height = GRID * SCALE;
-  canvas.style.width = canvas.style.height = `${(GRID * SCALE) / dpr}px`;
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Limb darkening: the disk dims toward the edge, I = 1 - u(1 - mu)
   function diskColor(r2) {
     const mu = Math.sqrt(Math.max(0, 1 - r2 / (RADIUS * RADIUS)));
-    const i = 1 - 0.55 * (1 - mu);
-    return `rgb(${Math.round(255 * (0.86 + 0.14 * i))}, ${Math.round(70 + 120 * i)}, ${Math.round(20 + 50 * i)})`;
+    const i = 1 - 0.7 * (1 - mu);
+    return `rgb(${Math.round(225 + 30 * i)}, ${Math.round(70 + 150 * i)}, ${Math.round(20 + 100 * i * i)})`;
   }
 
   function spotMap(regions) {
@@ -35,7 +34,7 @@
       // NOAA gives west longitudes as negative; west is on the right
       const x = C - Math.cos(lat) * Math.sin(lon) * RADIUS;
       const y = C - Math.sin(lat) * RADIUS;
-      const spotR = Math.max(1.2, Math.sqrt(r.area ?? 20) * 0.14);
+      const spotR = Math.max(1.5, Math.sqrt(r.area ?? 20) * 0.2);
       for (let gy = Math.floor(y - spotR); gy <= Math.ceil(y + spotR); gy++) {
         for (let gx = Math.floor(x - spotR); gx <= Math.ceil(x + spotR); gx++) {
           const d = Math.hypot(gx - x, gy - y);
@@ -57,7 +56,7 @@
         const r2 = (gx + 0.5 - C) ** 2 + (gy + 0.5 - C) ** 2;
         if (r2 > RADIUS * RADIUS) continue;
         const spot = spots.get(gy * GRID + gx);
-        const color = spot === 'umbra' ? '#2a1206' : spot === 'penumbra' ? '#8a3a10' : diskColor(r2);
+        const color = spot === 'umbra' ? '#1f0c04' : spot === 'penumbra' ? '#7a2e0c' : diskColor(r2);
         cells.push({ gx, gy, color, order: Math.sqrt(r2) });
       }
     }
@@ -67,7 +66,7 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const paint = (c) => {
       ctx.fillStyle = c.color;
-      ctx.fillRect(c.gx * SCALE, c.gy * SCALE, SCALE - 1, SCALE - 1);
+      ctx.fillRect(c.gx * SCALE, c.gy * SCALE, SCALE, SCALE);
     };
     if (reduceMotion) return cells.forEach(paint);
 

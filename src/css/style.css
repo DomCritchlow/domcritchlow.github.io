@@ -318,15 +318,31 @@ a:hover {
 }
 
 .sun {
+  position: relative;
   display: inline-block;
   line-height: 0;
 }
 
+/* Glow as a gradient behind the canvas. A CSS blur filter here gets clipped
+   to a square by mobile Safari; a gradient that fades to transparent does not. */
+.sun::before {
+  content: "";
+  position: absolute;
+  inset: -45%;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 140, 40, 0.38) 0%,
+    rgba(255, 130, 40, 0.22) 30%,
+    rgba(255, 120, 30, 0.08) 50%,
+    rgba(255, 120, 30, 0) 70%);
+  pointer-events: none;
+}
+
 .sun canvas {
+  position: relative;
   width: 252px;
   height: 252px;
   border-radius: 50%;
-  filter: drop-shadow(0 0 18px rgba(255, 130, 40, 0.45)) drop-shadow(0 0 60px rgba(255, 110, 30, 0.25));
 }
 
 .sun-caption a {

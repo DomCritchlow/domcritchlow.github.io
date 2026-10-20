@@ -6,7 +6,7 @@ permalink: /pinned/
 ---
 
 <style>
-  /* Warm, editorial treatment — scoped to the Pinned page only */
+  /* Warm, editorial treatment, scoped to the Pinned page only */
   body { background: #FBF6EC; }
 
   .pinned-page {
@@ -21,7 +21,7 @@ permalink: /pinned/
 
   .pinned-hero {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 1.25rem;
     margin: 0.5rem 0 1.75rem;
   }
@@ -74,7 +74,7 @@ permalink: /pinned/
     margin: 0.55rem 0 0;
   }
 
-  /* Content lists — the global reset strips ul padding, so style our own */
+  /* Content lists; the global reset strips ul padding, so style our own */
   .pinned-page .section ul {
     list-style: none;
     margin: 0.35rem 0 0;
@@ -105,13 +105,18 @@ permalink: /pinned/
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     padding: 0.5rem 0 1.25rem;
-    margin: 0 calc(-1 * var(--space-md));
-    padding-left: var(--space-md);
+    /* Full-bleed: scroll edge to edge, first shot aligned with the text */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    padding-left: max(var(--space-md), calc((100vw - var(--container-max)) / 2 + var(--space-md)));
     padding-right: var(--space-md);
+    scroll-padding-left: max(var(--space-md), calc((100vw - var(--container-max)) / 2 + var(--space-md)));
+    scrollbar-width: none;
   }
+  .shots-strip::-webkit-scrollbar { display: none; }
   .shots-strip a {
     flex: 0 0 auto;
-    scroll-snap-align: center;
+    scroll-snap-align: start;
     line-height: 0;
   }
   .shots-strip img {
@@ -154,7 +159,7 @@ permalink: /pinned/
     padding-bottom: 0.4rem;
     margin-bottom: 0.6rem;
   }
-  .pinned-page a { color: var(--teal); }
+  .pinned-page a:not(.pinned-cta) { color: var(--teal); }
   .pinned-page strong { color: var(--ink); }
   .pinned-page .post-meta { color: var(--muted); }
 
@@ -163,6 +168,14 @@ permalink: /pinned/
     .pinned-title { font-size: 2.2rem; }
     .pinned-hero .app-icon { width: 88px; height: 88px; border-radius: 20px; }
   }
+
+  /* Theme the site header and footer to match this page */
+  .site-header, .site-footer { background: #FBF6EC; border-color: rgba(43, 38, 34, 0.1); }
+  .site-title, .site-nav a, .site-footer, .site-footer a { color: #2B2622; }
+  .site-footer p { color: inherit; }
+  .site-nav a { opacity: 0.75; }
+  .site-nav a:hover { opacity: 1; }
+  html { overflow-x: clip; }
 </style>
 
 <div class="container pinned-page">
@@ -170,7 +183,7 @@ permalink: /pinned/
     <img class="app-icon" src="/public/pinned/icon.png" alt="Pinned app icon" width="104" height="104" />
     <div>
       <h1 class="pinned-title">Pinned</h1>
-      <p class="pinned-tagline">Save the places you love from a link, a screenshot, a map, or your camera. Pinned works out the real spot, right on your device, then helps you organize and find your way back.</p>
+      <p class="pinned-tagline">Save places from a link, a screenshot, a map, or your camera. Pinned finds the real spot on your device, then helps you organize them and find your way back.</p>
       <a class="pinned-cta" href="https://apps.apple.com/us/app/pinned-find-pin-go/id6768069856">
         <svg viewBox="0 0 384 512" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C71.4 141.1 24 184.3 24 271c0 25.6 4.7 52 14.1 79.3 12.5 36.4 57.7 125.7 105 124.3 24.7-.6 42.1-17.5 74.3-17.5 31.2 0 47.3 17.5 74.8 17.5 47.7-.7 88.6-81.8 100.5-118.3-63.5-29.9-60.4-87.5-60.4-87.4zM256.6 116.4c30.5-36.2 27.7-69.1 26.8-81-26.9 1.6-58 18.4-75.7 39.1-19.5 22.2-31 49.7-28.5 80.4 29.1 2.3 55.7-12.7 77.4-38.5z"/></svg>
         Download on the App Store
@@ -205,13 +218,12 @@ permalink: /pinned/
       <li><strong>Plans</strong>: build a day out as ordered stops with times, distances, and directions</li>
       <li><strong>Tags &amp; filters</strong>: narrow the map to just what you're looking for</li>
       <li><strong>Across iPhone &amp; iPad</strong>: Siri, Shortcuts, Spotlight, Visual Intelligence, and shareable pin links</li>
-      <li><strong>Private by design</strong>: your data lives on your devices and syncs through your own iCloud. No servers, no analytics, no tracking.</li>
     </ul>
   </section>
 
   <section class="section">
     <h2>Privacy</h2>
-    <p>Pinned collects nothing. Everything you save stays on your device and syncs privately through your personal iCloud account. Read the full <a href="/pinned/privacy/">privacy policy</a>.</p>
+    <p>Pinned has no servers and collects nothing. Your places stay on your devices and sync through your own iCloud account. Read the full <a href="/pinned/privacy/">privacy policy</a>.</p>
   </section>
 
   <section class="section">

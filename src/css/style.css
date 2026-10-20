@@ -49,6 +49,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Keep the footer at the bottom on short pages */
+body { min-height: 100vh; display: flex; flex-direction: column; }
+main { flex: 1; }
+
 /* ========================================
    Navigation
    ======================================== */
@@ -231,6 +235,7 @@ a:hover {
 
 .project-logo {
   font-size: 2rem;
+  color: var(--gray);
   margin-right: var(--space-sm);
   display: inline-block;
   vertical-align: middle;

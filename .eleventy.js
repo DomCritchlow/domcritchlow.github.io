@@ -43,7 +43,7 @@ module.exports = function(eleventyConfig) {
   // Create projects collection with dates as Date objects
   eleventyConfig.addCollection("projectsSorted", function(collectionApi) {
     const projects = require('./src/_data/projects.js');
-    return projects.map(project => ({
+    return projects.filter(project => !project.hidden).map(project => ({
       ...project,
       date: new Date(project.date)
     })).sort((a, b) => b.date - a.date);
@@ -73,7 +73,7 @@ module.exports = function(eleventyConfig) {
     });
     
     // Add projects
-    const projects = require('./src/_data/projects.js');
+    const projects = require('./src/_data/projects.js').filter(project => !project.hidden);
     projects.forEach(project => {
       items.push({
         title: project.title,

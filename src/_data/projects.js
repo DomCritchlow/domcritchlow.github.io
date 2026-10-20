@@ -10,21 +10,11 @@ module.exports = [
     logo: '<img src="/public/pinned/icon.png" class="project-app-icon" alt="" />'
   },
   {
-    title: "Pins",
-    shortname: "pins",
-    url: "https://critchlow.us/pins/",
-    github: "https://github.com/DomCritchlow/pins",
-    description: "The web app that came before Pinned. A PWA with tags, filters, a map, and a nearby-now view. Google Sheets is the database and GitHub Pages is the host; no backend, no build step. Invite only.",
-    date: "2026-04-23",
-    type: "app",
-    logo: "📍"
-  },
-  {
     title: "Helio",
     shortname: "helio",
     url: "https://critchlow.us/helio/",
     internal: true,
-    description: "A native iOS weather app for the sun. Live NASA imagery, current conditions from NOAA, and aurora forecasts for your sky. Every number explains itself. No servers, no tracking.",
+    description: "A native iOS weather app for the sun, the Earth, and the moon. Live NASA and NOAA imagery, aurora forecasts for your sky, and a system map of the spacecraft feeding it. No servers, no tracking.",
     date: "2026-07-05",
     type: "iOS app",
     logo: '<img src="/public/helio/icon.png" class="project-app-icon" alt="" />'
@@ -37,7 +27,7 @@ module.exports = [
     description: "Solar activity visualizer on live NOAA data. The sun renders as a pixel grid with sunspot regions at their real heliographic coordinates, and a 28-day scrubber replays the past month.",
     date: "2026-03-05",
     type: "web",
-    logo: "☀️"
+    logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'
   },
   {
     title: "Flags",
@@ -47,7 +37,7 @@ module.exports = [
     description: "Tracks how often every country is mentioned across U.S. bills, nominations, amendments, and the Congressional Record.",
     date: "2026-02-28",
     type: "data",
-    logo: "🌎"
+    logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>'
   },
   {
     title: "Vibecast",
@@ -57,7 +47,7 @@ module.exports = [
     description: "A daily podcast generated end to end: scheduled ingestion, script writing, text-to-speech, and an RSS feed. Runs unattended on GitHub Actions.",
     date: "2025-12-14",
     type: "app",
-    logo: "🎙️"
+    logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
   },
   {
     title: "ForkFeed",
@@ -67,7 +57,7 @@ module.exports = [
     description: "A self-hosted microblog with RSS aggregation. Post short updates and photos, follow any feed, and read everything in one timeline. Runs on GitHub Pages with no server or database.",
     date: "2025-12-13",
     type: "web",
-    logo: "🔀"
+    logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="7" r="2"/><path d="M6 7v10M18 9c0 5-12 3-12 8"/></svg>'
   },
   {
     title: "Latitude",
@@ -77,7 +67,7 @@ module.exports = [
     description: "Draws your line of latitude around the Earth, with live temperatures at every point along it. Geolocation, horizontal panning, and shareable URLs.",
     date: "2025-12-09",
     type: "web",
-    logo: "🌍"
+    logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M5 7.5h14M5 16.5h14"/></svg>'
   },
   {
     title: "airwaveml",
@@ -97,17 +87,18 @@ module.exports = [
     description: "An API for ham radio operations, built with FastAPI. The endpoints are built for automation and agent tool use.",
     date: "2025-08-12",
     type: "api",
-    logo: "📻"
+    logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v11M8 21h8M12 10l-4 11M12 10l4 11"/><path d="M8.5 6.5a5 5 0 0 1 7 0M6 4a8.5 8.5 0 0 1 12 0"/></svg>'
   },
   {
     title: "Enneagram Explorer",
+    hidden: true,  // kept for the short link, left off the lists
     shortname: "enneagram",
     url: "https://enneagram-app-w34l2h6gva-uc.a.run.app",
     github: "https://github.com/DomCritchlow/enneagram",
     description: "An interactive guide to the nine Enneagram types: growth paths, stress arrows, integration patterns, and reflection prompts.",
     date: "2025-10-11",
     type: "web",
-    logo: "🔷"
+    logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 9-9 9-9-9z"/></svg>'
   },
   {
     title: "Bleep",
@@ -117,6 +108,6 @@ module.exports = [
     description: "Bluetooth Low Energy scanner for device discovery and security research. Passive scanning with live signal strength, vendor identification, automatic device typing (AirTags, fitness trackers, IoT sensors), and read-only safety modes. Python, Flask, and Bleak.",
     date: "2025-11-13",
     type: "app",
-    logo: "🔵"
+    logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10-5 5V2l5 5L7 17"/></svg>'
   }
 ];

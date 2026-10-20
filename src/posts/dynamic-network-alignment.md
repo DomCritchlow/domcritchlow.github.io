@@ -2,7 +2,7 @@
 layout: post.njk
 title: Dynamic Network Alignment
 date: 2016-08-15
-description: Research at Notre Dame's CoNe Lab applying graph theory and computational approaches to understand complex interactions in social and biological networks through dynamic network alignment algorithms.
+description: Research at Notre Dame's CoNe Lab on dynamic network alignment algorithms for social and biological networks.
 categories: Academic
 permalink: /writing/dynamic-network-alignment/
 ---

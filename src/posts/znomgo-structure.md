@@ -1,8 +1,8 @@
 ---
 layout: post.njk
-title: ZnO/MgO Crystaline Structure
+title: ZnO/MgO Crystalline Structure
 date: 2015-08-01
-description: Theoretical physics research at Vanderbilt's Pentalides Group studying magnesium oxide deposition on zinc oxide nanowires, focusing on crystalline structure formation and material properties.
+description: Theoretical physics research at Vanderbilt on the crystalline structure of magnesium oxide deposited on zinc oxide nanowires.
 categories: Academic
 permalink: /writing/znomgo-structure/
 ---

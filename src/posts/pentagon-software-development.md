@@ -2,7 +2,7 @@
 layout: post.njk
 title: How the Pentagon could think about Software Development
 date: 2022-06-29
-description: Exploring how the Pentagon can adapt modern software development practices to deliver faster, more secure, and mission-critical systems while navigating complex acquisition processes and security requirements.
+description: How the Pentagon could adopt modern software development practices within its acquisition and security constraints.
 categories: DoD
 permalink: /writing/pentagon-software-development/
 ---

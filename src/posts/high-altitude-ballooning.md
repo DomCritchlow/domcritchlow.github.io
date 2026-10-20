@@ -2,7 +2,7 @@
 layout: post.njk
 title: Austin Peay High Altitude Ballooning
 date: 2017-08-21
-description: Four years of undergraduate research culminated in launching high-altitude balloons during the 2017 total solar eclipse to observe atmospheric and scientific effects at the APSU Farm with multiple research teams.
+description: Four years of undergraduate research at Austin Peay, ending with high-altitude balloon launches during the 2017 total solar eclipse.
 categories: Academic
 permalink: /writing/apsu-high-altitude-ballooning/
 ---

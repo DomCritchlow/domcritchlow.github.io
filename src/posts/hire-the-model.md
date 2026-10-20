@@ -1,8 +1,8 @@
 ---
 layout: post.njk
-title: Hire the Model - Mission Ready AI for Government
+title: "Hire the Model: Mission-Ready AI for Government"
 date: 2025-08-08
-description: Government agencies shouldn't just install AI—they should hire it. This framework treats AI models like new civil servants with defined roles, vetted training data, SOPs, and measurable performance metrics to ensure mission-ready, audit-compliant deployment.
+description: A framework for government AI that treats models like new civil servants, with defined roles, vetted training data, standard operating procedures, and performance metrics.
 categories: AI
 permalink: /writing/hire-the-model/
 ---

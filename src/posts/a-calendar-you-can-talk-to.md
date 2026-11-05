@@ -1,0 +1,111 @@
+---
+layout: post.njk
+title: "A Calendar You Can Talk To—and Still See"
+date: 2026-11-05
+description: "An interactive design sketch for calendars that combine natural-language edits with a visual understanding of time."
+categories: Design
+permalink: /writing/a-calendar-you-can-talk-to/
+---
+
+Most calendars are remarkably boring. For all the software we have built around our work, the calendar still looks much as it did years ago: a grid, some colored rectangles, and a lot of clicking.
+
+The grid isn't the problem. **Time is spatial.** Seeing a meeting squeeze between two others tells me something a list of appointments never could.
+
+The problem is editing it. I can drag a block, open a modal, change a date, save, and do it all over again. Or I can ask a chatbot to rearrange my afternoon and get a paragraph back explaining what it did. Neither feels right.
+
+I have been exploring a different interaction: **make the calendar itself the canvas, and let language manipulate it.** Not chat *instead of* a calendar. Chat *inside* a calendar.
+
+## Try the idea
+
+This is a small, self-contained design sketch—not a connection to my calendar or a demonstration of a finished AI backend. Every event below is fictional. Choose an instruction and watch the same visual space change.
+
+<div id="calendar-sketch" class="cal-sketch">
+  <div class="cal-caption"><span class="cal-dot"></span> INTERACTIVE DESIGN SKETCH <span class="cal-privacy">Fictional events · local to this page</span></div>
+  <div class="cal-toolbar"><div><strong>A week in view</strong><span>November 9–13 · example schedule</span></div><button type="button" id="cal-reset">Reset week ↺</button></div>
+  <div class="cal-scroll"><div class="cal-grid" id="cal-grid" aria-label="Fictional five-day work calendar">
+    <div class="cal-corner"></div>
+    <div class="cal-day">MON <b>9</b></div><div class="cal-day">TUE <b>10</b></div><div class="cal-day">WED <b>11</b></div><div class="cal-day">THU <b>12</b></div><div class="cal-day">FRI <b>13</b></div>
+    <div class="cal-hours" id="cal-hours"></div>
+    <div class="cal-days" id="cal-days"></div>
+  </div></div>
+  <div class="cal-commands"><span class="cal-prompt-title">Try telling the calendar:</span><div class="cal-pills">
+    <button type="button" data-change="move">Move design review to Thursday at 2</button>
+    <button type="button" data-change="focus">Protect Wednesday afternoon for focus</button>
+    <button type="button" data-change="coffee">Add coffee with Maya on Friday at 10</button>
+  </div></div>
+  <div class="cal-feedback" id="cal-feedback" role="status" aria-live="polite">Choose an instruction to see what changes.</div>
+</div>
+
+<style>
+.cal-sketch{--ink:#293346;--line:#e5e9ef;--blue:#4168c7;--blue-bg:#e6edff;--green:#257e6d;--green-bg:#dcf4ed;--amber:#92621f;--amber-bg:#fff1d9;margin:1.5rem 0 2rem;background:#fff;border:1px solid #dfe4eb;border-radius:16px;overflow:hidden;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.45}
+.cal-sketch *{box-sizing:border-box}.cal-caption{display:flex;align-items:center;gap:8px;padding:13px 17px;font-size:10px;font-weight:750;letter-spacing:.12em;color:#667385;background:#f8fafc;border-bottom:1px solid var(--line)}.cal-dot{width:7px;height:7px;border-radius:50%;background:#29a28d}.cal-privacy{margin-left:auto;letter-spacing:0;text-transform:none;font-size:11px;font-weight:500;color:#8a95a3}.cal-toolbar{display:flex;align-items:center;justify-content:space-between;padding:18px 17px 13px;gap:12px}.cal-toolbar strong{display:block;font-size:18px;color:#263248}.cal-toolbar span{display:block;font-size:12px;color:#7c8796;margin-top:2px}.cal-sketch button{font:inherit;cursor:pointer;border:1px solid #d7deea;background:#fff;border-radius:8px;color:#34445f;padding:7px 10px}.cal-sketch button:focus-visible{outline:3px solid #8eb5ff;outline-offset:2px}.cal-sketch button:hover{background:#f1f5fd}.cal-toolbar button{font-size:11px;white-space:nowrap}.cal-scroll{overflow-x:auto;margin:0 11px}.cal-grid{display:grid;grid-template-columns:43px repeat(5,minmax(90px,1fr));grid-template-rows:40px 420px;min-width:540px;border:1px solid var(--line);border-radius:9px;overflow:hidden}.cal-corner{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.cal-day{text-align:center;border-right:1px solid var(--line);border-bottom:1px solid var(--line);color:#8a95a3;padding-top:5px;font-size:10px;font-weight:700;letter-spacing:.06em}.cal-day b{display:block;font-size:15px;color:#37445a;font-weight:650;letter-spacing:0}.cal-hours{position:relative;border-right:1px solid var(--line);background:#fff}.cal-hour-label{position:absolute;right:7px;transform:translateY(-50%);font-size:10px;color:#9aa4b1;white-space:nowrap}.cal-hour-label:first-child{transform:none}.cal-days{grid-column:2/7;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:relative;background:repeating-linear-gradient(to bottom,#fff 0,#fff 51.5px,#edf0f5 52px,#fff 52.5px)}.cal-column{position:relative;border-right:1px solid var(--line);min-width:0}.cal-event{position:absolute;left:3px;right:3px;border-radius:5px;padding:6px 5px;overflow:hidden;border-left:3px solid var(--blue);background:var(--blue-bg);color:#2b4c9f;box-shadow:0 1px 1px #2632480b;transition:top .3s ease,height .3s ease}.cal-event strong{display:block;font-size:11px;line-height:1.3;font-weight:700}.cal-event small{display:block;font-size:10px;margin-top:3px;opacity:.83}.cal-event.green{background:var(--green-bg);color:var(--green);border-color:var(--green)}.cal-event.amber{background:var(--amber-bg);color:var(--amber);border-color:#e9a33c}.cal-event.focus{background:repeating-linear-gradient(135deg,#f0f5ff,#f0f5ff 8px,#e7eeff 8px,#e7eeff 16px);color:#4261ad;border:1px dashed #6881c1}.cal-commands{padding:18px 17px 12px}.cal-prompt-title{display:block;font-size:12px;font-weight:700;margin-bottom:9px;color:#566376}.cal-pills{display:flex;gap:7px;flex-wrap:wrap}.cal-pills button{font-size:12px;text-align:left;background:#f7f9fd;border-color:#e0e6f0;padding:8px 11px}.cal-pills button[aria-pressed=true]{background:#e7eeff;border-color:#9bb0e7;color:#234caa}.cal-feedback{margin:0 17px 17px;border-top:1px solid var(--line);padding-top:11px;min-height:27px;font-size:12px;color:#64748b}
+@media(max-width:600px){.cal-caption{font-size:9px}.cal-privacy{font-size:9px}.cal-toolbar{padding:14px 12px}.cal-toolbar strong{font-size:16px}.cal-commands{padding:14px 12px 10px}.cal-feedback{margin:0 12px 14px}.cal-scroll{margin:0 8px}.cal-pills{flex-direction:column}.cal-pills button{width:100%}}
+@media(prefers-reduced-motion:reduce){.cal-event{transition:none}}
+</style>
+<script>
+(function(){
+  var root=document.getElementById('calendar-sketch');
+  if(!root)return;
+  var base=[
+    {id:'planning',day:0,start:9,duration:1,title:'Weekly planning',type:'blue'},
+    {id:'studio',day:0,start:11,duration:1.5,title:'Studio session',type:'green'},
+    {id:'review',day:1,start:13,duration:1,title:'Design review',type:'blue'},
+    {id:'lunch',day:1,start:12,duration:.75,title:'Lunch with Alex',type:'amber'},
+    {id:'writing',day:2,start:9,duration:1.5,title:'Writing block',type:'green'},
+    {id:'sync',day:2,start:14,duration:1,title:'Project sync',type:'blue'},
+    {id:'walk',day:3,start:11,duration:1,title:'Neighborhood walk',type:'green'},
+    {id:'demo',day:3,start:15,duration:1,title:'Prototype demo',type:'blue'},
+    {id:'ideas',day:4,start:13,duration:1.5,title:'Ideas workshop',type:'amber'}
+  ];
+  var state=base.map(function(e){return Object.assign({},e)});
+  var hours=document.getElementById('cal-hours'),days=document.getElementById('cal-days'),feedback=document.getElementById('cal-feedback');
+  for(var h=9;h<=17;h++){var el=document.createElement('span');el.className='cal-hour-label';el.style.top=((h-9)*52)+'px';el.textContent=(h>12?h-12:h)+(h>=12?' PM':' AM');hours.appendChild(el)}
+  var cols=[];
+  for(var d=0;d<5;d++){var col=document.createElement('div');col.className='cal-column';days.appendChild(col);cols.push(col)}
+  function time(h){var hour=Math.floor(h),min=Math.round((h-hour)*60);return (hour%12||12)+':'+String(min).padStart(2,'0')+(hour>=12?' pm':' am')}
+  function render(){
+    cols.forEach(function(c){c.replaceChildren()});
+    state.forEach(function(e){
+      var block=document.createElement('div');block.className='cal-event '+e.type;block.style.top=((e.start-9)*52+2)+'px';block.style.height=(e.duration*52-4)+'px';
+      var label=document.createElement('strong');label.textContent=e.title;
+      var small=document.createElement('small');small.textContent=time(e.start);
+      block.appendChild(label);block.appendChild(small);block.title=e.title+', '+time(e.start);cols[e.day].appendChild(block);
+    });
+  }
+  function apply(action){
+    state=base.map(function(e){return Object.assign({},e)});
+    var message='';
+    if(action==='move'){
+      state.find(function(e){return e.id==='review'}).day=3;
+      state.find(function(e){return e.id==='review'}).start=14;
+      message='Design review moved from Tuesday at 1 pm to Thursday at 2 pm. The new position is visible in context.';
+    }else if(action==='focus'){
+      state=state.filter(function(e){return e.id!=='sync'});
+      state.push({id:'focus',day:2,start:13,duration:4,title:'Focus afternoon',type:'focus'});
+      message='Wednesday afternoon is now protected. The fictional project sync has been removed from this sketch.';
+    }else if(action==='coffee'){
+      state.push({id:'coffee',day:4,start:10,duration:1,title:'Coffee with Maya',type:'amber'});
+      message='Coffee with Maya added Friday at 10 am. You can see the gap it occupies.';
+    }
+    root.querySelectorAll('[data-change]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.change===action))});
+    feedback.textContent=message;render();
+  }
+  root.querySelectorAll('[data-change]').forEach(function(b){b.setAttribute('aria-pressed','false');b.addEventListener('click',function(){apply(b.dataset.change)})});
+  document.getElementById('cal-reset').addEventListener('click',function(){state=base.map(function(e){return Object.assign({},e)});root.querySelectorAll('[data-change]').forEach(function(b){b.setAttribute('aria-pressed','false')});feedback.textContent='Week reset. All events are fictional and no changes are saved.';render()});
+  render();
+})();
+</script>
+
+Notice what the interaction preserves. The instruction is a sentence, but the answer is a changed calendar. You can immediately judge whether Thursday is too full or Friday has room. You do not have to trust a summary or reconstruct the result in your head.
+
+## Why the visual part matters
+
+Language is excellent for *intent*: “Give me an uninterrupted afternoon,” or “Move this to somewhere less crowded.” The calendar is better for *judgment*: what overlaps, what gets squeezed, and how the week actually feels.
+
+That distinction has driven the design thinking. I don't want another chatbot bolted onto a familiar app. I want an interface in which the model proposes a change **on the object I'm already looking at**, shows me the consequence, and leaves me in control of accepting or revising it.
+
+The obvious next step is more interesting than a text box: preview several options directly on the grid, expose tradeoffs, and make undo as easy as asking. A useful AI calendar should make the user *more* aware of their time, not less.
+
+This sketch isn't the full product. It's a way to test one small idea: **the best conversational interfaces may not look like conversations at all.**
+
+[Explore the CalWidget project](https://github.com/DomCritchlow/CalWidget) — a separate experiment in making calendar time more visible.

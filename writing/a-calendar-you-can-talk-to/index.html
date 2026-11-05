@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calendars Are Kind of Boring | Dominic Critchlow</title>
-  <meta name="description" content="What happens when the calendar itself becomes the visual surface for a conversation?">
+  <meta name="description" content="An interactive look at what happens when a calendar can reshape itself around a question.">
   <link rel="canonical" href="https://critchlow.us/writing/a-calendar-you-can-talk-to/">
   <meta property="og:title" content="Calendars Are Kind of Boring | Dominic Critchlow">
-  <meta property="og:description" content="What happens when the calendar itself becomes the visual surface for a conversation?">
+  <meta property="og:description" content="An interactive look at what happens when a calendar can reshape itself around a question.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://critchlow.us/writing/a-calendar-you-can-talk-to/">
   <meta property="og:image" content="https://critchlow.us/public/headshot.jpg">
@@ -32,148 +32,228 @@
   <header class="post-header">
     <h1 class="page-title">Calendars Are Kind of Boring</h1>
     <p class="post-meta">
-      <time datetime="2026-11-05">November 05, 2026</time>&nbsp;&middot;&nbsp;Design</p><p class="page-subtitle">What happens when the calendar itself becomes the visual surface for a conversation?</p></header>
+      <time datetime="2026-11-05">November 05, 2026</time>&nbsp;&middot;&nbsp;Design</p><p class="page-subtitle">An interactive look at what happens when a calendar can reshape itself around a question.</p></header>
 
   <div class="post-content">
-    <p>A calendar is a good picture of time. You can tell which mornings are crowded, where the gaps are, and how much of a week has already been spoken for.</p>
-<p>Then you try to change it.</p>
-<p>You drag a meeting. Another one is in the way. You open a form, choose a different time, go back to the week and check what happened. Or you tell an assistant what you want and receive a tidy paragraph describing the result. Either way, the thinking happens somewhere other than the picture.</p>
-<p>What if the calendar could respond <em>as part of the conversation</em>?</p>
-<p>This is a set of small interactive studies drawn from the design and interaction work behind Dayweave. They use made-up meetings and scripted behavior. Nothing connects to a real calendar.</p>
-<h2 id="1.-give-attention-some-room" tabindex="-1">1. Give attention some room <a class="header-anchor" href="#1.-give-attention-some-room" aria-hidden="true">#</a></h2>
-<p>Most calendar layouts divide the available space evenly. Every day gets the same width, even when only two days matter to the question.</p>
-<p><strong>Select Thursday.</strong> It gets more room, but the other days stay in place. Then select Tuesday and Thursday together.</p>
-<div class="dw-study" id="dw-focus-study">
-  <div class="dw-study-top"><span>FOCUS AND CONTEXT</span><span class="dw-state" id="dw-focus-state">The whole week</span></div>
-  <div class="dw-days" id="dw-days" aria-label="An elastic five-day calendar"></div>
-  <div class="dw-study-caption">Select a day to expand it. Select another to compare. Select both again to return to the week.</div>
-</div>
-<p>This is the <em>fisheye</em> idea: keep the context, but give the part you're working on more space. It isn't new. <a href="https://www.cs.umd.edu/~bederson/images/pubs_pdfs/p618-bederson.pdf">DateLens, the original CHI 2003 fisheye-calendar paper</a>, explored precisely this tension between detail and overview.</p>
-<p>The interesting next step is to let the <em>question</em> determine the focus, rather than forcing the person to do all the navigation.</p>
-<h2 id="2.-the-calendar-can-listen-before-you-press-enter" tabindex="-1">2. The calendar can listen before you press Enter <a class="header-anchor" href="#2.-the-calendar-can-listen-before-you-press-enter" aria-hidden="true">#</a></h2>
-<p>Imagine typing “find two hours Thursday afternoon.” There are three useful pieces of information in that sentence: a day, part of the day, and duration. None requires a model to guess what you mean.</p>
-<p><strong>Start typing the request</strong>, or use the example. Watch Thursday widen and the possible windows appear while the sentence is still a draft.</p>
-<div class="dw-study" id="dw-draft-study">
-  <div class="dw-study-top"><span>WORDS BECOME A VIEW</span><span class="dw-state" id="dw-draft-state">Nothing selected</span></div>
-  <div class="dw-mini-calendar">
-    <div class="dw-mini-day" data-draft-day="wednesday"><div class="dw-mini-heading">WED</div><div class="dw-mini-events"><span class="dw-slot busy" style="top:14%;height:18%">Design sync</span><span class="dw-slot busy" style="top:54%;height:16%">Research</span></div></div>
-    <div class="dw-mini-day" data-draft-day="thursday"><div class="dw-mini-heading">THU</div><div class="dw-mini-events"><span class="dw-slot busy" style="top:10%;height:14%">Planning</span><span class="dw-slot busy" style="top:46%;height:13%">Catch-up</span><span class="dw-slot found" id="dw-found-slot" style="top:63%;height:29%" hidden>2h open</span></div></div>
-    <div class="dw-mini-day" data-draft-day="friday"><div class="dw-mini-heading">FRI</div><div class="dw-mini-events"><span class="dw-slot busy" style="top:24%;height:20%">Review</span><span class="dw-slot busy" style="top:65%;height:14%">Wrap-up</span></div></div>
+    <p>A calendar is already a pretty good picture of time. You can glance at a week and see the problem. Three meetings stacked on Thursday. Nothing uninterrupted on Tuesday. A suspiciously empty Friday.</p>
+<p>The trouble begins when you try to do something about it. You drag blocks around, open forms, or ask an assistant to explain a proposed schedule in text. The picture stays mostly still while the thinking happens somewhere else.</p>
+<p>What if the calendar could take part in the conversation?</p>
+<p>These little experiments draw on the layout and interaction ideas implemented in Dayweave. All appointments are fictional and every response is scripted. This is a design exploration, not a connection to anyone's calendar.</p>
+<h2 id="the-week-should-be-able-to-bend" tabindex="-1">The week should be able to bend <a class="header-anchor" href="#the-week-should-be-able-to-bend" aria-hidden="true">#</a></h2>
+<p>Start with the ordinary week. Every day has an equal share of the width. Every hour has an equal share of the height. That is a useful default, but not a particularly good answer to every question.</p>
+<p><strong>Choose Thursday, then click the Design review inside it.</strong> Watch what happens to the rest of the calendar.</p>
+<div class="dwx-study" id="dwx-fisheye">
+  <div class="dwx-head"><span>01 / FOCUS + CONTEXT</span><span id="dwx-fish-caption">The whole week, evenly spaced</span></div>
+  <div class="dwx-fish" id="dwx-fish">
+    <div class="dwx-times" id="dwx-times"></div>
+    <div class="dwx-fish-days" id="dwx-fish-days"></div>
   </div>
-  <div class="dw-prompt"><input id="dw-draft-input" autocomplete="off" aria-label="Type a calendar request" placeholder="Search or change your calendar"><button id="dw-try-draft" type="button">Try example</button></div>
-  <div class="dw-understood" id="dw-understood" aria-live="polite">The preview does not change any events.</div>
+  <div class="dwx-actions"><button type="button" id="dwx-fish-reset">Return to whole week</button><small>Click a day heading, then an event</small></div>
 </div>
-<p>Dayweave's implementation uses a local parser for this first response. It can recognize named dates, parts of days, durations and meetings. The view reacts immediately, while the real interpretation and reasoning happen after the request is submitted.</p>
-<p>A draft is a <em>lens</em>, not an instruction to move anything.</p>
-<h2 id="3.-one-sentence-can-move-several-things" tabindex="-1">3. One sentence can move several things <a class="header-anchor" href="#3.-one-sentence-can-move-several-things" aria-hidden="true">#</a></h2>
-<p>Now consider a week that is already full.</p>
-<blockquote>
-<p>“Give me two hours to work on the prototype, group the catch-ups together, and keep some space before Friday's review.”</p>
-</blockquote>
-<p>A text answer could list five changes. But it's much easier to judge the consequences when the changes remain on the calendar.</p>
-<p><strong>Show the proposal.</strong> The highlighted events move to their suggested positions. Other commitments remain where they were.</p>
-<div class="dw-study" id="dw-moves-study">
-  <div class="dw-study-top"><span>MULTIPLE CHANGES, ONE PICTURE</span><span class="dw-state" id="dw-moves-state">Current schedule</span></div>
-  <div class="dw-moves-legend"><span><i></i>Unchanged</span><span><i></i>Proposed move</span><span><i></i>New focus time</span></div>
-  <div class="dw-moves-board" id="dw-moves-board" aria-label="Fictional crowded workweek with movable proposed events">
-    <div class="dw-board-head" style="grid-column:1">MON</div><div class="dw-board-head" style="grid-column:2">TUE</div><div class="dw-board-head" style="grid-column:3">WED</div><div class="dw-board-head" style="grid-column:4">THU</div><div class="dw-board-head" style="grid-column:5">FRI</div>
-    <div class="dw-board-body" id="dw-board-body"></div>
+<p>The selected day takes more room <em>horizontally</em>. When the event opens, its surrounding hours take more room <em>vertically</em>. Earlier and later hours compress. The time scale is shared across the day columns, so an hour still means the same thing everywhere.</p>
+<p>This focus-and-context idea has a history. <a href="https://www.cs.umd.edu/~bederson/images/pubs_pdfs/p618-bederson.pdf">DateLens, the 2003 fisheye calendar paper</a>, explored how to enlarge the useful part of a calendar without throwing away the surrounding dates. The interesting extension is to let the calendar choose a useful focus from the question you're asking, rather than making zoom a separate chore.</p>
+<h2 id="comparing-days-shouldn't-mean-losing-the-days-between-them" tabindex="-1">Comparing days shouldn't mean losing the days between them <a class="header-anchor" href="#comparing-days-shouldn't-mean-losing-the-days-between-them" aria-hidden="true">#</a></h2>
+<p>Say you're trying to decide between Tuesday and Thursday. Showing the whole week wastes space. Showing only those two days erases the fact that Wednesday exists.</p>
+<p><strong>Compare two dates.</strong> The intervening dates collapse into a labeled strip. Click that strip to bring them back.</p>
+<div class="dwx-study" id="dwx-compare">
+  <div class="dwx-head"><span>02 / COMPARE WITHOUT LOSING YOUR PLACE</span><span id="dwx-compare-caption">Tuesday versus Thursday</span></div>
+  <div class="dwx-pickers"><button type="button" data-pair="tue" aria-pressed="true">Tuesday + Thursday</button><button type="button" data-pair="wed" aria-pressed="false">Wednesday + Friday</button></div>
+  <div class="dwx-comparison" id="dwx-comparison"></div>
+  <div class="dwx-foot" id="dwx-comparison-foot">The missing day is compressed, not empty.</div>
+</div>
+<p>This is not a trick for making two columns prettier. It's a way of keeping the mental map intact. You can look closely at two alternatives and still see where they sit in the week.</p>
+<h2 id="the-same-thing-works-at-the-scale-of-a-month" tabindex="-1">The same thing works at the scale of a month <a class="header-anchor" href="#the-same-thing-works-at-the-scale-of-a-month" aria-hidden="true">#</a></h2>
+<p>Looking for a free afternoon is a daily question. Looking for a pattern is a monthly one. Those shouldn't require entirely different calendar interfaces.</p>
+<p><strong>Open a week in the month.</strong> Other weeks shrink while the chosen week reveals its events. Then choose another date.</p>
+<div class="dwx-study" id="dwx-month">
+  <div class="dwx-head"><span>03 / OVERVIEW INTO DETAIL</span><span id="dwx-month-caption">April 2027 · fictional appointments</span></div>
+  <div class="dwx-month-grid" id="dwx-month-grid"></div>
+  <div class="dwx-actions"><button type="button" id="dwx-month-reset">Back to month</button><small id="dwx-month-note">Select any date</small></div>
+</div>
+<p>A month question can still be about the <em>whole</em> month while one week is open for inspection. The view on screen, the range being discussed, and the dates for which the calendar has reliable data are three different things. Compressing a week must never quietly turn its events into free time.</p>
+<h2 id="now-let-a-question-decide-what-comes-forward" tabindex="-1">Now let a question decide what comes forward <a class="header-anchor" href="#now-let-a-question-decide-what-comes-forward" aria-hidden="true">#</a></h2>
+<p>A useful AI calendar should do more than produce a list.</p>
+<p>Take the question <strong>“Which meetings could I skip this week?”</strong> The interesting answer isn't five lines of prose. It is a set of meetings, in context, with a reason attached to each one.</p>
+<p><strong>Ask the question</strong>, then correct the answer.</p>
+<div class="dwx-study" id="dwx-highlight">
+  <div class="dwx-head"><span>04 / SHOW, THEN REFINE</span><span id="dwx-highlight-caption">Fictional workweek</span></div>
+  <div class="dwx-quote" id="dwx-question">"Which meetings could I skip this week?"</div>
+  <div class="dwx-pickers">
+    <button type="button" id="dwx-show-candidates">Show candidates</button>
+    <button type="button" id="dwx-correct-candidates" disabled>Those reviews matter</button>
   </div>
-  <div class="dw-actions"><button type="button" id="dw-moves-next">Show proposed changes</button><span id="dw-moves-note" role="status" aria-live="polite">Five events could move. None has moved yet.</span></div>
+  <div class="dwx-result-grid" id="dwx-results"></div>
+  <div class="dwx-foot" id="dwx-highlight-note">The answer belongs on the events, not beside the calendar.</div>
 </div>
-<p>This is where the calendar is doing more than displaying a result. Moving three meetings to make room for one block is a <em>trade-off</em>. You can see the cost at a glance. You might decide the proposal solves the wrong problem.</p>
-<h2 id="4.-a-correction-should-change-the-picture%2C-not-restart-the-chat" tabindex="-1">4. A correction should change the picture, not restart the chat <a class="header-anchor" href="#4.-a-correction-should-change-the-picture%2C-not-restart-the-chat" aria-hidden="true">#</a></h2>
-<p>A proposal is not a booking. Saying “actually, Thursday needs to stay free” should revise the plan, not require a new conversation about a different week.</p>
-<p><strong>Add the constraint</strong> below. Notice what changes, and what doesn't.</p>
-<div class="dw-study" id="dw-revision-study">
-  <div class="dw-study-top"><span>A CONVERSATION WITH CONSEQUENCES</span><span class="dw-state" id="dw-revision-state">One possible plan</span></div>
-  <div class="dw-convo-line"><span class="dw-speaker">You</span>Make time for deep work without breaking up my meetings.</div>
-  <div class="dw-convo-line dw-convo-answer" id="dw-convo-answer"><span class="dw-speaker">Calendar</span>One option is to use Thursday afternoon.</div>
-  <div class="dw-trade-days" id="dw-trade-days"><div class="dw-trade-day"><b>WEDNESDAY</b><span id="dw-wed-card">Team sync · 2 pm</span></div><div class="dw-trade-day"><b>THURSDAY</b><span id="dw-thu-card" class="dw-trade-focus">Deep work · 1–4 pm</span></div><div class="dw-trade-day"><b>FRIDAY</b><span id="dw-fri-card">Project review · 11 am</span></div></div>
-  <div class="dw-actions"><button type="button" id="dw-revise">Actually, keep Thursday open</button><span id="dw-revise-note" role="status" aria-live="polite">A preview only. No meetings changed.</span></div>
+<p>The correction doesn't mean “forget the question.” It means that the original set of candidates needs refining. The remaining highlights stay in place. A question, its results and the events explicitly ruled out all belong to the same conversation.</p>
+<p>That distinction matters when a request gets harder: “Show my planning time this month, but exclude anything that overlaps another meeting.” A protected block isn't necessarily an unbooked gap. You need the calendar's actual facts and the question's intent, not a search for event titles containing the word <em>planning</em>.</p>
+<h2 id="and-if-the-answer-involves-changing-things%3F" tabindex="-1">And if the answer involves changing things? <a class="header-anchor" href="#and-if-the-answer-involves-changing-things%3F" aria-hidden="true">#</a></h2>
+<p>Consider a fuller request: “Group the catch-ups, find time for the prototype and keep some space before Friday's review.”</p>
+<p>There is no useful way to judge that from a sentence saying “I've rearranged your week.”</p>
+<p><strong>Show the proposal.</strong> Several changes appear together. Then set one move aside to see how a correction can change only part of the plan.</p>
+<div class="dwx-study" id="dwx-proposal">
+  <div class="dwx-head"><span>05 / PROPOSE, DON'T PRETEND IT'S DONE</span><span id="dwx-proposal-caption">Current schedule</span></div>
+  <div class="dwx-proposal-legend"><span><i></i>Booked</span><span><i></i>Proposed</span><span><i></i>Focus block</span></div>
+  <div class="dwx-proposal-board" id="dwx-proposal-board"></div>
+  <div class="dwx-actions"><button type="button" id="dwx-proposal-step">Show the proposal</button><small id="dwx-proposal-note">No changes have been made.</small></div>
 </div>
-<p>This sounds small, but it changes what a conversation means. You're no longer asking a system to do something out of sight. You're making and revising a visual plan.</p>
-<p>The interface needs to distinguish three separate states: <strong>what is in focus, what is being proposed, and what is actually booked</strong>. A possible move can be drawn on the grid without claiming it has happened. An organizer request can be shown as waiting for agreement. Unknown availability must stay unknown.</p>
-<p>That distinction matters much more than making events animate beautifully.</p>
-<h2 id="a-different-kind-of-calendar" tabindex="-1">A different kind of calendar <a class="header-anchor" href="#a-different-kind-of-calendar" aria-hidden="true">#</a></h2>
-<p>The conventional grid is still a useful starting point. The change is in what the grid can do.</p>
-<p>It can expand around a question. It can acknowledge a sentence before the sentence is finished. It can display several changes together, with their consequences. And when the answer isn't quite right, it can keep the relevant context on screen while the plan changes again.</p>
-<p>Maybe the calendar doesn't need more chat. It needs to become the thing we're talking <em>through</em>.</p>
+<p>The outline of a proposed meeting isn't the same as the booked meeting. If an organizer has to agree, the original meeting stays put. A proposed move can be checked, revised, rejected or applied, but the picture must never imply a calendar write before one happened.</p>
+<p>The calendar can show a whole set of changes, and still make each change independently understandable.</p>
+<h2 id="the-calendar-as-the-answer" tabindex="-1">The calendar as the answer <a class="header-anchor" href="#the-calendar-as-the-answer" aria-hidden="true">#</a></h2>
+<p>None of this requires abandoning the grid. The grid is the good part.</p>
+<p>What changes is its willingness to respond. The calendar can give more space to what matters, compare distant dates without losing the intervening time, move between month and day, identify the events that answer a question, and show the consequences of several proposed changes at once.</p>
+<p>A conversation can supply the intent. The calendar can supply the understanding.</p>
+<p>Maybe calendars don't need more chat. They need to be a little less static.</p>
 <style>
-.dw-study{color:#34483b;background:#fbfcf9;border:1px solid #dfe6df;border-radius:13px;padding:16px;margin:19px 0 27px;font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}.dw-study *{box-sizing:border-box}.dw-study-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:13px}.dw-study-top>span:first-child{letter-spacing:.1em;font-size:10px;font-weight:750;color:#85968a}.dw-state{color:#64786a;font-size:11px}.dw-study-caption{font-size:11px;color:#809084;margin-top:11px}.dw-days{display:flex;gap:5px;height:230px}.dw-day{border:1px solid #dfe6df;border-radius:7px;background:#fff;overflow:hidden;min-width:0;flex:1;transition:flex .45s cubic-bezier(.22,.8,.24,1),background .3s;display:flex;flex-direction:column}.dw-day[aria-pressed=true]{flex:4;background:#f2f8f2;border-color:#9cbcaa}.dw-day button{width:100%;height:35px;flex:none;border:0;border-bottom:1px solid #e8eee9;background:transparent;color:#557062;font:inherit;font-size:11px;font-weight:750;cursor:pointer}.dw-day button:focus-visible,.dw-actions button:focus-visible,.dw-prompt button:focus-visible,.dw-prompt input:focus-visible{outline:2px solid #699e7a;outline-offset:2px}.dw-day-events{position:relative;flex:1;background:repeating-linear-gradient(to bottom,transparent 0,transparent 36px,#edf0ed 37px)}.dw-day-event{position:absolute;left:5px;right:5px;background:#dcece0;color:#32604a;border-radius:4px;padding:5px;overflow:hidden;font-size:10px;white-space:nowrap;text-overflow:ellipsis}.dw-day.is-compressed .dw-day-event{font-size:0;padding:0 2px}.dw-day.is-compressed .dw-day-event:before{content:"";display:block;height:5px;margin-top:5px;background:#80b099;border-radius:3px}.dw-mini-calendar{display:flex;gap:6px;height:202px}.dw-mini-day{min-width:0;flex:1;border:1px solid #dce4dd;border-radius:7px;overflow:hidden;background:#fff;transition:flex .35s ease,opacity .35s ease}.dw-mini-day.is-focused{flex:2.6;border-color:#76a788;background:#f7fbf6}.dw-mini-day.is-muted{opacity:.53}.dw-mini-heading{height:28px;font-size:10px;font-weight:750;padding:7px 10px;background:#f4f7f4;color:#597062;border-bottom:1px solid #dfe8df}.dw-mini-events{position:relative;height:173px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 33px,#e8eeea 34px)}.dw-slot{position:absolute;left:5px;right:5px;overflow:hidden;border-radius:4px;padding:5px;background:#dce8e0;color:#426856;font-size:10px;line-height:1.2}.dw-slot.found{background:repeating-linear-gradient(135deg,#e4f4e8,#e4f4e8 6px,#d4ebdb 6px,#d4ebdb 12px);border:1px dashed #5b9d72;color:#266c40;font-weight:700}.dw-slot[hidden]{display:none}.dw-prompt{display:flex;gap:8px;margin-top:12px}.dw-prompt input{min-width:0;flex:1;padding:10px;border:1px solid #bfcfc2;border-radius:24px;background:#fff;color:#263e2e;font:inherit;font-size:12px}.dw-prompt button,.dw-actions button{background:#345c45;color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit;font-weight:650;font-size:12px}.dw-prompt button:hover,.dw-actions button:hover{background:#274936}.dw-understood{font-size:11px;color:#718574;min-height:20px;margin-top:8px}.dw-moves-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:#7b897d;margin-bottom:11px}.dw-moves-legend span{display:flex;gap:5px;align-items:center}.dw-moves-legend i{height:9px;width:9px;background:#b7cfc0;border-radius:2px}.dw-moves-legend span:nth-child(2) i{background:#e8b76a}.dw-moves-legend span:nth-child(3) i{background:#62ad83}.dw-moves-board{border:1px solid #e3e9e4;border-radius:7px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:hidden}.dw-board-head{text-align:center;background:#f4f7f3;color:#607465;font-size:10px;font-weight:700;padding:9px 0;border-bottom:1px solid #e0e8e0}.dw-board-body{grid-column:1/-1;position:relative;height:280px;background:repeating-linear-gradient(to bottom,#fff 0,#fff 34px,#ecf0eb 35px)}.dw-move-event{position:absolute;z-index:2;border-left:3px solid #87b59c;background:#e2efe5;border-radius:5px;color:#345f49;overflow:hidden;padding:3px 4px;line-height:1.18;font-size:10px;transition:left .65s cubic-bezier(.2,.75,.2,1),top .65s cubic-bezier(.2,.75,.2,1),width .4s ease,background .4s ease,opacity .4s ease}.dw-move-event.changed{background:#fff0d8;color:#846323;border-color:#dbab60}.dw-move-event.focus{background:repeating-linear-gradient(135deg,#daf0df,#daf0df 8px,#c9e7d1 8px,#c9e7d1 16px);border:1px dashed #4e9467;color:#277347}.dw-move-event b{display:block;overflow-wrap:break-word;font-size:10px}.dw-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}.dw-actions span{font-size:11px;color:#6a7d6f}.dw-convo-line{background:#edf2f0;border-radius:10px;padding:9px 11px;margin-bottom:7px;font-size:12px}.dw-convo-answer{background:#f4f6f1}.dw-speaker{font-weight:700;color:#4b7057;margin-right:8px}.dw-trade-days{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:13px}.dw-trade-day{border:1px solid #dce5de;border-radius:7px;min-height:108px;padding:8px 6px;background:repeating-linear-gradient(to bottom,#fff 0,#fff 32px,#eef2ed 33px)}.dw-trade-day>b{display:block;font-size:9px;color:#748b78;margin-bottom:15px}.dw-trade-day>span{display:block;background:#e4eee6;color:#3d6e52;padding:6px 4px;border-radius:5px;font-size:10px;transition:background .3s ease,opacity .3s ease}.dw-trade-day>span.dw-trade-focus{background:#d2ead9;border:1px dashed #68a880}.dw-trade-day>span.dw-trade-muted{opacity:.45}@media(max-width:490px){.dw-study{padding:12px}.dw-prompt{flex-direction:column}.dw-prompt button{align-self:flex-end}.dw-study-top{align-items:flex-start}.dw-state{text-align:right}.dw-days{height:198px}.dw-move-event{font-size:9px}.dw-move-event b{font-size:9px}.dw-trade-days{gap:4px}.dw-trade-day{padding:6px 4px}}@media(prefers-reduced-motion:reduce){.dw-day,.dw-mini-day,.dw-move-event,.dw-trade-day>span{transition:none}}
+.dwx-study{background:#fafcf9;color:#344839;border:1px solid #dee8df;border-radius:13px;margin:20px 0 29px;padding:14px 15px;overflow:hidden;font:12px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.dwx-study *{box-sizing:border-box}.dwx-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.dwx-head span:first-child{font-weight:750;letter-spacing:.09em;color:#789081;font-size:10px}.dwx-head span:last-child{font-size:11px;color:#718477;text-align:right}.dwx-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:12px}.dwx-actions button,.dwx-pickers button{font:inherit;color:#345c46;border:1px solid #c7dacb;background:#f4f9f5;border-radius:7px;padding:7px 11px;cursor:pointer}.dwx-actions button:hover,.dwx-pickers button:hover{background:#e4f0e6}.dwx-actions button:focus-visible,.dwx-pickers button:focus-visible,.dwx-day button:focus-visible,.dwx-gap:focus-visible,.dwx-month-day:focus-visible,.dwx-event:focus-visible{outline:2px solid #477e5b;outline-offset:2px}.dwx-pickers button[aria-pressed=true]{background:#315e46;color:#fff;border-color:#315e46}.dwx-pickers button:disabled{opacity:.4;cursor:default}.dwx-actions small,.dwx-foot{font-size:11px;color:#798d7e}.dwx-foot{margin-top:10px}.dwx-pickers{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}.dwx-fish{display:flex;border:1px solid #dee5df;border-radius:8px;overflow:hidden;background:#fff;height:350px}.dwx-times{position:relative;width:36px;flex-shrink:0;border-right:1px solid #e7ece7}.dwx-times span{position:absolute;right:4px;font-size:9px;color:#819386;transform:translateY(-40%);transition:top .5s ease}.dwx-fish-days{display:flex;gap:0;flex:1;min-width:0}.dwx-day{display:flex;flex-direction:column;flex:1;min-width:0;border-right:1px solid #e8eee8;transition:flex .52s cubic-bezier(.2,.8,.2,1),background .3s}.dwx-day.selected{flex:3.4;background:#f5faf5}.dwx-day.compressed{flex:.6}.dwx-day button{flex:none;width:100%;height:33px;padding:6px 2px;border:0;border-bottom:1px solid #e4eae4;background:#f8faf7;color:#456b54;font:inherit;font-size:10px;font-weight:750;cursor:pointer}.dwx-track{flex:1;position:relative;overflow:hidden}.dwx-rule{position:absolute;left:0;right:0;border-top:1px solid #edf0ec;pointer-events:none;transition:top .5s ease}.dwx-event{position:absolute;left:4px;right:4px;text-align:left;font:inherit;font-size:10px;background:#e2eee5;border:1px solid #c0d8c8;color:#346b4a;border-radius:5px;padding:3px 4px;overflow:hidden;cursor:pointer;transition:top .5s ease,height .5s ease,background .3s}.dwx-event b{display:block;overflow-wrap:anywhere}.dwx-event.expanded{background:#d2e8d9;border-color:#5b996e;box-shadow:0 0 0 1px #73a883}.dwx-event .dwxe-detail{display:block;font-size:10px;margin-top:6px;line-height:1.3}.dwx-day.compressed .dwx-event b{font-size:0}.dwx-day.compressed .dwx-event{padding:2px 1px}.dwx-comparison{display:flex;min-height:216px;border:1px solid #e0e7e1;border-radius:8px;overflow:hidden;background:#fff}.dwx-compare-day{flex:1;min-width:0;position:relative;padding:9px;background:repeating-linear-gradient(to bottom,#fff 0,#fff 42px,#eff2ed 43px);border-right:1px solid #e3e9e3}.dwx-compare-day strong{display:block;font-size:11px;color:#526d5b;background:#fff;width:max-content;padding:2px 5px;border-radius:4px}.dwx-compare-card{display:block;position:relative;margin:15px 0 0;padding:7px;border-radius:6px;background:#dcece1;color:#326a48;font-size:11px;max-width:95%}.dwx-gap{width:28px;flex:none;background:#eef2ed;border:0;border-left:1px solid #dfe7de;border-right:1px solid #dfe7de;padding:4px 0;writing-mode:vertical-rl;color:#69806d;font:inherit;font-size:9px;cursor:pointer}.dwx-gap:hover{background:#dfeadf}.dwx-compare-included{width:25%;flex:none;background:#f8faf7;border-left:1px solid #e5ebe5;padding:9px 6px;color:#58735e;font-size:10px}.dwx-month-grid{border:1px solid #dfe8df;border-radius:8px;background:#fff;overflow:hidden}.dwx-month-weekdays{display:grid;grid-template-columns:repeat(7,1fr);background:#f1f6f1}.dwx-month-weekdays span{padding:7px 0;text-align:center;color:#718774;font-size:10px;font-weight:700}.dwx-month-week{display:grid;grid-template-columns:repeat(7,1fr);height:47px;transition:height .5s ease;border-top:1px solid #e3eae4}.dwx-month-week.open{height:130px;background:#f6faf6}.dwx-month-day{font:inherit;min-width:0;text-align:left;border:0;border-right:1px solid #e7ece7;background:none;padding:4px;color:#536b58;cursor:pointer;overflow:hidden}.dwx-month-day.inactive{opacity:.35}.dwx-month-day.active{background:#e8f3e9}.dwx-month-day b{font-size:10px;font-weight:650}.dwx-month-marker{display:block;background:#c9dfcf;border-radius:4px;height:5px;margin-top:6px;max-width:65%}.dwx-month-week.open .dwx-month-marker{height:auto;background:#d8eade;color:#396950;padding:4px 2px;font-size:9px;margin-top:7px;line-height:1.25;max-width:none}.dwx-quote{padding:9px 11px;background:#eef4ef;border-radius:8px;margin-bottom:12px;color:#41634e;font-size:12px}.dwx-result-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.dwx-result-day{background:#fff;border:1px solid #e1e9e1;border-radius:6px;min-height:128px;padding:6px 4px}.dwx-result-day b{font-size:10px;display:block;color:#667d6a;margin-bottom:8px}.dwx-result-event{display:block;border-radius:5px;padding:5px 4px;background:#e6eee7;color:#536b59;font-size:10px;margin-bottom:6px;min-height:27px;overflow-wrap:anywhere}.dwx-result-event.candidate{background:#d1eada;border:1px solid #72a887;color:#2b6c47}.dwx-result-event em{display:block;font-size:9px;font-style:normal;margin-top:3px;font-weight:650}.dwx-result-event.excluded{opacity:.64}.dwx-proposal-legend{display:flex;flex-wrap:wrap;gap:13px;font-size:10px;color:#758b7a;margin-bottom:10px}.dwx-proposal-legend span{display:flex;gap:5px;align-items:center}.dwx-proposal-legend i{display:inline-block;height:9px;width:9px;background:#b7d2be;border-radius:2px}.dwx-proposal-legend span:nth-child(2) i{background:#e5b96e}.dwx-proposal-legend span:nth-child(3) i{background:#79bd93}.dwx-proposal-board{position:relative;height:330px;background:repeating-linear-gradient(to bottom,#fff 0,#fff 35px,#eaf0e9 36px);border:1px solid #e0e8df;border-radius:8px;overflow:hidden}.dwx-proposal-heading{position:absolute;top:0;height:28px;background:#f6f9f5;border-bottom:1px solid #e3ebe2;text-align:center;font-size:10px;font-weight:750;color:#5f7867;padding-top:8px}.dwx-proposal-colrule{position:absolute;top:28px;bottom:0;border-left:1px solid #e9eee9}.dwx-proposal-event{position:absolute;border:1px solid #bad6c1;border-radius:4px;background:#e1efe4;color:#366b4b;font-size:10px;padding:4px;overflow:hidden;transition:top .55s ease,left .55s ease,background .4s ease}.dwx-proposal-event.proposed{border:1px dashed #be934e;background:repeating-linear-gradient(135deg,#fff2d8,#fff2d8 5px,#fbe9c9 5px,#fbe9c9 10px);color:#795624}.dwx-proposal-event.ghost{opacity:.36;border-style:dotted;pointer-events:none}.dwx-proposal-event.focus{background:#d2ebda;border:1px dashed #5c9c70}.dwx-proposal-event b{display:block;font-weight:700}.dwx-proposal-event small{display:block;font-size:9px;margin-top:2px}@media(max-width:520px){.dwx-study{padding:12px}.dwx-fish{height:312px}.dwx-day.selected{flex:4}.dwx-event{font-size:9px}.dwx-head{align-items:flex-start}.dwx-result-event{font-size:9px;padding:4px 2px}.dwx-result-event em{font-size:8px}.dwx-month-week.open{height:115px}.dwx-compare-day{padding:6px}.dwx-proposal-event{font-size:9px;padding:2px}.dwx-proposal-event small{display:none}}@media(prefers-reduced-motion:reduce){.dwx-times span,.dwx-day,.dwx-rule,.dwx-event,.dwx-month-week,.dwx-proposal-event{transition:none}}
 </style>
 <script>
 (function(){
-var focusRoot=document.getElementById('dw-days');if(!focusRoot)return;
-var weekdays=['MON','TUE','WED','THU','FRI'];
-var entries=[[['Planning',8,21],['Studio',38,24]],[['Sync',15,19],['Review',51,23]],[['Research',10,35],['Catch-up',59,19]],[['Design',18,31],['Prototype',60,23]],[['Review',25,23],['Wrap-up',65,19]]];
-var chosen=[],focusCols=[];
-weekdays.forEach(function(day,i){
- var col=document.createElement('div');col.className='dw-day';col.setAttribute('aria-pressed','false');
- var head=document.createElement('button');head.type='button';head.setAttribute('aria-pressed','false');head.textContent=day;head.setAttribute('aria-label','Focus '+day);
- head.addEventListener('click',function(){
-  chosen=chosen.includes(i)?chosen.filter(function(x){return x!==i}):chosen.length>=2?[i]:chosen.concat(i);
-  drawFocus();
-  document.getElementById('dw-focus-state').textContent=chosen.length===0?'The whole week':chosen.length===1?'Focused on '+weekdays[chosen[0]]:weekdays[chosen[0]]+' + '+weekdays[chosen[1]];
- });
- col.appendChild(head);var ev=document.createElement('div');ev.className='dw-day-events';
- entries[i].forEach(function(e){var b=document.createElement('span');b.className='dw-day-event';b.style.top=e[1]+'%';b.style.height=e[2]+'%';b.textContent=e[0];ev.appendChild(b)});
- col.appendChild(ev);focusRoot.appendChild(col);focusCols.push({col:col,head:head});
-});
-function drawFocus(){
- focusCols.forEach(function(x,i){
-  var active=chosen.includes(i);
-  x.col.setAttribute('aria-pressed',String(active));
-  x.col.classList.toggle('is-compressed',chosen.length>0&&!active);
-  x.head.setAttribute('aria-pressed',String(active));
- });
-}
-drawFocus();
-var input=document.getElementById('dw-draft-input'),example=document.getElementById('dw-try-draft');
-function onDraft(){
- var v=input.value.toLowerCase(),thu=/\b(thurs(day)?)\b/.test(v),wed=/\b(wed(nesday)?)\b/.test(v),fri=/\b(fri(day)?)\b/.test(v),aft=/\b(afternoon|after lunch)\b/.test(v),two=/\b(2|two)\s*(h|hr|hours?)\b/.test(v);
- document.querySelectorAll('#dw-draft-study [data-draft-day]').forEach(function(el){var active=(thu&&el.dataset.draftDay==='thursday')||(wed&&el.dataset.draftDay==='wednesday')||(fri&&el.dataset.draftDay==='friday');el.classList.toggle('is-focused',!!active);el.classList.toggle('is-muted',!!(thu||wed||fri)&&!active)});
- var found=document.getElementById('dw-found-slot');found.hidden=!(thu&&aft&&two);
- var words=[thu?'Thursday':wed?'Wednesday':fri?'Friday':'',aft?'afternoon':'',two?'two hours':''].filter(Boolean);
- document.getElementById('dw-draft-state').textContent=words.length?'Previewing '+words.join(' · '):'Nothing selected';
- document.getElementById('dw-understood').textContent=found.hidden?(words.length?'Recognized: '+words.join(', ')+'. Keep typing to refine the view.':'The preview does not change any events.'):'Thursday afternoon has a two-hour opening. The calendar is still unchanged.';
-}
-input.addEventListener('input',onDraft);example.addEventListener('click',function(){input.value='find two hours Thursday afternoon';onDraft();input.focus()});
-var fixtures=[
- {id:'plan',name:'Planning',day:0,time:1,length:1.3},{id:'notes',name:'Notes',day:0,time:3,length:1},
- {id:'team',name:'Team sync',day:1,time:1,length:1.2},{id:'mia',name:'Mia catch-up',day:1,time:2.6,length:1},{id:'review',name:'Design review',day:1,time:4.4,length:1.4},{id:'work',name:'Prototype',day:1,time:6.2,length:1},
- {id:'leo',name:'Leo catch-up',day:2,time:1.2,length:1},{id:'research',name:'Research',day:2,time:3,length:1.2},{id:'status',name:'Status',day:2,time:5.2,length:1},
- {id:'client',name:'Client call',day:3,time:1.3,length:1.4},{id:'sam',name:'Sam catch-up',day:3,time:3.1,length:1},{id:'testing',name:'Testing',day:3,time:5.4,length:1.2},
- {id:'fri',name:'Friday review',day:4,time:2.3,length:1.4},{id:'admin',name:'Admin',day:4,time:5.2,length:1}
+const names=['MON','TUE','WED','THU','FRI'];
+const calendar=[
+ [{name:'Planning',from:9,to:10},{name:'Research',from:13,to:14}],
+ [{name:'Team sync',from:9.5,to:10.5},{name:'Vendor demo',from:14,to:15}],
+ [{name:'Prototype',from:10,to:11.5},{name:'Catch-up',from:15,to:16}],
+ [{name:'Planning',from:9,to:10},{name:'Design review',from:11,to:12.5},{name:'Deep work',from:15,to:16.5}],
+ [{name:'Project review',from:10,to:11},{name:'Wrap-up',from:14,to:15}]
 ];
-var proposals={mia:{day:1,time:5.8},leo:{day:1,time:6.9},sam:{day:1,time:7.9},work:{day:2,time:4.4},research:{day:3,time:4.7}};
-var board=document.getElementById('dw-board-body'),nodes={};var scale=29;
-fixtures.forEach(function(x){
- var el=document.createElement('div');el.className='dw-move-event';var label=document.createElement('b');label.textContent=x.name;el.appendChild(label);el.title=x.name;board.appendChild(el);nodes[x.id]=el;
-});
-var focusEvent=document.createElement('div');focusEvent.className='dw-move-event focus';var focusLabel=document.createElement('b');focusLabel.textContent='Deep work · 2h';focusEvent.appendChild(focusLabel);board.appendChild(focusEvent);
-var moved=false;
-function place(el,day,time,length){el.style.left='calc('+day*20+'% + 3px)';el.style.width='calc(20% - 6px)';el.style.top=(time*scale+3)+'px';el.style.height=Math.max(22,length*scale-4)+'px'}
-function drawMoves(){
- fixtures.forEach(function(x){var p=moved?proposals[x.id]:null;place(nodes[x.id],p?p.day:x.day,p?p.time:x.time,x.length);nodes[x.id].classList.toggle('changed',!!p)});
- focusEvent.hidden=!moved;if(moved)place(focusEvent,2,6.5,2);
- document.getElementById('dw-moves-state').textContent=moved?'Proposed, not booked':'Current schedule';
- document.getElementById('dw-moves-next').textContent=moved?'Return to current schedule':'Show proposed changes';
- document.getElementById('dw-moves-note').textContent=moved?'Catch-ups grouped, work protected, research shifted. All changes are tentative.':'Five events could move. None has moved yet.';
+function percent(time){return (time-8)/10*100}
+let fishDays=[],fishActive=-1,fishEvent=null;
+const fishHolder=document.getElementById('dwx-fish-days'),hours=document.getElementById('dwx-times');
+function scale(focus){
+ const cuts=[8,9,10,11,12,13,14,15,16,17,18];let slices=[],total=0;
+ for(let i=0;i<cuts.length-1;i++){const a=cuts[i],b=cuts[i+1],near=focus&&a<focus[1]+.5&&b>focus[0]-.5;const size=focus?(near?2.05:.64):1;slices.push({a,b,y:total,h:size});total+=size}
+ return {at:function(t){let segment=slices.find(x=>t<=x.b)||slices.at(-1);return (segment.y+Math.max(0,Math.min(1,(t-segment.a)/(segment.b-segment.a)))*segment.h)/total*100}};
 }
-document.getElementById('dw-moves-next').addEventListener('click',function(){moved=!moved;drawMoves()});drawMoves();
-var revised=false;
-document.getElementById('dw-revise').addEventListener('click',function(){
- revised=!revised;
- document.getElementById('dw-revision-state').textContent=revised?'Revised plan':'One possible plan';
- document.getElementById('dw-revise').textContent=revised?'Return to the first option':'Actually, keep Thursday open';
- document.getElementById('dw-convo-answer').innerHTML=revised?'<span class="dw-speaker">Calendar</span>That changes things. Try a Wednesday morning block instead. Thursday stays open.':'<span class="dw-speaker">Calendar</span>One option is to use Thursday afternoon.';
- document.getElementById('dw-wed-card').textContent=revised?'Deep work 9–12 · Sync 2 pm':'Team sync · 2 pm';
- document.getElementById('dw-thu-card').textContent=revised?'Thursday open':'Deep work · 1–4 pm';
- document.getElementById('dw-thu-card').classList.toggle('dw-trade-muted',revised);
- document.getElementById('dw-wed-card').classList.toggle('dw-trade-focus',revised);
- document.getElementById('dw-revise-note').textContent='A preview only. No meetings changed.';
+for(let i=8;i<=18;i++){let label=document.createElement('span');label.textContent=(i%12||12)+(i<12?'a':'p');hours.appendChild(label)}
+names.forEach((day,i)=>{
+ const column=document.createElement('div');column.className='dwx-day';
+ const button=document.createElement('button');button.type='button';button.textContent=day;button.setAttribute('aria-label','Focus '+day);
+ button.addEventListener('click',()=>{fishActive=fishActive===i?-1:i;fishEvent=null;drawFish()});
+ const track=document.createElement('div');track.className='dwx-track';
+ const rules=[];for(let j=8;j<=18;j++){let rule=document.createElement('div');rule.className='dwx-rule';track.appendChild(rule);rules.push(rule)}
+ const events=calendar[i].map((entry,k)=>{
+  let button=document.createElement('button');button.type='button';button.className='dwx-event';const title=document.createElement('b');title.textContent=entry.name;button.appendChild(title);const detail=document.createElement('span');detail.className='dwxe-detail';detail.hidden=true;button.appendChild(detail);
+  button.addEventListener('click',()=>{fishActive=i;fishEvent=fishEvent&&fishEvent[0]===i&&fishEvent[1]===k?null:[i,k];drawFish()});
+  track.appendChild(button);return {button,entry,detail};
+ });
+ column.append(button,track);fishHolder.appendChild(column);fishDays.push({column,button,track,rules,events});
 });
+function drawFish(){
+ const focus=fishEvent?calendar[fishEvent[0]][fishEvent[1]]:null;
+ const map=scale(focus?[focus.from,focus.to]:null);
+ const labels=hours.querySelectorAll('span');labels.forEach((l,i)=>{l.style.top='calc(33px + '+(map.at(i+8)*.94)+'%)'});
+ fishDays.forEach((col,i)=>{
+  col.column.classList.toggle('selected',i===fishActive);col.column.classList.toggle('compressed',fishActive>=0&&i!==fishActive);
+  col.button.setAttribute('aria-pressed',String(i===fishActive));
+  col.rules.forEach((rule,j)=>rule.style.top=map.at(j+8)+'%');
+  col.events.forEach(({button,entry,detail},k)=>{
+   button.style.top='calc('+map.at(entry.from)+'% + 2px)';
+   button.style.height='calc('+(map.at(entry.to)-map.at(entry.from))+'% - 4px)';
+   let open=!!fishEvent&&fishEvent[0]===i&&fishEvent[1]===k;button.classList.toggle('expanded',open);detail.hidden=!open;detail.textContent=open?'11:00–12:30 · 3 attendees · Join / Discuss':'';button.style.zIndex=open?'3':'1';
+  });
+ });
+ document.getElementById('dwx-fish-caption').textContent=fishEvent?'Event inspection stretches nearby hours':fishActive>=0?names[fishActive]+' gets more room':'The whole week, evenly spaced';
+}
+document.getElementById('dwx-fish-reset').addEventListener('click',()=>{fishActive=-1;fishEvent=null;drawFish()});drawFish();
+let pair='tue',gapOpen=false;
+const compare=document.getElementById('dwx-comparison');
+function compareDay(label,meetings){
+ const el=document.createElement('div');el.className='dwx-compare-day';let title=document.createElement('strong');title.textContent=label;el.append(title);
+ meetings.forEach(t=>{let item=document.createElement('span');item.className='dwx-compare-card';item.textContent=t;el.append(item)});return el;
+}
+function renderComparison(){
+ compare.replaceChildren();
+ const config=pair==='tue'?{days:['TUE','THU'],between:'WED',events:[['9:30 · Team sync','2:00 · Vendor demo'],['9:00 · Planning','11:00 · Design review']]}:{days:['WED','FRI'],between:'THU',events:[['10:00 · Prototype','3:00 · Catch-up'],['10:00 · Project review','2:00 · Wrap-up']]};
+ compare.append(compareDay(config.days[0],config.events[0]));
+ if(gapOpen){let middle=document.createElement('button');middle.className='dwx-compare-included';middle.textContent=config.between+' · 2 meetings (click to compress)';middle.style.cursor='pointer';middle.addEventListener('click',()=>{gapOpen=false;renderComparison()});compare.append(middle)}
+ else{let gap=document.createElement('button');gap.type='button';gap.className='dwx-gap';gap.textContent=config.between+' · click to include';gap.addEventListener('click',()=>{gapOpen=true;renderComparison()});compare.append(gap)}
+ compare.append(compareDay(config.days[1],config.events[1]));
+ document.getElementById('dwx-compare-caption').textContent=config.days[0]+' compared with '+config.days[1];
+ document.getElementById('dwx-comparison-foot').textContent=gapOpen?'The middle day is back in view. Click it to compress again.':'The missing day is compressed, not empty.';
+ document.querySelectorAll('#dwx-compare [data-pair]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.pair===pair)));
+}
+document.querySelectorAll('#dwx-compare [data-pair]').forEach(b=>b.addEventListener('click',()=>{pair=b.dataset.pair;gapOpen=false;renderComparison()}));renderComparison();
+const month=document.getElementById('dwx-month-grid');
+const weekdays=['M','T','W','T','F','S','S'];
+let openWeek=-1;
+const weekdayRow=document.createElement('div');weekdayRow.className='dwx-month-weekdays';weekdays.forEach(n=>{let s=document.createElement('span');s.textContent=n;weekdayRow.append(s)});month.append(weekdayRow);
+const monthWeeks=[];
+for(let week=0;week<5;week++){
+ let row=document.createElement('div');row.className='dwx-month-week';
+ const buttons=[];
+ for(let day=0;day<7;day++){
+  const d=week*7+day-2,btn=document.createElement('button');btn.type='button';btn.className='dwx-month-day'+(d<1||d>30?' inactive':'');
+  let b=document.createElement('b');b.textContent=d<1?31+d:d>30?d-30:d;btn.append(b);
+  if(d>=1&&d<=30&&[5,8,13,15,21,23,27,29].includes(d)){let mk=document.createElement('span');mk.className='dwx-month-marker';mk.dataset.title=({5:'Planning',8:'Review',13:'Project',15:'Design',21:'Prototype',23:'Meeting',27:'Review',29:'Research'})[d];btn.append(mk)}
+  btn.addEventListener('click',()=>{openWeek=openWeek===week?-1:week;drawMonth(d)});
+  row.append(btn);buttons.push(btn);
+ }month.append(row);monthWeeks.push({row,buttons});
+}
+function drawMonth(selected){
+ monthWeeks.forEach((week,i)=>{week.row.classList.toggle('open',i===openWeek);week.buttons.forEach(b=>{b.classList.toggle('active',i===openWeek);let marker=b.querySelector('.dwx-month-marker');if(marker)marker.textContent=i===openWeek?marker.dataset.title:''})});
+ document.getElementById('dwx-month-note').textContent=openWeek<0?'Select any date':'One week expanded, the others remain visible';
+ document.getElementById('dwx-month-caption').textContent=openWeek<0?'April 2027 · fictional appointments':'Week '+(openWeek+1)+' opened within April';
+}
+document.getElementById('dwx-month-reset').addEventListener('click',()=>{openWeek=-1;drawMonth()});drawMonth();
+const results=document.getElementById('dwx-results');let highlighted=0;
+const resultData=[
+ [['Planning',false],['Standup',false]],
+ [['Design review',true],['Email',false]],
+ [['Vendor demo',true],['Research',false]],
+ [['Project sync',false],['Office hours',true]],
+ [['Friday review',true],['Wrap-up',false]]
+];
+function drawResults(){
+ results.replaceChildren();
+ resultData.forEach((day,i)=>{
+  let col=document.createElement('div');col.className='dwx-result-day';let name=document.createElement('b');name.textContent=names[i];col.append(name);
+  day.forEach(([title,candidate])=>{
+   let e=document.createElement('div');e.className='dwx-result-event';let active=highlighted>0&&candidate&&!(highlighted===2&&title.toLowerCase().includes('review'));
+   e.classList.toggle('candidate',active);e.classList.toggle('excluded',highlighted===2&&candidate&&!active);
+   e.textContent=title;
+   if(active){let why=document.createElement('em');why.textContent=title==='Vendor demo'?'Optional · recording':title==='Office hours'?'Drop-in': 'Needs your input?';e.append(why)}
+   col.append(e);
+  });results.append(col);
+ });
+ document.getElementById('dwx-highlight-caption').textContent=highlighted===0?'Fictional workweek':highlighted===1?'Four events considered':'Two candidates remain';
+ document.getElementById('dwx-highlight-note').textContent=highlighted===0?'The answer belongs on the events, not beside the calendar.':highlighted===1?'These are possibilities, not permissions to decline. The reasons and uncertainty stay attached.':'The reviews are excluded from this candidate set. The original question remains active.';
+ document.getElementById('dwx-correct-candidates').disabled=highlighted!==1;
+ document.getElementById('dwx-show-candidates').textContent=highlighted===0?'Show candidates':'Start again';
+ document.getElementById('dwx-question').textContent=highlighted===2?'"Those reviews matter."':'"Which meetings could I skip this week?"';
+}
+document.getElementById('dwx-show-candidates').addEventListener('click',()=>{highlighted=highlighted===0?1:0;drawResults()});
+document.getElementById('dwx-correct-candidates').addEventListener('click',()=>{highlighted=2;drawResults()});drawResults();
+const board=document.getElementById('dwx-proposal-board');
+names.forEach((name,i)=>{let h=document.createElement('div');h.className='dwx-proposal-heading';h.style.left=(i*20)+'%';h.style.width='20%';h.textContent=name;board.append(h);if(i>0){let line=document.createElement('div');line.className='dwx-proposal-colrule';line.style.left=(i*20)+'%';board.append(line)}});
+const items=[
+ {id:'p',label:'Planning',d:0,t:9,dur:.8},
+ {id:'mia',label:'Mia',d:0,t:11,dur:.8,to:{d:1,t:14}},
+ {id:'build',label:'Prototype',d:0,t:14,dur:1,to:{d:2,t:13}},
+ {id:'sync',label:'Team sync',d:1,t:10,dur:.8},
+ {id:'leo',label:'Leo',d:2,t:11,dur:.8,to:{d:1,t:15}},
+ {id:'design',label:'Design review',d:2,t:15,dur:1},
+ {id:'client',label:'Client',d:3,t:10,dur:1},
+ {id:'sam',label:'Sam',d:3,t:13,dur:.8,to:{d:1,t:16}},
+ {id:'test',label:'Testing',d:3,t:15.5,dur:.8},
+ {id:'fri',label:'Friday review',d:4,t:11,dur:1},
+ {id:'wrap',label:'Wrap-up',d:4,t:15,dur:.8}
+];
+let proposalStage=0;const proposals=[];
+function addProposalEvent(kind,label,d,t,dur){let e=document.createElement('div');e.className='dwx-proposal-event '+kind;let b=document.createElement('b');b.textContent=label;e.append(b);board.append(e);setPlacement(e,d,t,dur);return e}
+function setPlacement(e,d,t,dur){e.style.left='calc('+(d*20)+'% + 4px)';e.style.width='calc(20% - 8px)';e.style.top=(28+(t-8)*36+2)+'px';e.style.height=Math.max(24,dur*36-4)+'px'}
+const booked=items.map(item=>({item,element:addProposalEvent('',item.label,item.d,item.t,item.dur)}));
+const proposed=items.filter(item=>item.to).map(item=>({item,element:addProposalEvent('proposed',item.label+' ↗',item.to.d,item.to.t,item.dur)}));
+const focus=addProposalEvent('focus','Focus 2h',2,16,2);const reminder=addProposalEvent('proposed','Mia ↗',1,14,.8);
+function drawProposal(){
+ booked.forEach(({item,element})=>{element.classList.toggle('ghost',proposalStage>0&&!!item.to);setPlacement(element,item.d,item.t,item.dur)});
+ proposed.forEach(({item,element})=>{element.hidden=proposalStage===0||(proposalStage===2&&item.id==='mia')});
+ focus.hidden=proposalStage===0;reminder.hidden=true;
+ document.getElementById('dwx-proposal-caption').textContent=proposalStage===0?'Current schedule':proposalStage===1?'Four proposed moves · none booked':'Three proposed moves · one set aside';
+ document.getElementById('dwx-proposal-note').textContent=proposalStage===0?'No changes have been made.':proposalStage===1?'The original meetings remain booked. Proposed destinations are dashed.':'Mia stays put. The other proposed changes remain visible.';
+ document.getElementById('dwx-proposal-step').textContent=proposalStage===0?'Show the proposal':proposalStage===1?'Set aside Mia’s move':'Reset the schedule';
+}
+document.getElementById('dwx-proposal-step').addEventListener('click',()=>{proposalStage=(proposalStage+1)%3;drawProposal()});drawProposal();
 })();
 </script>
 

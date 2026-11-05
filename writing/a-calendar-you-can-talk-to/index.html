@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A Calendar You Can Talk To—and Still See | Dominic Critchlow</title>
-  <meta name="description" content="An interactive design sketch for calendars that combine natural-language edits with a visual understanding of time.">
+  <title>What if a calendar could move with you? | Dominic Critchlow</title>
+  <meta name="description" content="A few small interactive sketches about calendars, attention, and changing things where you can see them.">
   <link rel="canonical" href="https://critchlow.us/writing/a-calendar-you-can-talk-to/">
-  <meta property="og:title" content="A Calendar You Can Talk To—and Still See | Dominic Critchlow">
-  <meta property="og:description" content="An interactive design sketch for calendars that combine natural-language edits with a visual understanding of time.">
+  <meta property="og:title" content="What if a calendar could move with you? | Dominic Critchlow">
+  <meta property="og:description" content="A few small interactive sketches about calendars, attention, and changing things where you can see them.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://critchlow.us/writing/a-calendar-you-can-talk-to/">
   <meta property="og:image" content="https://critchlow.us/public/headshot.jpg">
@@ -30,99 +30,115 @@
     
 <article class="container container-narrow">
   <header class="post-header">
-    <h1 class="page-title">A Calendar You Can Talk To—and Still See</h1>
+    <h1 class="page-title">What if a calendar could move with you?</h1>
     <p class="post-meta">
-      <time datetime="2026-11-05">November 05, 2026</time>&nbsp;&middot;&nbsp;Design</p><p class="page-subtitle">An interactive design sketch for calendars that combine natural-language edits with a visual understanding of time.</p></header>
+      <time datetime="2026-11-05">November 05, 2026</time>&nbsp;&middot;&nbsp;Design</p><p class="page-subtitle">A few small interactive sketches about calendars, attention, and changing things where you can see them.</p></header>
 
   <div class="post-content">
-    <p>Most calendars are remarkably boring. For all the software we have built around our work, the calendar still looks much as it did years ago: a grid, some colored rectangles, and a lot of clicking.</p>
-<p>The grid isn't the problem. <strong>Time is spatial.</strong> Seeing a meeting squeeze between two others tells me something a list of appointments never could.</p>
-<p>The problem is editing it. I can drag a block, open a modal, change a date, save, and do it all over again. Or I can ask a chatbot to rearrange my afternoon and get a paragraph back explaining what it did. Neither feels right.</p>
-<p>I have been exploring a different interaction: <strong>make the calendar itself the canvas, and let language manipulate it.</strong> Not chat <em>instead of</em> a calendar. Chat <em>inside</em> a calendar.</p>
-<h2 id="try-the-idea" tabindex="-1">Try the idea <a class="header-anchor" href="#try-the-idea" aria-hidden="true">#</a></h2>
-<p>This is a small, self-contained design sketch—not a connection to my calendar or a demonstration of a finished AI backend. Every event below is fictional. Choose an instruction and watch the same visual space change.</p>
-<div id="calendar-sketch" class="cal-sketch">
-  <div class="cal-caption"><span class="cal-dot"></span> INTERACTIVE DESIGN SKETCH <span class="cal-privacy">Fictional events · local to this page</span></div>
-  <div class="cal-toolbar"><div><strong>A week in view</strong><span>November 9–13 · example schedule</span></div><button type="button" id="cal-reset">Reset week ↺</button></div>
-  <div class="cal-scroll"><div class="cal-grid" id="cal-grid" aria-label="Fictional five-day work calendar">
-    <div class="cal-corner"></div>
-    <div class="cal-day">MON <b>9</b></div><div class="cal-day">TUE <b>10</b></div><div class="cal-day">WED <b>11</b></div><div class="cal-day">THU <b>12</b></div><div class="cal-day">FRI <b>13</b></div>
-    <div class="cal-hours" id="cal-hours"></div>
-    <div class="cal-days" id="cal-days"></div>
-  </div></div>
-  <div class="cal-commands"><span class="cal-prompt-title">Try telling the calendar:</span><div class="cal-pills">
-    <button type="button" data-change="move">Move design review to Thursday at 2</button>
-    <button type="button" data-change="focus">Protect Wednesday afternoon for focus</button>
-    <button type="button" data-change="coffee">Add coffee with Maya on Friday at 10</button>
-  </div></div>
-  <div class="cal-feedback" id="cal-feedback" role="status" aria-live="polite">Choose an instruction to see what changes.</div>
+    <p>I keep coming back to calendars. They are one of the few apps where the layout is the information. A crowded morning looks crowded. An empty afternoon feels open. You understand the shape of a day before reading any event names.</p>
+<p>But editing that picture still feels strangely mechanical. Drag a rectangle. Open a form. Change a time. Save. More recently, we have another option: ask an assistant to do it. That's easier to say, but the result often arrives as a sentence about what changed, rather than something you can actually see.</p>
+<p>I've been playing with a few ideas about this. Not a finished design, and certainly not a new way to schedule meetings for its own sake. I am interested in what the calendar itself could do differently.</p>
+<p>All the events in these sketches are fictional.</p>
+<h2 id="the-grid-gets-one-thing-right" tabindex="-1">The grid gets one thing right <a class="header-anchor" href="#the-grid-gets-one-thing-right" aria-hidden="true">#</a></h2>
+<p>I don't think the answer is to throw the calendar grid away. The spatial view is why calendars work in the first place. The awkward part is that the grid gives every hour exactly the same amount of space, whether it's relevant or not.</p>
+<p>Here's an ordinary day. <strong>Click the design review.</strong></p>
+<div class="ds-visual" id="ds-one">
+  <div class="ds-eyebrow">01 / THE GRID</div>
+  <div class="ds-visual-title">A day, laid out evenly</div>
+  <div class="ds-day" id="ds-flat" aria-label="Fictional day calendar, with a clickable design review"></div>
+  <p class="ds-note" id="ds-flat-note" aria-live="polite">The same amount of room is reserved for every hour.</p>
 </div>
+<p>The event is only forty-five minutes long, but it is the part of the day I'm thinking about. A regular grid doesn't know the difference. It can highlight the event, but it can't make any more room to understand what surrounds it.</p>
+<h2 id="what-if-the-calendar-bent-around-your-attention%3F" tabindex="-1">What if the calendar bent around your attention? <a class="header-anchor" href="#what-if-the-calendar-bent-around-your-attention%3F" aria-hidden="true">#</a></h2>
+<p>This led me to a fisheye idea. The area you're looking at gets more space. The rest of the day compresses, but doesn't disappear.</p>
+<p><strong>Move your focus over the timeline.</strong> Watch the hour markers spread out around it. The events never change times. The view changes its shape.</p>
+<div class="ds-visual" id="ds-two">
+  <div class="ds-eyebrow">02 / THE FISHEYE</div>
+  <div class="ds-visual-title">More detail where it matters</div>
+  <div class="ds-focus-line"><label for="ds-focus">Where you're looking</label><output for="ds-focus" id="ds-focus-label">1:00 pm</output></div>
+  <input id="ds-focus" class="ds-range" type="range" min="8" max="18" step=".25" value="13" aria-label="Move the calendar's focus through the day">
+  <div class="ds-day" id="ds-fish" aria-label="Fisheye calendar day with hours that expand around the selected focus"></div>
+  <p class="ds-note">The review gets room without losing the morning or the evening.</p>
+</div>
+<p>What interests me isn't just the magnification. It is the motion between states. As your focus shifts, you can follow the events. Nothing jumps into a completely different interface, and you don't lose the context you had a second ago.</p>
+<p>There is a balance to find here. Distort time too aggressively and the view becomes hard to read. Distort it just enough and you get something conventional zooming doesn't offer: detail without completely giving up the rest of the day.</p>
+<h2 id="then-let-an-instruction-change-the-picture" tabindex="-1">Then let an instruction change the picture <a class="header-anchor" href="#then-let-an-instruction-change-the-picture" aria-hidden="true">#</a></h2>
+<p>The natural-language part becomes more interesting once the calendar is able to respond visually. Suppose I say, &quot;Move the review to Thursday at 2.&quot;</p>
+<p>I don't want a paragraph telling me that the event has been moved. I want to see where it would land.</p>
+<p><strong>Click the review on Tuesday.</strong> The proposed move appears in Thursday's column. Click the destination to accept it, or click the original event again to cancel.</p>
+<div class="ds-visual" id="ds-three">
+  <div class="ds-eyebrow">03 / THE MOVE</div>
+  <div class="ds-visual-title">An instruction you can see</div>
+  <div class="ds-quote">“Move the design review to Thursday at 2.”</div>
+  <div class="ds-week" id="ds-week" aria-label="Fictional Tuesday and Thursday schedule with a proposed calendar move"></div>
+  <p class="ds-note" id="ds-move-note" aria-live="polite">Select the Tuesday review to preview its new position.</p>
+</div>
+<p>In a real calendar, the next step would be to handle conflicts, show alternatives, and make undo effortless. But this tiny interaction gets at the bit I care about. A request is not the end of the interaction. It's the beginning of a visible change that you can assess.</p>
+<h2 id="putting-it-together" tabindex="-1">Putting it together <a class="header-anchor" href="#putting-it-together" aria-hidden="true">#</a></h2>
+<p>These started as questions about a calendar's visual design, but they're really questions about how software responds to people.</p>
+<p>The grid gives us the shape of time. A fisheye view could give us more detail where our attention happens to be. Language could let us express what we want without making us translate it into dozens of clicks. And movement could make every proposed change understandable as it happens.</p>
+<p>I think the missing piece in a lot of AI interfaces is the space <em>between</em> asking and getting an answer. The model might know what to do, but I still want to see it working on the thing in front of me. I want to notice a conflict, change my mind, and stay involved without starting a new conversation.</p>
+<p>Maybe the most useful AI calendar won't feel much like chatting with an assistant. It might just feel like a calendar that finally understands what you're trying to do.</p>
 <style>
-.cal-sketch{--ink:#293346;--line:#e5e9ef;--blue:#4168c7;--blue-bg:#e6edff;--green:#257e6d;--green-bg:#dcf4ed;--amber:#92621f;--amber-bg:#fff1d9;margin:1.5rem 0 2rem;background:#fff;border:1px solid #dfe4eb;border-radius:16px;overflow:hidden;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.45}
-.cal-sketch *{box-sizing:border-box}.cal-caption{display:flex;align-items:center;gap:8px;padding:13px 17px;font-size:10px;font-weight:750;letter-spacing:.12em;color:#667385;background:#f8fafc;border-bottom:1px solid var(--line)}.cal-dot{width:7px;height:7px;border-radius:50%;background:#29a28d}.cal-privacy{margin-left:auto;letter-spacing:0;text-transform:none;font-size:11px;font-weight:500;color:#8a95a3}.cal-toolbar{display:flex;align-items:center;justify-content:space-between;padding:18px 17px 13px;gap:12px}.cal-toolbar strong{display:block;font-size:18px;color:#263248}.cal-toolbar span{display:block;font-size:12px;color:#7c8796;margin-top:2px}.cal-sketch button{font:inherit;cursor:pointer;border:1px solid #d7deea;background:#fff;border-radius:8px;color:#34445f;padding:7px 10px}.cal-sketch button:focus-visible{outline:3px solid #8eb5ff;outline-offset:2px}.cal-sketch button:hover{background:#f1f5fd}.cal-toolbar button{font-size:11px;white-space:nowrap}.cal-scroll{overflow-x:auto;margin:0 11px}.cal-grid{display:grid;grid-template-columns:43px repeat(5,minmax(90px,1fr));grid-template-rows:40px 420px;min-width:540px;border:1px solid var(--line);border-radius:9px;overflow:hidden}.cal-corner{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.cal-day{text-align:center;border-right:1px solid var(--line);border-bottom:1px solid var(--line);color:#8a95a3;padding-top:5px;font-size:10px;font-weight:700;letter-spacing:.06em}.cal-day b{display:block;font-size:15px;color:#37445a;font-weight:650;letter-spacing:0}.cal-hours{position:relative;border-right:1px solid var(--line);background:#fff}.cal-hour-label{position:absolute;right:7px;transform:translateY(-50%);font-size:10px;color:#9aa4b1;white-space:nowrap}.cal-hour-label:first-child{transform:none}.cal-days{grid-column:2/7;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:relative;background:repeating-linear-gradient(to bottom,#fff 0,#fff 51.5px,#edf0f5 52px,#fff 52.5px)}.cal-column{position:relative;border-right:1px solid var(--line);min-width:0}.cal-event{position:absolute;left:3px;right:3px;border-radius:5px;padding:6px 5px;overflow:hidden;border-left:3px solid var(--blue);background:var(--blue-bg);color:#2b4c9f;box-shadow:0 1px 1px #2632480b;transition:top .3s ease,height .3s ease}.cal-event strong{display:block;font-size:11px;line-height:1.3;font-weight:700}.cal-event small{display:block;font-size:10px;margin-top:3px;opacity:.83}.cal-event.green{background:var(--green-bg);color:var(--green);border-color:var(--green)}.cal-event.amber{background:var(--amber-bg);color:var(--amber);border-color:#e9a33c}.cal-event.focus{background:repeating-linear-gradient(135deg,#f0f5ff,#f0f5ff 8px,#e7eeff 8px,#e7eeff 16px);color:#4261ad;border:1px dashed #6881c1}.cal-commands{padding:18px 17px 12px}.cal-prompt-title{display:block;font-size:12px;font-weight:700;margin-bottom:9px;color:#566376}.cal-pills{display:flex;gap:7px;flex-wrap:wrap}.cal-pills button{font-size:12px;text-align:left;background:#f7f9fd;border-color:#e0e6f0;padding:8px 11px}.cal-pills button[aria-pressed=true]{background:#e7eeff;border-color:#9bb0e7;color:#234caa}.cal-feedback{margin:0 17px 17px;border-top:1px solid var(--line);padding-top:11px;min-height:27px;font-size:12px;color:#64748b}
-@media(max-width:600px){.cal-caption{font-size:9px}.cal-privacy{font-size:9px}.cal-toolbar{padding:14px 12px}.cal-toolbar strong{font-size:16px}.cal-commands{padding:14px 12px 10px}.cal-feedback{margin:0 12px 14px}.cal-scroll{margin:0 8px}.cal-pills{flex-direction:column}.cal-pills button{width:100%}}
-@media(prefers-reduced-motion:reduce){.cal-event{transition:none}}
+.ds-visual{--ds-border:#e1e6ec;--ds-ink:#26354b;--ds-blue:#3b5eab;--ds-bluebg:#e5edfe;--ds-green:#287968;--ds-greenbg:#e1f3ec;--ds-amber:#986d2a;--ds-amberbg:#fff1d8;position:relative;margin:22px 0 28px;border:1px solid var(--ds-border);border-radius:12px;background:#fff;padding:17px;color:var(--ds-ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.ds-visual *{box-sizing:border-box}.ds-eyebrow{font-size:10px;color:#7a8798;font-weight:750;letter-spacing:.12em}.ds-visual-title{font-size:17px;font-weight:650;margin:4px 0 13px}.ds-note{font-size:12px;color:#69798a;margin:11px 0 0;line-height:1.5}.ds-day{height:290px;position:relative;border:1px solid #e7ebf0;border-radius:7px;overflow:hidden;background:white}.ds-hour{position:absolute;left:0;right:0;display:flex;align-items:flex-start;border-top:1px solid #edf0f4;min-height:3px;transition:top .3s ease}.ds-hour:first-child{border-top:0}.ds-hour-label{width:56px;flex-shrink:0;font-size:10px;color:#92a0ad;padding:2px 5px}.ds-block{position:absolute;left:62px;right:7px;border:0;border-left:3px solid #6486d0;background:var(--ds-bluebg);border-radius:4px;padding:5px 8px;color:var(--ds-blue);overflow:hidden;text-align:left;font:inherit;font-size:11px;transition:top .3s ease,height .3s ease,opacity .2s ease;z-index:2}.ds-block strong{display:block;font-weight:700;line-height:1.25}.ds-block small{font-size:10px;opacity:.8}.ds-block.ds-green{background:var(--ds-greenbg);color:var(--ds-green);border-left-color:#5ea991}.ds-block.ds-amber{background:var(--ds-amberbg);color:var(--ds-amber);border-left-color:#e3aa55}.ds-block.ds-click{cursor:pointer;outline-offset:2px}.ds-block.ds-click:focus-visible,.ds-week-event:focus-visible,.ds-range:focus-visible{outline:3px solid #93b5f2;outline-offset:2px}.ds-block.ds-selected{box-shadow:0 0 0 2px #6388dc inset}.ds-focus-line{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:5px}.ds-focus-line output{font-weight:700}.ds-range{width:100%;accent-color:#4569ba;cursor:pointer;margin:0 0 14px}.ds-quote{padding:9px 11px;margin-bottom:13px;background:#f5f7fb;border-radius:7px;font-size:13px;font-style:italic;color:#4b5b72}.ds-week{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.ds-week-column{border:1px solid #e4e9f0;border-radius:8px;overflow:hidden;min-width:0}.ds-week-head{background:#f8fafc;border-bottom:1px solid #e4e9f0;padding:8px 10px;font-size:12px;font-weight:700}.ds-week-track{height:200px;position:relative;background:repeating-linear-gradient(to bottom,#fff 0px,#fff 48px,#edf0f5 49px,#fff 50px)}.ds-week-time{position:absolute;left:5px;color:#9aa5b3;font-size:9px}.ds-week-event{position:absolute;left:39px;right:5px;padding:7px 6px;border-radius:5px;background:#e6ecfd;border:1px solid #94a9dc;color:#345aa6;text-align:left;font:inherit;font-size:11px;cursor:pointer;transition:top .35s ease,opacity .35s ease,transform .35s ease}.ds-week-event strong{display:block}.ds-week-event small{display:block;font-size:10px}.ds-week-event.ds-ghost{border:1px dashed #5272bc;background:#eef3ff;animation:ds-pulse 1.5s ease-in-out infinite}.ds-week-event.ds-muted{opacity:.35}.ds-week-event.ds-confirmed{background:#dff1e9;border-color:#64a28d;color:#287968}.ds-week-event.ds-reset{cursor:pointer;border-color:#b5bdcc;color:#65748a;background:#f3f5f8}.ds-help{font-size:10px;color:#8290a0;padding:6px 10px;border-top:1px solid #e4e9f0}@keyframes ds-pulse{50%{box-shadow:0 0 0 3px #aabbea50}}@media(max-width:520px){.ds-visual{padding:12px}.ds-week-event{left:27px;padding:5px 4px;font-size:10px}.ds-week-event small{font-size:9px}.ds-week-time{font-size:8px}.ds-hour-label{width:48px}.ds-block{left:53px}}@media(prefers-reduced-motion:reduce){.ds-hour,.ds-block,.ds-week-event{transition:none}.ds-week-event.ds-ghost{animation:none}}
 </style>
 <script>
 (function(){
-  var root=document.getElementById('calendar-sketch');
-  if(!root)return;
-  var base=[
-    {id:'planning',day:0,start:9,duration:1,title:'Weekly planning',type:'blue'},
-    {id:'studio',day:0,start:11,duration:1.5,title:'Studio session',type:'green'},
-    {id:'review',day:1,start:13,duration:1,title:'Design review',type:'blue'},
-    {id:'lunch',day:1,start:12,duration:.75,title:'Lunch with Alex',type:'amber'},
-    {id:'writing',day:2,start:9,duration:1.5,title:'Writing block',type:'green'},
-    {id:'sync',day:2,start:14,duration:1,title:'Project sync',type:'blue'},
-    {id:'walk',day:3,start:11,duration:1,title:'Neighborhood walk',type:'green'},
-    {id:'demo',day:3,start:15,duration:1,title:'Prototype demo',type:'blue'},
-    {id:'ideas',day:4,start:13,duration:1.5,title:'Ideas workshop',type:'amber'}
+  var events=[
+    {start:9.5,end:10.5,title:'Planning',color:'ds-green'},
+    {start:11,end:12,title:'Sketching',color:'ds-amber'},
+    {start:13,end:13.75,title:'Design review',color:'',review:true},
+    {start:15.25,end:16.25,title:'Prototype notes',color:'ds-green'}
   ];
-  var state=base.map(function(e){return Object.assign({},e)});
-  var hours=document.getElementById('cal-hours'),days=document.getElementById('cal-days'),feedback=document.getElementById('cal-feedback');
-  for(var h=9;h<=17;h++){var el=document.createElement('span');el.className='cal-hour-label';el.style.top=((h-9)*52)+'px';el.textContent=(h>12?h-12:h)+(h>=12?' PM':' AM');hours.appendChild(el)}
-  var cols=[];
-  for(var d=0;d<5;d++){var col=document.createElement('div');col.className='cal-column';days.appendChild(col);cols.push(col)}
-  function time(h){var hour=Math.floor(h),min=Math.round((h-hour)*60);return (hour%12||12)+':'+String(min).padStart(2,'0')+(hour>=12?' pm':' am')}
-  function render(){
-    cols.forEach(function(c){c.replaceChildren()});
-    state.forEach(function(e){
-      var block=document.createElement('div');block.className='cal-event '+e.type;block.style.top=((e.start-9)*52+2)+'px';block.style.height=(e.duration*52-4)+'px';
-      var label=document.createElement('strong');label.textContent=e.title;
-      var small=document.createElement('small');small.textContent=time(e.start);
-      block.appendChild(label);block.appendChild(small);block.title=e.title+', '+time(e.start);cols[e.day].appendChild(block);
+  var min=8,max=19,H=290;
+  function label(t){var h=Math.floor(t),m=Math.round((t-h)*60);return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' pm':' am')}
+  function fixed(t){return (t-min)/(max-min)*H}
+  function fisheye(t,f){var samples=120;var total=0,part=0,step=(max-min)/samples;for(var i=0;i<samples;i++){var x=min+(i+.5)*step;var w=.3+2.6*Math.exp(-Math.pow((x-f)/1.45,2));total+=w*step;if(x<t)part+=w*step}return H*part/total}
+  function buildDay(target,mode){
+    var el=document.getElementById(target);el.replaceChildren();
+    var items=[];
+    for(var h=8;h<=19;h++){var row=document.createElement('div');row.className='ds-hour';var t=document.createElement('span');t.className='ds-hour-label';t.textContent=h===19?'':(h%12||12)+(h>=12?' pm':' am');row.appendChild(t);el.appendChild(row);items.push({node:row,time:h})}
+    var blocks=[];
+    events.forEach(function(e){
+      var b=document.createElement(e.review&&mode==='fixed'?'button':'div');
+      if(e.review&&mode==='fixed')b.type='button';
+      b.className='ds-block '+e.color+(e.review&&mode==='fixed'?' ds-click':'');
+      var title=document.createElement('strong');title.textContent=e.title;
+      var subtitle=document.createElement('small');subtitle.textContent=label(e.start);
+      b.append(title,subtitle);el.appendChild(b);blocks.push({node:b,event:e});
+      if(e.review&&mode==='fixed')b.addEventListener('click',function(){b.classList.toggle('ds-selected');document.getElementById('ds-flat-note').textContent=b.classList.contains('ds-selected')?'You can select the review, but the surrounding hours still take exactly the same space.':'The same amount of room is reserved for every hour.'});
     });
+    function draw(f){var scale=mode==='fish'?function(t){return fisheye(t,f)}:fixed;items.forEach(function(it){it.node.style.top=scale(it.time)+'px'});blocks.forEach(function(it){it.node.style.top=scale(it.event.start)+'px';it.node.style.height=Math.max(17,scale(it.event.end)-scale(it.event.start)-2)+'px'})}
+    draw(13);return draw;
   }
-  function apply(action){
-    state=base.map(function(e){return Object.assign({},e)});
-    var message='';
-    if(action==='move'){
-      state.find(function(e){return e.id==='review'}).day=3;
-      state.find(function(e){return e.id==='review'}).start=14;
-      message='Design review moved from Tuesday at 1 pm to Thursday at 2 pm. The new position is visible in context.';
-    }else if(action==='focus'){
-      state=state.filter(function(e){return e.id!=='sync'});
-      state.push({id:'focus',day:2,start:13,duration:4,title:'Focus afternoon',type:'focus'});
-      message='Wednesday afternoon is now protected. The fictional project sync has been removed from this sketch.';
-    }else if(action==='coffee'){
-      state.push({id:'coffee',day:4,start:10,duration:1,title:'Coffee with Maya',type:'amber'});
-      message='Coffee with Maya added Friday at 10 am. You can see the gap it occupies.';
-    }
-    root.querySelectorAll('[data-change]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.change===action))});
-    feedback.textContent=message;render();
+  buildDay('ds-flat','fixed');
+  var updateFish=buildDay('ds-fish','fish'),slider=document.getElementById('ds-focus'),out=document.getElementById('ds-focus-label');
+  slider.addEventListener('input',function(){var v=Number(slider.value);out.textContent=label(v);updateFish(v)});
+  var week=document.getElementById('ds-week'),status=document.getElementById('ds-move-note'),stage=0;
+  function makeColumn(day){
+    var col=document.createElement('div');col.className='ds-week-column';
+    var head=document.createElement('div');head.className='ds-week-head';head.textContent=day;
+    var track=document.createElement('div');track.className='ds-week-track';
+    [12,13,14,15].forEach(function(h){var t=document.createElement('span');t.className='ds-week-time';t.style.top=(h-12)*50+2+'px';t.textContent=(h%12||12)+' pm';track.appendChild(t)});
+    var help=document.createElement('div');help.className='ds-help';help.textContent=day==='Tuesday'?'Current position':'Proposed position';
+    col.append(head,track,help);week.appendChild(col);return track;
   }
-  root.querySelectorAll('[data-change]').forEach(function(b){b.setAttribute('aria-pressed','false');b.addEventListener('click',function(){apply(b.dataset.change)})});
-  document.getElementById('cal-reset').addEventListener('click',function(){state=base.map(function(e){return Object.assign({},e)});root.querySelectorAll('[data-change]').forEach(function(b){b.setAttribute('aria-pressed','false')});feedback.textContent='Week reset. All events are fictional and no changes are saved.';render()});
+  var tue=makeColumn('TUESDAY'),thu=makeColumn('THURSDAY');
+  function event(parent,title,at,kind,handler){
+    var b=document.createElement('button');b.type='button';b.className='ds-week-event '+(kind||'');b.style.top=((at-12)*50+3)+'px';b.style.height='45px';
+    var strong=document.createElement('strong');strong.textContent=title;
+    var small=document.createElement('small');small.textContent=label(at);b.append(strong,small);parent.appendChild(b);b.addEventListener('click',handler);return b;
+  }
+  function render(){
+    tue.querySelectorAll('button').forEach(function(b){b.remove()});thu.querySelectorAll('button').forEach(function(b){b.remove()});
+    event(tue,stage===2?'Review moved':'Design review',13,stage===1?'ds-muted':stage===2?'ds-reset':'',function(){if(stage===0){stage=1;status.textContent='Preview: the review would move to Thursday at 2 pm. Click the outlined destination to accept.'}else if(stage===1){stage=0;status.textContent='Preview cancelled. The review remains on Tuesday at 1 pm.'}else{stage=0;status.textContent='Undone. The review is back on Tuesday at 1 pm.'}render()});
+    if(stage===1)event(thu,'Design review',14,'ds-ghost',function(){stage=2;status.textContent='Moved to Thursday at 2 pm. Click the Tuesday placeholder to undo.';render()});
+    if(stage===2)event(thu,'Design review',14,'ds-confirmed',function(){stage=0;status.textContent='Undone. The review is back on Tuesday at 1 pm.';render()});
+  }
   render();
 })();
 </script>
-<p>Notice what the interaction preserves. The instruction is a sentence, but the answer is a changed calendar. You can immediately judge whether Thursday is too full or Friday has room. You do not have to trust a summary or reconstruct the result in your head.</p>
-<h2 id="why-the-visual-part-matters" tabindex="-1">Why the visual part matters <a class="header-anchor" href="#why-the-visual-part-matters" aria-hidden="true">#</a></h2>
-<p>Language is excellent for <em>intent</em>: “Give me an uninterrupted afternoon,” or “Move this to somewhere less crowded.” The calendar is better for <em>judgment</em>: what overlaps, what gets squeezed, and how the week actually feels.</p>
-<p>That distinction has driven the design thinking. I don't want another chatbot bolted onto a familiar app. I want an interface in which the model proposes a change <strong>on the object I'm already looking at</strong>, shows me the consequence, and leaves me in control of accepting or revising it.</p>
-<p>The obvious next step is more interesting than a text box: preview several options directly on the grid, expose tradeoffs, and make undo as easy as asking. A useful AI calendar should make the user <em>more</em> aware of their time, not less.</p>
-<p>This sketch isn't the full product. It's a way to test one small idea: <strong>the best conversational interfaces may not look like conversations at all.</strong></p>
-<p><a href="https://github.com/DomCritchlow/CalWidget">Explore the CalWidget project</a> — a separate experiment in making calendar time more visible.</p>
 
   </div>
 </article>

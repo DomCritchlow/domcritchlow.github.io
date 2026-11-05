@@ -71,7 +71,7 @@ A text answer could list five changes. But it's much easier to judge the consequ
     <div class="dw-board-head" style="grid-column:1">MON</div><div class="dw-board-head" style="grid-column:2">TUE</div><div class="dw-board-head" style="grid-column:3">WED</div><div class="dw-board-head" style="grid-column:4">THU</div><div class="dw-board-head" style="grid-column:5">FRI</div>
     <div class="dw-board-body" id="dw-board-body"></div>
   </div>
-  <div class="dw-actions"><button type="button" id="dw-moves-next">Show proposed changes</button><span id="dw-moves-note" role="status" aria-live="polite">Four events could move. None has moved yet.</span></div>
+  <div class="dw-actions"><button type="button" id="dw-moves-next">Show proposed changes</button><span id="dw-moves-note" role="status" aria-live="polite">Five events could move. None has moved yet.</span></div>
 </div>
 
 This is where the calendar is doing more than displaying a result. Moving three meetings to make room for one block is a *trade-off*. You can see the cost at a glance. You might decide the proposal solves the wrong problem.
@@ -164,7 +164,7 @@ function drawMoves(){
  focusEvent.hidden=!moved;if(moved)place(focusEvent,2,6.5,2);
  document.getElementById('dw-moves-state').textContent=moved?'Proposed, not booked':'Current schedule';
  document.getElementById('dw-moves-next').textContent=moved?'Return to current schedule':'Show proposed changes';
- document.getElementById('dw-moves-note').textContent=moved?'Catch-ups grouped, work protected, research shifted. All changes are tentative.':'Four events could move. None has moved yet.';
+ document.getElementById('dw-moves-note').textContent=moved?'Catch-ups grouped, work protected, research shifted. All changes are tentative.':'Five events could move. None has moved yet.';
 }
 document.getElementById('dw-moves-next').addEventListener('click',function(){moved=!moved;drawMoves()});drawMoves();
 var revised=false;
@@ -173,7 +173,7 @@ document.getElementById('dw-revise').addEventListener('click',function(){
  document.getElementById('dw-revision-state').textContent=revised?'Revised plan':'One possible plan';
  document.getElementById('dw-revise').textContent=revised?'Return to the first option':'Actually, keep Thursday open';
  document.getElementById('dw-convo-answer').innerHTML=revised?'<span class="dw-speaker">Calendar</span>That changes things. Try a Wednesday morning block instead. Thursday stays open.':'<span class="dw-speaker">Calendar</span>One option is to use Thursday afternoon.';
- document.getElementById('dw-wed-card').textContent=revised?'Deep work · 9–12':'Team sync · 2 pm';
+ document.getElementById('dw-wed-card').textContent=revised?'Deep work 9–12 · Sync 2 pm':'Team sync · 2 pm';
  document.getElementById('dw-thu-card').textContent=revised?'Thursday open':'Deep work · 1–4 pm';
  document.getElementById('dw-thu-card').classList.toggle('dw-trade-muted',revised);
  document.getElementById('dw-wed-card').classList.toggle('dw-trade-focus',revised);

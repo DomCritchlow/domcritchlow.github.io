@@ -84,6 +84,12 @@ This is the Dayweave frontend running against a scripted, in-browser stand-in fo
 
 The scripted stand-in understands a limited set of requests. The actual application uses a model and provider checks for more complicated work, including multiple-event proposals. In either case, the point isn't that you can type a magic sentence. It's that you can stay with the week while the answer takes shape.
 
+## What happens when the request gets messy?
+
+The harder cases in the codebase aren't single moves. One browser test starts with “Decline the external meetings on Friday with a note,” then revises that proposal in a follow-up. It checks that the selected events stay visible, that a change can be undone and redone, and that nothing reaches the calendar provider until the user confirms. Another test selects three invitations and declines them together with the same note, while keeping each result separate.
+
+Those examples get closer to the reason I started this. I don't want to tell an assistant five instructions, wait for a summary, and hope it kept them straight. I want the affected meetings right there, with the actions and consequences visible. If I correct one part of the request, the rest of the work should not disappear.
+
 ## What I kept
 
 I tried more controls than I ended up wanting. A separate planning studio, a persistent decision area, heavy event cards, a scanning animation while the model worked. In isolation, most of them looked plausible. Together, they made a simple calendar feel busy in the wrong way.

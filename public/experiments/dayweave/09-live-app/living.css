@@ -1,0 +1,160 @@
+/* Living calendar layer: tokens, type, events that read as objects, and a pill that
+   is always there. Loaded after styles.css and canvas.css and only overrides them. */
+@font-face{font-family:"Figtree";src:url("figtree.woff2") format("woff2");font-weight:300 900;font-display:swap}
+@font-face{font-family:"Bricolage Grotesque";src:url("bricolage.woff2") format("woff2");font-weight:200 800;font-stretch:75% 100%;font-display:swap}
+:root{
+ --paper:#f8f9f5;--paper-2:#f1f3ed;--ink:#1d2a23;--ink-2:#56645b;--ink-3:#8a968d;--rule:#e3e8de;--rule-2:#cdd6c8;
+ --accent:#2f5a45;--accent-soft:#dfeadf;--amber:#b97a1f;--amber-soft:#f6ead3;--now:#d0603a;
+ --free:#2f8a5f;--free-wash:rgba(47,138,95,.09);--free-line:rgba(47,138,95,.55);
+ --tok-when:#d9ebdc;--tok-when-line:#3f8a5c;--tok-long:#f5e6c7;--tok-long-line:#b97a1f;--tok-what:#dbe7f3;--tok-what-line:#2f72ad;
+ --lift:0 2px 4px rgba(29,42,35,.08),0 14px 30px rgba(29,42,35,.16);--float:0 1px 2px rgba(29,42,35,.06),0 12px 32px rgba(29,42,35,.12);
+ --display:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+ --text:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+ --spring:cubic-bezier(.2,.9,.25,1);
+ font-family:var(--text);color:var(--ink);background:var(--paper);
+}
+body{background:var(--paper);-webkit-font-smoothing:antialiased}
+.shell,.drawer,#toast{font-family:var(--text)}
+
+/* Header */
+.topbar{background:var(--paper);border-bottom:1px solid var(--rule)}
+#date-title,.date-nav h1{font-family:var(--display);font-weight:600;letter-spacing:-.02em;font-size:23px;font-variation-settings:"opsz" 48}
+.view-switch button{color:var(--ink-2);font-weight:600;font-size:12.5px;border-radius:8px}
+.view-switch button.active,.view-switch button[aria-pressed=true]{background:var(--paper-2);color:var(--ink);box-shadow:0 1px 2px rgba(29,42,35,.08)}
+
+/* Day headings: quiet weekday, display numeral */
+.day-heading button span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2)}
+.day-heading button strong{font-family:var(--display);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.day-heading.today button strong{color:#fff}
+.day-heading.focus-day{background:transparent}
+.day-heading.focus-day button span{color:var(--ink)}
+.day-track.focus-day{background-color:color-mix(in srgb,var(--accent-soft) 30%,transparent)}
+.day-track.weekend{background-color:color-mix(in srgb,var(--paper-2) 70%,transparent)}
+.time-label{font-variant-numeric:tabular-nums;color:var(--ink-3)}
+.hour-rule{border-top-color:var(--rule)}
+
+/* Events read as objects: tinted, rounded, no heavy left bar. */
+.event{border-radius:9px;border-width:1px;border-left-width:1px;padding:5px 8px;transition:background-color .2s,box-shadow .25s,opacity .3s,filter .3s,transform .3s var(--spring)}
+.event .event-title{font-size:12.5px;font-weight:650;line-height:1.25}
+.event .event-time{font-size:11.5px;opacity:1;color:color-mix(in srgb,currentColor 70%,transparent);font-variant-numeric:tabular-nums}
+.calendar-grid.single .event-title{font-size:14px}
+.event.highlighted,.event.selected,.event.inspected{box-shadow:0 0 0 1.5px var(--category-accent,var(--accent)),var(--lift);transform:translateY(-1px);z-index:5}
+.event.dimmed{opacity:.36;filter:saturate(.3)}
+.event.proposed{outline:2px dashed var(--accent);outline-offset:-2px;box-shadow:var(--lift);z-index:6}
+.event.ghost{background:transparent;border:1.5px dashed var(--rule-2);opacity:.85}
+.event.past:not(.highlighted):not(.selected){opacity:.55}
+.event-note{display:block;flex-shrink:0;margin-top:3px;font-size:11.5px;line-height:1.3;color:var(--ink);font-weight:500;max-width:100%}
+.event.compact .event-note{display:none}
+.now-line{border-top-color:var(--now)}.now-line:before{background:var(--now)}
+
+/* What a draft makes visible: open windows that fit, and where a meeting could go. */
+.gap.draft-window{position:absolute;left:3px;right:3px;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;gap:6px;padding:5px 8px;border-radius:10px;border:1.5px dashed var(--free-line);background:var(--free-wash);color:var(--free);font-size:11.5px;font-weight:650;text-align:left;animation:draft-in .35s var(--spring) both}
+.gap.draft-window small{font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.gap.draft-window:hover,.gap.draft-window:focus-visible{background:color-mix(in srgb,var(--free) 16%,transparent)}
+.draft-target{position:absolute;left:3px;right:3px;z-index:3;border-radius:10px;border:1.5px dashed var(--free-line);background:var(--paper);color:var(--free);font-size:11.5px;font-weight:650;padding:5px 8px;display:flex;justify-content:space-between;pointer-events:none;animation:draft-in .35s var(--spring) both}
+.draft-target small{color:var(--ink-2);font-weight:600}
+.month-day.draft-focus{box-shadow:inset 0 0 0 1.5px var(--accent);background:color-mix(in srgb,var(--accent-soft) 35%,transparent)}
+@keyframes draft-in{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+
+/* The calendar leaves room for the pill instead of sitting under it. */
+.calendar-scroll{margin-bottom:var(--pill-reserve,0px);transition:margin-bottom .3s var(--spring)}
+.conversation-tucked .calendar-scroll{margin-bottom:0}
+
+/* The pill */
+.shell .decision-panel,.shell.overview .decision-panel{width:min(640px,calc(100% - 32px));border-radius:22px;border:1px solid var(--rule-2);background:color-mix(in srgb,var(--paper) 97%,transparent);box-shadow:var(--float);backdrop-filter:saturate(1.2) blur(6px)}
+.shell .decision-panel.composer-only{width:min(640px,calc(100% - 32px));border-radius:24px}
+.shell .decision-panel:focus-within{border-color:color-mix(in srgb,var(--accent) 45%,var(--rule-2));box-shadow:var(--float),0 0 0 4px color-mix(in srgb,var(--accent) 10%,transparent)}
+.shell #composer{gap:8px;padding:4px 4px 4px 6px}
+.pill-mark{flex:0 0 auto;width:24px;height:24px;display:grid;place-items:center;color:var(--accent)}
+.pill-mark svg{width:24px;height:24px;overflow:visible}
+.pill-mark path{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;transform-origin:50% 50%}
+.pill-mark path.b{stroke:var(--amber)}
+.shell.thinking .pill-mark path{stroke-dasharray:6 4;animation:pill-dash .9s linear infinite}
+@keyframes pill-dash{to{stroke-dashoffset:-20}}
+.command-field{position:relative;flex:1;min-width:0}
+.shell .command-field #command{position:relative;width:100%;font-family:var(--text);font-size:15px;line-height:24px;padding:8px 0;color:var(--ink);caret-color:var(--accent);background:transparent}
+.shell #command::placeholder{color:var(--ink-3)}
+#command-mirror{position:absolute;inset:0;margin:0;color:transparent;pointer-events:none;white-space:pre-wrap;overflow-wrap:break-word;overflow:hidden;font-family:var(--text);font-size:15px;line-height:24px;padding:8px 0}
+#command-mirror mark{color:transparent;border-radius:4px;background:var(--tok-when);box-shadow:0 0 0 2px var(--tok-when),inset 0 -2px 0 var(--tok-when-line)}
+#command-mirror mark.long{background:var(--tok-long);box-shadow:0 0 0 2px var(--tok-long),inset 0 -2px 0 var(--tok-long-line)}
+#command-mirror mark.what,#command-mirror mark.who{background:var(--tok-what);box-shadow:0 0 0 2px var(--tok-what),inset 0 -2px 0 var(--tok-what-line)}
+#command-mirror mark.act{background:transparent;box-shadow:inset 0 -1.5px 0 var(--ink-3)}
+.shell .submit-button{width:34px;height:34px;border-radius:17px;background:var(--accent);color:#fff}
+.composer-tools .icon-button{color:var(--ink-3)}
+.composer-meta:has(#draft-chips:not([hidden])),.composer-only .composer-meta:has(#draft-chips:not([hidden])){display:flex}
+.composer-meta{gap:8px;align-items:center;flex-wrap:wrap;padding:0 8px 4px 40px}
+.draft-chips{display:flex;flex-wrap:wrap;gap:5px}
+.draft-chip{font-size:11px;font-weight:650;padding:2px 8px;border-radius:999px;background:var(--tok-when);color:var(--ink);animation:draft-in .25s var(--spring) both}
+.draft-chip.long{background:var(--tok-long)}.draft-chip.what,.draft-chip.who{background:var(--tok-what)}
+.draft-chip.act{background:var(--paper-2);border:1px solid var(--rule)}
+.draft-chip.free{background:transparent;color:var(--free);border:1px solid var(--free-line)}
+
+/* Waiting reads as a status line, not a placeholder answer. */
+#work-status{border:0;margin:0 0 2px;padding:4px 8px 6px 40px;font-size:12.5px;color:var(--ink-2)}
+#work-status strong{font-weight:650;color:var(--ink)}
+#work-status .work-dot.working{width:8px;height:8px;border:0;background:var(--accent);animation:work-breathe 1.2s ease-in-out infinite}
+
+/* Answers and proposals */
+.shell #assistant-title{font-family:var(--display);font-weight:600;letter-spacing:-.015em}
+.shell .review-actions .primary{border-radius:999px;padding:8px 18px}
+.conversation-return{border-radius:999px;border-color:var(--rule-2);background:var(--paper);box-shadow:var(--float);font-family:var(--text)}
+.month-day.today .month-date strong{background:var(--accent)}
+@media (max-width:760px){
+ .shell .decision-panel,.shell .decision-panel.composer-only{width:calc(100% - 20px)}
+ .shell #command,#command-mirror{font-size:16px}
+ .composer-meta{padding-left:36px}
+ #date-title,.date-nav h1{font-size:18px}
+}
+@media (prefers-reduced-motion:reduce){.event,.gap.draft-window,.draft-target,.draft-chip,.calendar-scroll{transition:none;animation:none}.shell.thinking .pill-mark path{animation:none}}
+
+/* Proposals stay compact: the card scrolls inside instead of taking over the calendar,
+   and several steps read as one list with a shared consequence. */
+@media (min-width:761px){.shell .assistant-stage{max-height:min(36vh,360px)}}
+#impact-summary.multi .impact-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:2px 14px;padding:7px 0}
+#impact-summary.multi .impact-item + .impact-item{padding-top:7px}
+#impact-summary.multi .impact-item strong{font-size:14px;font-weight:600;letter-spacing:0;line-height:1.35}
+#impact-summary.multi .impact-item .impact-time{font-size:12.5px;color:var(--ink-2);margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+#impact-summary.multi .impact-item>small:not(.impact-time),#impact-summary.multi .impact-item>.finding{grid-column:1/-1;margin:0}
+.impact-common{margin:8px 0 0;font-size:12.5px;color:var(--ink-2)}
+
+/* On wider screens the calendar runs full height behind the input and can scroll its last hour clear of it. */
+@media (min-width:761px){#calendar{padding-bottom:var(--pill-clearance,0px)}}
+
+/* The input is a floating pill; an answer or proposal is its own card above it.
+   No surrounding block: the calendar shows around both. */
+:root{--marker-decision:#c1995b;--marker-proposed:#2f5a45;--marker-pending:#b79a60}
+.shell .decision-panel,.shell.overview .decision-panel,.shell .decision-panel.composer-only{background:transparent;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;overflow:visible;border-radius:0}
+.shell .decision-panel:focus-within{border-color:transparent;box-shadow:none}
+.answer-card{position:relative;display:flex;flex-direction:column;flex:0 1 auto;min-height:0;background:var(--paper);border:1px solid var(--rule-2);border-radius:18px;box-shadow:var(--float);margin-bottom:8px;overflow:hidden;animation:card-rise .28s var(--spring) both}
+.composer-only .answer-card{display:none}
+@keyframes card-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card-close{position:absolute;top:8px;right:8px;z-index:3;width:30px;height:30px;padding:0;border-radius:50%;display:grid;place-items:center;font-size:19px;line-height:1;color:var(--ink-3);background:transparent}
+.card-close:hover,.card-close:focus-visible{background:var(--paper-2);color:var(--ink)}
+.shell .answer-card .decision-scroll,.shell .answer-card .conversation-panel{padding-right:40px}
+.shell .composer-wrap,.shell .composer-only .composer-wrap{padding:0;border:0;background:transparent}
+.shell #composer,.shell .composer-only #composer{background:color-mix(in srgb,var(--paper) 88%,transparent);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border:1px solid color-mix(in srgb,var(--rule-2) 85%,transparent);border-radius:24px;box-shadow:0 1px 2px rgba(29,42,35,.06),0 10px 28px rgba(29,42,35,.12);padding:5px 6px 5px 12px;transition:box-shadow .2s,border-color .2s}
+.shell #composer:focus-within{border-color:color-mix(in srgb,var(--accent) 45%,var(--rule-2));box-shadow:0 1px 2px rgba(29,42,35,.06),0 10px 28px rgba(29,42,35,.12),0 0 0 4px color-mix(in srgb,var(--accent) 10%,transparent)}
+.composer-meta{padding:5px 12px 0}
+#request-status:not(:empty){background:color-mix(in srgb,var(--paper) 92%,transparent);border-radius:999px;padding:2px 10px;color:var(--ink-2)}
+.shell #work-status,.shell #check-progress{width:fit-content;max-width:100%;background:color-mix(in srgb,var(--paper) 92%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--rule);border-radius:999px;padding:5px 12px;margin:0 0 6px 6px}
+#toast{top:68px;bottom:auto;display:flex;gap:14px;align-items:center;border-radius:999px;padding:10px 18px;background:var(--ink);color:var(--paper);box-shadow:var(--float)}
+#toast button{color:inherit;text-decoration:underline;text-underline-offset:3px;padding:0;min-height:0;background:none}
+
+/* A settings change previews like a calendar change and waits for a yes. */
+.settings-proposal{padding:6px 44px 14px 18px;display:flex;flex-direction:column;gap:2px}
+.settings-title{font-family:var(--display);font-size:18px;font-weight:600;letter-spacing:-.01em;margin-bottom:6px}
+.settings-step{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13.5px;padding:7px 0;border-top:1px solid var(--rule)}
+.settings-step s{color:var(--ink-3)}
+.settings-swatches{display:flex;align-items:center;gap:6px;color:var(--ink-3)}
+.settings-swatches i{width:18px;height:18px;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)}
+.settings-swatches code{font-size:12px;color:var(--ink-2)}
+.settings-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.settings-actions .primary{border-radius:999px;padding:8px 18px}
+.settings-actions small{color:var(--ink-3)}
+
+/* Marker colors are settings too. */
+.event.has-decision:after,.legend-dot.decision{background:var(--marker-decision)}
+.event.proposed{outline:2px dashed var(--marker-proposed)}
+.legend-dot.proposed{border-color:var(--marker-proposed)}
+.event.pending{outline:2px dotted var(--marker-pending);outline-offset:-2px}
+.legend-dot.pending{border-color:var(--marker-pending)}

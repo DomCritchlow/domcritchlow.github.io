@@ -36,7 +36,7 @@ export function restoreScenario(state,s){Object.assign(state,clone(s));}
 export function checkpoint(state){state.undo.push(scenario(state));state.undo=state.undo.slice(-30);state.redo=[];}
 export function projectedEvents(events,state){return [...events,...state.created].map(e=>{
  const c=state.edits[e.ref];if(!c||unchangedTime(e,c))return {...e};
- return {...e,...(c.kind==='move'||c.kind==='resize'?{start:c.start,end:c.end}:{}),previewKind:c.kind,previewDeclined:['decline','remove'].includes(c.kind),previewAccepted:c.kind==='accept',previewTentative:c.kind==='tentative',pending:['move','resize'].includes(c.kind)&&!canEdit(e),original:e};
+ return {...e,...(c.kind==='move'||c.kind==='resize'?{start:c.start,end:c.end}:{}),previewKind:c.kind,previewDeclined:['decline','remove','cancel'].includes(c.kind),previewAccepted:c.kind==='accept',previewTentative:c.kind==='tentative',pending:['move','resize'].includes(c.kind)&&!canEdit(e),original:e};
 });}
 export function blockingEvents(events,state){
  const projected=projectedEvents(events,state).filter(e=>!e.transparent&&(e.response!=='declined'||e.previewAccepted||e.previewTentative)&&!e.previewDeclined);
@@ -83,7 +83,7 @@ export function queryEvents(events,predicates){
 function requireIds(ids,events){if(!ids.length)throw Error('Select the events you mean first.');if(ids.some(id=>!events.some(e=>e.ref===id)))throw Error('An event in that request is no longer available.');}
 export function runOperations(original,operations,events,options={}){
  const state=clone(original);ensureView(state);const all=[...events,...state.created];
- if(!Array.isArray(operations)||operations.length>12)throw Error('That instruction is too large.');
+ if(!Array.isArray(operations)||operations.length>24)throw Error('That instruction is too large.');
  const mutable=operations.some(o=>['edit','create','draft'].includes(o.op)||o.op==='clear'&&o.mode==='scenario');
  if(mutable)checkpoint(state);
  for(const op of operations){
@@ -112,12 +112,17 @@ export function runOperations(original,operations,events,options={}){
   }else if(op.op==='view'){
    navigateView(state,op);state.guided=false;
   }else if(op.op==='edit'){
-   requireIds(ids,all);if(!['decline','accept','tentative','move','resize','remove','restore'].includes(op.action))throw Error('Unknown calendar change.');
+   requireIds(ids,all);if(!['decline','accept','tentative','move','resize','remove','cancel','restore'].includes(op.action))throw Error('Unknown calendar change.');
    for(const id of ids){const source=all.find(e=>e.ref===id),current=projectedEvents(all.filter(e=>!e.created),{...state,created:state.created}).find(e=>e.ref===id)||source;
-    if(source.allDay)throw Error('All-day changes need a separate review. Select timed events for this experiment.');
+    if(source.allDay&&['move','resize'].includes(op.action))throw Error('All-day events cannot be moved here yet.');
     if(op.action==='restore'){delete state.edits[id];continue;}
-    if(op.action==='remove'&&(!source.organizerSelf||source.attendees?.some(p=>!p.self)))throw Error('Only your own solo holds can be removed.');
+    const guests=source.attendees?.some(p=>!p.self&&!p.resource);
+    if(op.action==='remove'&&source.organizerSelf&&guests)throw Error('This meeting has guests. Cancel it for everyone instead.');
+    if(op.action==='cancel'&&!(source.organizerSelf&&guests))throw Error('Only meetings you organize with guests can be cancelled for everyone.');
+    if(source.created&&op.action==='remove'){state.created=state.created.filter(e=>e.ref!==id);delete state.edits[id];continue;}
     const change={kind:op.action,fromDecision:options.decisionId||null,stepId:op.stepId,after:op.after||[]};
+    if(op.note&&['decline','accept','tentative'].includes(op.action))change.note=String(op.note).slice(0,500);
+    if(op.scope==='series'&&source.seriesId&&!['move','resize'].includes(op.action))change.scope='series';
     if(['move','resize'].includes(op.action)){
      if(op.deltaDays!==undefined&&(!Number.isInteger(op.deltaDays)||Math.abs(op.deltaDays)>366))throw Error('Use a whole number of days within one year.');
      let start=current.start;
@@ -132,7 +137,9 @@ export function runOperations(original,operations,events,options={}){
   }else if(op.op==='create'){
    const duration=op.minutes||30;if(!Number.isInteger(duration)||duration<5||duration>1440)throw Error('Use a duration between 5 minutes and 24 hours.');
    const start=localISO(op.date,op.time),ref='new-'+Math.random().toString(36).slice(2,10);
-   const event={ref,id:ref,title:(op.title||'Focus').slice(0,180),start,end:new Date(Date.parse(start)+duration*60000).toISOString(),allDay:false,transparent:false,organizerSelf:true,organizer:'You',peopleCount:1,audience:'solo',format:'solo',created:true,fromDecision:options.decisionId||null,response:'accepted',attendees:[]};
+   const guests=[...new Set((op.attendees||[]).filter(a=>typeof a==='string'&&a.includes('@')).map(a=>a.trim().toLowerCase()))].slice(0,50);
+   const eventType=['focusTime','outOfOffice'].includes(op.eventType)&&!guests.length?op.eventType:'default';
+   const event={ref,id:ref,title:(op.title||(eventType==='outOfOffice'?'Out of office':'Focus')).slice(0,180),start,end:new Date(Date.parse(start)+duration*60000).toISOString(),allDay:false,transparent:false,organizerSelf:true,organizer:'You',peopleCount:1+guests.length,audience:guests.length?'unknown':'solo',format:guests.length?'meeting':'solo',created:true,fromDecision:options.decisionId||null,response:'accepted',attendees:guests.map(email=>({email,responseStatus:'needsAction'})),type:eventType,meet:!!op.meet&&guests.length>0,description:typeof op.description==='string'?op.description.slice(0,4000):''};
    event.stepId=op.stepId;event.after=op.after||[];state.created.push(event);all.push(event);state.selected=[ref];state.source=false;
   }else if(op.op==='draft'){
    if(['remove','update'].includes(op.action)){

@@ -1,0 +1,75 @@
+/* One place for answers, proposals and bulk actions, never on top of the calendar.
+   Desktop: a docked column beside the calendar. Phone: a sheet along the bottom,
+   with the calendar's scroll area ending above it. Selection actions live in that same place. */
+
+.shell .selection-bar{position:static;transform:none;left:auto;bottom:auto;top:auto;max-width:none;width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  background:var(--paper);color:var(--ink);border:1px solid var(--rule-2);border-radius:16px;box-shadow:none;padding:10px;margin:0 0 8px}
+.shell .selection-bar[hidden]{display:none}
+.shell .selection-bar .selection-count{font-weight:600;font-size:13px;padding:0 4px;flex:1 0 100%}
+.shell .selection-bar .selection-note{font-size:12px;color:var(--ink-3);flex:1 0 100%;padding:0 4px}
+.shell .selection-bar button{border:1px solid var(--rule-2);border-radius:999px;background:var(--paper-2,#f3f5ef);color:var(--ink);font-size:12px;min-height:32px;padding:6px 12px}
+.shell .selection-bar button:hover{background:var(--paper)}
+.shell .selection-bar button.danger{color:#8a2f1d}
+.shell .selection-bar button[data-action="clear-selection"]{margin-left:auto;background:transparent;border-color:transparent}
+.shell .selection-bar .note-row{display:flex;gap:6px;flex:1 0 100%}
+.shell .selection-bar .note-row input{flex:1;min-width:0;border:1px solid var(--rule-2);border-radius:999px;padding:6px 12px;font:inherit;font-size:12px;background:var(--paper)}
+
+/* Per item progress for a confirmed bulk action. */
+.step-progress{display:flex;flex-direction:column;gap:4px;margin:8px 0 0;padding:0;list-style:none;font-size:12px}
+.step-progress li{display:flex;gap:8px;align-items:baseline}
+.step-progress li i{font-style:normal;width:14px;flex:0 0 14px;text-align:center}
+.step-progress li.pending i,.step-progress li.unknown i{color:var(--ink-3)}
+.step-progress li.success i,.step-progress li.awaiting_reply i{color:#2f5a45}
+.step-progress li.failed i,.step-progress li.skipped i{color:#8a2f1d}
+.step-progress li small{color:var(--ink-3)}
+
+.answer-text{white-space:pre-line}
+
+@media (min-width:761px){
+  .shell .workspace{display:flex;overflow:hidden}
+  .shell .calendar-main{flex:1 1 auto;min-width:0}
+  #calendar{padding-bottom:0}
+  .shell .calendar-scroll{margin-bottom:0}
+  .shell .decision-panel,.shell.overview .decision-panel,.shell .decision-panel.composer-only{
+    position:relative;left:auto;top:auto;bottom:auto;z-index:2;flex:0 0 clamp(340px,27vw,420px);width:clamp(340px,27vw,420px);max-width:none;
+    height:auto;max-height:none;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-end;gap:0;
+    padding:12px 12px 14px;border-left:1px solid var(--rule-2);border-radius:0;background:color-mix(in srgb,var(--paper) 70%,#eef2ea);
+    box-shadow:none;overflow:hidden;transition:none}
+  .shell .decision-panel[hidden]{display:none}
+  .shell .answer-card{flex:0 1 auto;min-height:0;box-shadow:none;margin:0 0 8px;animation:none}
+  .shell .answer-card .assistant-stage{max-height:none;flex:1 1 auto;overflow:auto}
+  .shell .composer-only .answer-card{display:none}
+  .shell .composer-wrap{flex:0 0 auto}
+  .shell .conversation-return{bottom:28px;right:20px}
+  .shell .empty-hint{flex:1 1 auto;display:flex;flex-direction:column;justify-content:flex-end;color:var(--ink-3);font-size:13px;padding:0 6px 12px;line-height:1.5}
+  .shell .decision-panel:not(.composer-only) .empty-hint{display:none}
+  .shell .decision-panel:has(.selection-bar:not([hidden])) .empty-hint{display:none}
+}
+
+@media (max-width:760px){
+  .shell .empty-hint{display:none}
+  .shell .selection-bar{margin:0 0 6px;padding:8px}
+  .shell .selection-bar .selection-count{flex:0 0 auto}
+}
+
+/* Fisheye: an opened event grows in place into its full card. Its day column widens and its time
+   span stretches to fit; neighbouring hours and days compress but stay visible around it. */
+@media (min-width:761px){
+  .shell .event.lens-host{visibility:hidden}
+  .drawer[data-kind=event].lens{position:fixed;right:auto;bottom:auto;border:1.5px solid var(--accent,#2f5a45);border-radius:12px;
+    box-shadow:0 10px 30px rgba(29,42,35,.14);overflow:auto;transition:none;animation:lens-open .22s var(--spring,ease-out) both}
+  .drawer[data-kind=event].lens.offscreen{visibility:hidden}
+  .drawer[data-kind=event].lens .drawer-head{padding:12px 14px 6px}
+  .drawer[data-kind=event].lens .drawer-body{padding:0 14px 14px}
+  .drawer[data-kind=event].lens .drawer-head h2{font-size:17px}
+  @keyframes lens-open{from{opacity:.4;transform:scale(.97)}to{opacity:1;transform:none}}
+}
+@media (prefers-reduced-motion:reduce){.drawer[data-kind=event].lens{animation:none}}
+
+/* Saved, History, Settings and the other side views open in the docked column itself, replacing
+   the conversation while they are open, instead of floating over the calendar. */
+@media (min-width:761px){
+  body .drawer:not([data-kind=event]):not([data-kind=colors]){top:var(--topbar-height,57px);right:0;bottom:0;left:auto;height:auto;max-height:none;
+    width:clamp(340px,27vw,420px);max-width:none;border-radius:0;border:0;border-left:1px solid var(--rule-2,#dce4d4);box-shadow:none;z-index:25}
+  body .drawer-shade{display:none}
+}

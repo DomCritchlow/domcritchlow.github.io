@@ -64,7 +64,7 @@ Several changes arrive together, and each one can be dropped on its own.
   <figcaption><span>The request bar, then two commands chosen with the arrow keys</span><button type="button" class="dw-replay">Replay</button></figcaption>
 </figure>
 
-The first version had about 20 buttons and labels on screen at rest; it now has the dates, one request bar, three view buttons and settings. Saved decisions, history, weekends and the rest sit behind the request bar, and a command chosen there runs without calling the model.
+The first version had about 20 buttons and labels on screen at rest; it now has the dates, one request bar, three view buttons, settings, and a rail that adds the week's hours up by category. Saved decisions, history, weekends and the rest sit behind the request bar, and a command chosen there runs without calling the model.
 
 Getting there was mostly removal, and four things were built and then cut:
 

@@ -15,7 +15,7 @@ window.Date=class extends RealDate{constructor(...args){if(args.length)super(...
 const params=new URLSearchParams(location.search),SCENE=params.get('scene'),CAPTIONS=params.get('captions')==='1';
 if(SCENE)document.documentElement.classList.add('scene');
 const realFetch=window.fetch.bind(window);
-const KEY='dayweave-demo-v1'+(SCENE?':'+SCENE:''),zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
+const KEY='dayweave-demo-v2'+(SCENE?':'+SCENE:''),zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
 if(SCENE)try{sessionStorage.removeItem(KEY);for(const k of Object.keys(localStorage))if(k.endsWith(':scene-'+SCENE))localStorage.removeItem(k);}catch{}
 const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -54,8 +54,8 @@ function freshSnapshot(){
  events.push({ref:'e900',id:'demo-900',title:'Studio week',start:monday,end:addDays(monday,5),allDay:true,transparent:true,calendarId:'primary',organizerSelf:true,canEdit:true,organizer:ME.email,response:'accepted',attendees:[],audience:'solo',peopleCount:1,format:'solo',participation:'unknown'});
  const start=addDays(monday,-70),end=addDays(monday,77);
  return {events,snapshotKey:'dayweave-demo-'+monday,calendarRevision:1,timezone:zone,defaultDate:today,range:{start:addDays(monday,-7),end:addDays(monday,28)},coverage:[{start,end}],capturedAt:new Date().toISOString(),
-  calendarSettings:{internalDomains:['example.test'],internalAddresses:[],colors:{internal:'#2878bf',external:'#cf6a25',solo:'#8753bb'}},
-  appearance:{revision:0,policy:{mode:'audience',description:'Internal and external meetings, and time on my own.',categories:[{id:'internal',label:'Internal',color:'#2878bf',definition:'Everyone else is on the team.'},{id:'external',label:'External',color:'#cf6a25',definition:'Someone outside the team is invited.'},{id:'solo',label:'Solo / focus',color:'#8753bb',definition:'Time on my own.'}]}}};
+  calendarSettings:{internalDomains:['example.test'],internalAddresses:[],colors:{internal:'#2a78d6',external:'#eb6834',solo:'#1baf7a',decision:'#c1995b',proposed:'#2f5a45',pending:'#b79a60'}},
+  appearance:{revision:1,canUndo:false,policy:purposePolicy('Color by the purpose of my time. Leave unclear events neutral.')}};
 }
 let db;
 try{db=JSON.parse(sessionStorage.getItem(KEY)||'null');}catch{db=null;}
@@ -67,6 +67,73 @@ const status=()=>({hosted:false,demo:true,...(SCENE?{user:{id:'scene-'+SCENE,ema
 const list=()=>Object.values(db.decisions).sort((a,b)=>b.updated-a.updated);
 const calendarState=()=>({snapshot:db.snapshot,decisions:list(),sync:status().sync});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ---------- categories: a scripted stand-in for the model that sorts meetings ---------- */
+function purposePolicy(description){return {mode:'semantic',description,categories:[
+ {id:'focus',label:'Focus & preparation',color:'#1baf7a',definition:'Concentrated individual work, reading, writing and preparation.'},
+ {id:'together',label:'Working together',color:'#2a78d6',definition:'Sessions to make, review, decide, solve or develop something together.'},
+ {id:'coordination',label:'Updates & coordination',color:'#eb6834',definition:'Sharing status, aligning people, checking in or arranging work.'},
+ {id:'life',label:'Life & logistics',color:'#b8328a',definition:'Breaks, personal appointments, travel and practical commitments.'}]};}
+function peoplePolicy(description){return {mode:'semantic',description,categories:[
+ {id:'team',label:'My team',color:'#2a78d6',definition:'Everyone invited is on my team.'},
+ {id:'outside',label:'Outside the company',color:'#eb6834',definition:'At least one guest is from another company.'},
+ {id:'own',label:'On my own',color:'#1baf7a',definition:'Time with nobody else invited.'}]};}
+const HINT={focus:/focus|deep|solo|my own|prep|writing|research/i,together:/together|collab|review|client|customer|project|making/i,coordination:/coord|update|status|sync|check-in|admin/i,life:/life|personal|break|lunch|logistic/i};
+const WHY={focus:'Time on your own with nobody else invited.',together:'A session with other people to make or decide something.',coordination:'A recurring update or check-in.',life:'A break in the day.'};
+const bucketOf=e=>/lunch|break|dentist|gym/i.test(e.title)?'life':/standup|sync|check-in|office hours|all hands|update/i.test(e.title)?'coordination':e.audience==='solo'?'focus':'together';
+const forBucket=(policy,bucket)=>policy.categories.find(c=>c.id===bucket)||policy.categories.find(c=>HINT[bucket].test(c.label+' '+c.definition));
+function sortEvent(policy,e){
+ if(e.allDay)return null;
+ for(const rule of policy.rules||[]){
+  const text=rule.toLowerCase();if(!text.includes(e.title.toLowerCase()))continue;
+  const rest=text.replace(e.title.toLowerCase(),'');
+  const named=policy.categories.find(c=>rest.includes(c.label.toLowerCase()))||policy.categories.find(c=>c.label.toLowerCase().split(/[^a-z0-9:]+/).some(w=>w.length>3&&rest.includes(w)));
+  const hinted=named||Object.keys(HINT).map(b=>HINT[b].test(rest)&&forBucket(policy,b)).find(Boolean);
+  if(hinted)return [hinted.id,'Your rule: '+rule];
+ }
+ const ids=new Set(policy.categories.map(c=>c.id));
+ if(ids.has('team')||ids.has('outside')||ids.has('own')){const id={internal:'team',external:'outside',solo:'own'}[e.audience];return ids.has(id)?[id,'Sorted by who is invited.']:null;}
+ const bucket=bucketOf(e),category=forBucket(policy,bucket);return category?[category.id,WHY[bucket]]:null;
+}
+const colorKey=e=>(e.calendarId||'primary')+':'+e.id;
+// Every event carries its category the way the real server attaches it; here the sorter is local, so it runs on each request.
+function paintCategories(){
+ const policy=db.snapshot.appearance.policy,ids=new Set(policy.categories.map(c=>c.id));db.overrides=db.overrides||{};
+ for(const e of db.snapshot.events){
+  const chosen=e.ref in db.overrides?db.overrides[e.ref]:e.seriesId&&('series:'+e.seriesId) in db.overrides?db.overrides['series:'+e.seriesId]:undefined;
+  if(chosen!==undefined&&(chosen===null||ids.has(chosen))){e.displayCategory={categoryId:chosen,reason:'Set by you for this event.',state:'corrected'};continue;}
+  if(policy.mode==='audience'){delete e.displayCategory;continue;}
+  const sorted=sortEvent(policy,e);e.displayCategory=sorted?{categoryId:sorted[0],reason:sorted[1],state:'classified'}:{categoryId:null,reason:'Not enough in the invitation to place it.',state:'unresolved'};
+ }
+}
+function colorPreview(body){
+ let policy=structuredClone(body.policy);
+ if(body.instruction)policy.rules=[...(policy.rules||[]),String(body.instruction).slice(0,200)].slice(0,20);
+ else if(body.redesign)policy=/\bwho\b|people|invited|outside|my team/i.test(policy.description)?peoplePolicy(policy.description):purposePolicy(policy.description);
+ const days=new Set(body.days||[]),events=db.snapshot.events.filter(e=>days.has(e.allDay?e.start.slice(0,10):localDay(e.start))),assignments={};
+ for(const e of events){const sorted=sortEvent(policy,e);assignments[colorKey(e)]={ref:e.ref,categoryId:sorted?sorted[0]:null,reason:sorted?sorted[1]:'Not enough in the invitation to place it.',state:sorted?'classified':'unresolved',fingerprint:'demo',policyHash:'demo'};}
+ return {baseRevision:body.revision,draftToken:body.draftToken,days:[...days],total:events.length,sampled:events.length,policy,assignments,metrics:{modelCalls:0},createdAt:Date.now()/1000};
+}
+function changeColors(body){
+ const appearance=db.snapshot.appearance,action=body.action||'apply';db.overrides=db.overrides||{};
+ if(body.revision!==appearance.revision)return json({error:'Your saved colors changed. Reopen the editor to use the latest version.'},409);
+ const before={policy:structuredClone(appearance.policy),overrides:structuredClone(db.overrides)};
+ if(action==='undo'){
+  if(!db.previousColors)return json({error:'There is no color change to undo.'},422);
+  appearance.policy=db.previousColors.policy;db.overrides=db.previousColors.overrides;db.previousColors=null;
+ }else if(action==='correct'){
+  const e=byRef(body.ref);if(!e)return json({error:'That event is no longer available.'},422);
+  const key=body.scope==='series'&&e.seriesId?'series:'+e.seriesId:e.ref;
+  if(body.reset)delete db.overrides[key];else db.overrides[key]=body.categoryId??null;
+  db.previousColors=before;
+ }else if(action==='apply'){
+  appearance.policy=structuredClone(body.policy);
+  for(const c of body.corrections||[])db.overrides[c.ref]=c.categoryId??null;
+  if(appearance.policy.mode==='audience')for(const c of appearance.policy.categories)db.snapshot.calendarSettings.colors[c.id]=c.color;
+  db.previousColors=before;
+ }
+ appearance.revision++;appearance.canUndo=!!db.previousColors;paintCategories();save();return json(calendarState());
+}
 function startJob(kind,work){
  const id='demo-job-'+(db.next++),job={id,kind,status:'running',queuedAt:Date.now()/1000,updatedAt:Date.now()/1000};jobs.set(id,job);
  const update=values=>{if(job.status==='cancelled')return;Object.assign(job,values,{updatedAt:Date.now()/1000});for(const fn of listeners.get(id)||[])fn({...job});};
@@ -184,6 +251,7 @@ function reconcile({proposal={},contributionId}){
 /* ---------- routing ---------- */
 const json=(body,code=200)=>new Response(JSON.stringify(body),{status:code,headers:{'Content-Type':'application/json'}});
 async function route(path,method,body){
+ paintCategories();
  if(method==='GET'){
   if(path==='/api/bootstrap')return json({status:status(),snapshot:db.snapshot,review:{decisions:[],annotations:[]},decisions:list()});
   if(path==='/api/status')return json(status());
@@ -211,7 +279,9 @@ async function route(path,method,body){
  if(path==='/api/sync')return json({jobId:startJob('sync',async()=>({status:'ok'}))},202);
  if(path==='/api/jobs/cancel'){const job=jobs.get(body.id);if(job&&!['complete','error'].includes(job.status))job.status='cancelled';return json(job||{status:'cancelled'});}
  if(path==='/api/memory'){if('remove' in body)db.preferences=db.preferences.filter(p=>p.id!==body.remove);else if(body.body)db.preferences.push({id:db.next++,body:String(body.body).slice(0,500)});save();return json({preferences:db.preferences});}
- if(path==='/api/calendar-settings'){const prev=db.snapshot.calendarSettings;db.snapshot.calendarSettings={...prev,...body,colors:{...prev.colors,...(body.colors||{})}};const pol=db.snapshot.appearance?.policy;if(pol?.mode==='audience')for(const c of pol.categories)if(body.colors?.[c.id])c.color=body.colors[c.id];db.snapshot.appearance.revision++;save();return json(calendarState());}
+ if(path==='/api/appearance-preview')return json({jobId:startJob('appearance',async update=>{update({partial:{phase:'colors',message:'Reading your calendar…'}});await sleep(700);return colorPreview(body);})},202);
+ if(path==='/api/appearance')return changeColors(body);
+ if(path==='/api/calendar-settings'){const prev=db.snapshot.calendarSettings;db.snapshot.calendarSettings={...prev,...body,colors:{...prev.colors,...(body.colors||{})}};const pol=db.snapshot.appearance?.policy;if(pol?.mode==='audience')for(const c of pol.categories)if(body.colors?.[c.id]&&c.color!==body.colors[c.id]){c.color=body.colors[c.id];db.snapshot.appearance.revision++;}save();return json(calendarState());}
  if(['/api/events/participation','/api/events/refresh'].includes(path))return json({...calendarState(),snapshot:db.snapshot});
  return json({error:'That part of Dayweave is not in the demo.'},422);
 }

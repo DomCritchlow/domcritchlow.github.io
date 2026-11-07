@@ -256,18 +256,8 @@ summary { cursor: pointer; }
 .thread-link { width: 100%; text-align: left; font-size: 13px; padding: 13px; line-height: 1.6; border: 1px solid #d4e1c7; margin-top: 13px; background: #f1f7e9; }.thread-link span { display: block; font-size: 11px; color: #779463; margin-top: 6px; }
 .proposal-version { padding: 12px 0 24px; border-bottom: 1px solid var(--line); }.proposal-version h3 { font-size: 17px; }.proposal-version>div { padding: 11px 0; }.proposal-version strong { font-size: 13px; display: block; font-weight: 500; }.proposal-version small { font-size: 11px; display: block; color: #7b9269; margin-top: 6px; }.proposal-version button { font-size: 12px; background: #e9f1df; margin-top: 12px; }
 .settings-section { border-bottom: 1px solid var(--line); padding: 0 0 24px; margin-bottom: 24px; }.settings-section h3 { font-size: 16px; }.settings-section p { font-size: 12px; margin: 6px 0; }.settings-links { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }.settings-links button { font-size: 13px; padding: 8px 0; }
-.calendar-colors { display: grid; gap: 12px; }
-.color-choice {display:flex;align-items:center;justify-content:space-between;gap:16px;}
-.drawer .color-choice label{margin:0;color:var(--ink);font-size:13px;}
-.color-controls{display:flex;gap:8px;align-items:center;}
-.drawer .color-controls input[type=color]{width:52px;min-width:52px;padding:3px;}
-.drawer .color-controls input[data-color-hex]{width:100px;padding:8px;font:12px ui-monospace,monospace;cursor:text;}
 .legend .legend-color{display:flex;align-items:center;gap:6px;padding:3px 0;font:inherit;border-radius:3px;}
 .legend .legend-color:hover{text-decoration:underline;text-underline-offset:3px;}
-.drawer .color-choice { margin: 0; }
-.color-choice span { display: block; margin-bottom: 7px; }
-.drawer .color-choice input { height: 42px; padding: 4px; cursor: pointer; }
-.reset-colors { font-size: 11px; color: var(--muted); padding: 8px 0; margin-top: 4px; }
 #calendar-settings-form textarea { min-height: 0; resize: vertical; font-size: 13px; line-height: 1.6; }
 #calendar-settings-form .actions { align-items: center; margin-bottom: 0; }
 #calendar-settings-status { flex: 1; min-width: 0; font-size: 12px; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }

@@ -18,7 +18,7 @@ const rangeLoads=new Map();let rangeQueue=Promise.resolve();
 let STORE='calendar-decisions-v3',PREFERENCES='calendar-settings-v4',lastCalendarPoll=0,mail=null,received=null,receivedRecords=[];
 let queueTab='open',panelOpen=true,polling=false,lastConversationId='calendar-home',entryFresh=false,pillPinned=false;
 let preferences={readAloud:false};
-const CALENDAR_DEFAULTS={internalDomains:['fractional.ai'],internalAddresses:[],colors:{internal:'#2878bf',external:'#cf6a25',solo:'#8753bb',decision:'#c1995b',proposed:'#2f5a45',pending:'#b79a60'}};
+const CALENDAR_DEFAULTS={internalDomains:['fractional.ai'],internalAddresses:[],colors:{internal:'#2a78d6',external:'#eb6834',solo:'#1baf7a',decision:'#c1995b',proposed:'#2f5a45',pending:'#b79a60'}};
 const calendarSettings=()=>{const shown=displaySnapshot(),settings=shown?.calendarSettings||CALENDAR_DEFAULTS;return shown?.appearance?.policy.mode==='audience'?{...settings,colors:Object.fromEntries(shown.appearance.policy.categories.map(c=>[c.id,c.color]))}:settings;};
 function displaySnapshot(){
  const plan=state?.settingsProposal?.plan;if(!snapshot||!plan)return snapshot;
@@ -61,7 +61,7 @@ function updateClock(){
 // When the pill grows or tucks away, the hours re-fit at once so nothing lands under it.
 const floating=floatingWorkspace($('.decision-panel'),$('.workspace'),$('#conversation-return'),{onReserve:()=>{if(snapshot&&state)renderCalendar();}});
 function confirmation(){return entryFresh?null:confirmationAnchor(current(),proposalSignature(state),snapshot.calendarRevision||0);}
-const appearance=createAppearance({api,waitJob,snapshot:()=>displaySnapshot(),days:()=>ensureView(state).mode==='month'?monthGrid(state.view.anchor):displayedDays(),render:()=>{applyCalendarColors();renderCalendar();},receive:receiveCalendar,openDrawer,closeDrawer,esc,colorPalette,toast});
+const appearance=createAppearance({api,waitJob,snapshot:()=>displaySnapshot(),days:()=>ensureView(state).mode==='month'?monthGrid(state.view.anchor):displayedDays(),render:()=>{applyCalendarColors();renderCalendar();},receive:receiveCalendar,openDrawer,closeDrawer,esc,colorPalette,toast,canvas:()=>SURFACE==='canvas'});
 // Phone focus is presentation state: it never narrows a decision's calendar context.
 const phoneLayout=matchMedia('(max-width: 760px)'),phoneFocus=new Map();
 // Two surfaces share all logic. Canvas: a command bar, one headline line over the calendar and
@@ -76,6 +76,7 @@ function placeSurface(){
  // Weekends are one step away (the day control beside the dates, or the palette), so the switch reads Day, Week, Month.
  $('[data-action="workweek"]').textContent='Week';$('[data-action="fullweek"]').hidden=true;
  $('#conversation-return').hidden=true;
+ try{$('.shell').classList.toggle('no-mix',localStorage.getItem('dayweave-rail')==='hidden');}catch{}
 }
 placeSurface();phoneLayout.addEventListener('change',placeSurface);
 let phoneRange=true,selectionMode=false,drawerReturnFocus,layoutScope,inspectionOwner,weekView=[];
@@ -192,7 +193,7 @@ function scrollCalendarToRefs(refs){
  const left=first.left<bounds.left+58||first.right>bounds.right?Math.max(0,region.scrollLeft+first.left-bounds.left-62):region.scrollLeft;
  region.scrollTo({top,left,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
-function render(){current().state=state;persist();applyCalendarColors();renderHeader();renderCalendar();renderAssistant();renderSelection();floating.schedule({avoid:true});renderHeadline();}
+function render(){current().state=state;persist();applyCalendarColors();renderHeader();renderCalendar();renderAssistant();renderSelection();floating.schedule({avoid:true});renderHeadline();appearance.rail();}
 function renderHeader(){
  $('#mail-button').hidden=!status?.hosted;
  const viewMode=ensureView(state).mode==='month'?'month':phoneLayout.matches&&!phoneRange?'day':ensureView(state).mode;
@@ -639,6 +640,7 @@ async function disposition(value,id=activeId){
 function compactState(scope){const s=scope.state,p=isConversation(scope)&&s.suggestion?s.suggestion.state:s,days=displayedDays(),view={...viewSummary(s),...(days.length===1?{mode:'day'}:{}),start:days[0],end:shiftDate(days.at(-1),1),dates:days};return {calendarRevision:snapshot.calendarRevision||0,decisionId:scope.id,days,view,visibleScope:normalizedScope(null,days),questionScope:s.questionScope,clientBuild:CLIENT_BUILD,requestId:s.requestId,viewRevision:ensureView(s).revision,gapKind:s.gapKind,selection:s.selected,highlights:s.highlighted,selectionLabel:s.selectionLabel,focusContext:focusContext(s),threadType:isConversation(scope)?'conversation':'decision',possibleChange:s.suggestion?{title:s.suggestion.title,hypothetical:true}:null,currentDecision:{id:scope.id,title:scope.title,ids:scope.refs},edits:p.edits,created:p.created,drafts:p.drafts,source:s.source,gapMinutes:s.gapMinutes,availabilityWarnings:(s.check?.steps||[]).filter(row=>row.warnings?.length).slice(0,12).map(row=>({ref:row.ref,title:row.title,warnings:row.warnings})),conversation:s.transcript.slice(-8),contextSummary:s.contextSummary||'',previousContext:s.previousContext||null,receivedContext:s.receivedContext,evidenceContexts:s.evidenceContexts||[],incomingSuggestion:s.incomingSuggestion,mailThreadIds:s.mailThreadIds||[],settings:currentSettings().map(({key,label,value})=>({key,label,value})),visibleGaps:s.gapMinutes?timeWindows(snapshot.events,visibleProposal(snapshot,s),snapshot,s.gapMinutes):[],excludedActions:actionBundle(snapshot,p).filter(a=>p.excluded?.includes(a.key))};}
 async function submit(text){
  if(!state)return;text=text.trim();if(!text)return $('#command').focus();if(state.executionRunning)return toast('This change is being applied.');
+ appearance.clearFilter();
  
  // Only plain assent, dismissal, "later" and returning to the week are handled locally; everything else goes to the model.
  const local=localIntent(text,state.days),intent=['confirm','dismiss','later','back-week','today'].includes(local?.kind)?local:null;
@@ -928,15 +930,14 @@ function savePreferences(){localStorage.setItem(PREFERENCES,JSON.stringify(prefe
 // and anything used once a month, sits behind More.
 const switchRow=(label,note,checked,attrs)=>`<label class="set-row"><span><b>${label}</b>${note?`<small>${note}</small>`:''}</span><input type="checkbox" class="set-switch" ${attrs} ${checked?'checked':''}></label>`;
 function calendarSettingsMarkup(){
- const settings=calendarSettings(),semantic=snapshot.appearance?.policy.mode==='semantic';
- const color=(key,label,value)=>`<div class="color-choice"><label for="color-${key}">${label}</label><div class="color-controls"><input id="color-${key}" name="${key}" type="color" value="${esc(value)}" aria-label="${label} color"><input id="hex-${key}" data-color-hex="${key}" aria-label="${label} hex color" value="${esc(value)}" pattern="#[0-9a-fA-F]{6}" maxlength="7" spellcheck="false" required></div></div>`;
- return `<form id="calendar-settings-form"><section class="set-group"><h3>Colors</h3>${appearance.summary()}<div class="calendar-colors" ${semantic?'hidden':''}>${[['internal','Internal'],['external','External'],['solo','Solo / focus']].map(([key,label])=>color(key,label,settings.colors[key])).join('')}</div><div class="calendar-colors marker-colors">${[['decision','Open decision'],['proposed','Proposed change'],['pending','Needs agreement']].map(([key,label])=>color(key,label,markerColors()[key])).join('')}</div><button type="button" data-action="reset-colors" class="reset-colors">Reset colors</button></section><section class="set-group"><h3>Who counts as internal</h3><label class="set-field" for="internal-domains"><span>Domains</span><textarea id="internal-domains" rows="1" spellcheck="false" autocapitalize="none" autocomplete="off" maxlength="12000" placeholder="example.com">${esc(settings.internalDomains.join(', '))}</textarea></label><label class="set-field" for="internal-addresses"><span>People</span><textarea id="internal-addresses" rows="1" spellcheck="false" autocapitalize="none" autocomplete="off" maxlength="12000" placeholder="person@example.com">${esc(settings.internalAddresses.join(', '))}</textarea></label><p class="set-note">Separate with commas. A meeting is internal when everyone else on it matches.</p></section><div class="set-save"><button type="submit" class="primary">Save</button><span id="calendar-settings-status" role="status" aria-live="polite"></span></div></form>`;
+ const settings=calendarSettings();
+ return `<form id="calendar-settings-form"><section class="set-group"><h3>Categories and colors</h3>${appearance.summary()}</section><section class="set-group"><h3>Who counts as internal</h3><label class="set-field" for="internal-domains"><span>Domains</span><textarea id="internal-domains" rows="1" spellcheck="false" autocapitalize="none" autocomplete="off" maxlength="12000" placeholder="example.com">${esc(settings.internalDomains.join(', '))}</textarea></label><label class="set-field" for="internal-addresses"><span>People</span><textarea id="internal-addresses" rows="1" spellcheck="false" autocapitalize="none" autocomplete="off" maxlength="12000" placeholder="person@example.com">${esc(settings.internalAddresses.join(', '))}</textarea></label><p class="set-note">Separate with commas. A meeting is internal when everyone else on it matches.</p></section><div class="set-save"><button type="submit" class="primary">Save</button><span id="calendar-settings-status" role="status" aria-live="polite"></span></div></form>`;
 }
 async function saveCalendarSettings(form){
  const button=form.querySelector('[type=submit]'),message=form.querySelector('[role=status]');button.disabled=true;message.textContent='Saving…';
  const entries=id=>form.querySelector('#'+id).value.split(/[\s,;]+/).filter(Boolean);
  try{
-  const data={internalDomains:entries('internal-domains'),internalAddresses:entries('internal-addresses'),colors:Object.fromEntries(['internal','external','solo','decision','proposed','pending'].map(key=>[key,form.querySelector('#hex-'+key)?.value]).filter(([,value])=>value))};
+  const data={internalDomains:entries('internal-domains'),internalAddresses:entries('internal-addresses')};
   await receiveCalendar(await api('/api/calendar-settings',data));
   message.textContent='Saved';
  }catch(error){message.textContent=error.message;}
@@ -1031,7 +1032,6 @@ const actions={
  mail:()=>mail.open(),
  'received-context':()=>received.queue(),
  'sign-out':async()=>{await api('/auth/logout',{});localStorage.removeItem(STORE);localStorage.removeItem(PREFERENCES);location.assign('/login');},
- 'reset-colors':()=>{for(const [key,color] of Object.entries(CALENDAR_DEFAULTS.colors)){const input=$('#color-'+key);if(input)input.value=color;const hex=$('#hex-'+key);if(hex)hex.value=color;}if($('#calendar-settings-status'))$('#calendar-settings-status').textContent='Save to apply';},
  month:()=>setCalendarView('month'),'collapse-month':()=>backView(),'view-back':()=>backView(),day:()=>setCalendarView('day'),workweek:()=>setCalendarView('workweek'),fullweek:()=>setCalendarView('fullweek'),
  'back-week':()=>backView(),'today':()=>showWeek(weekDates(dayKey({start:new Date().toISOString()}))),
  'view-trace':()=>openDrawer('View diagnostics',`<p>${CLIENT_BUILD} · Latest 50 transitions in this conversation</p><pre class="view-trace">${esc(JSON.stringify(state.interactionTrace||[],null,2))}</pre>`,'view-trace'),
@@ -1153,9 +1153,14 @@ function paletteCatalog(){
   threadOpen()&&{label:'New topic',keywords:'conversation fresh',search:true,run:newConversation},
   {label:selectionMode?'Stop selecting':'Select events',keywords:'multiple bulk',search:!selectionMode,run:actions['toggle-selection-mode']},
   status?.testModel?.available&&{label:usingTest()?'Use the default model':`Use ${testLabel()}`,keywords:'model switch',run:()=>setModel(usingTest()?'default':'test')},
-  status?.hosted&&mail&&{label:'Mail',search:true,run:()=>mail.open()},{label:'Settings',keywords:'preferences colors connection',run:showSettings}].filter(Boolean).map(c=>({kind:'command',group:'Open',...c}));
+  {label:'Categories and colors',keywords:'kinds color code sort rules legend',run:()=>appearance.open()},
+  SURFACE==='canvas'&&{label:railHidden()?'Show hours by category':'Hide hours by category',keywords:'rail side panel mix legend',search:!railHidden(),run:toggleRail},
+  status?.hosted&&mail&&{label:'Mail',search:true,run:()=>mail.open()},{label:'Settings',keywords:'preferences connection',run:showSettings}].filter(Boolean).map(c=>({kind:'command',group:'Open',...c}));
  return [...asks,...recent,...go,...open];
 }
+// The rail can be put away; the choice is remembered on this device.
+function railHidden(){return $('.shell').classList.contains('no-mix');}
+function toggleRail(){const hide=!railHidden();if(hide)appearance.clearFilter();$('.shell').classList.toggle('no-mix',hide);try{localStorage.setItem('dayweave-rail',hide?'hidden':'shown');}catch{}render();}
 function renderPalette(){
  const el=$('#palette');if(!el||!state||!snapshot)return;
  const query=$('#command').value.trim().toLowerCase(),all=paletteCatalog();
@@ -1223,8 +1228,6 @@ $('#command').onkeydown=e=>{
 document.addEventListener('input',e=>{
  if(e.target.closest('#settings-live-status'))$('#settings-live-status').dataset.dirty='true';
  const form=e.target.closest('#calendar-settings-form');if(!form)return;
- if(e.target.type==='color'){form.querySelector('#hex-'+e.target.name).value=e.target.value;}
- if(e.target.dataset.colorHex&&/^#[0-9a-f]{6}$/i.test(e.target.value))form.querySelector('#color-'+e.target.dataset.colorHex).value=e.target.value;
  form.querySelector('[role=status]').textContent='Unsaved changes';
 });
 document.addEventListener('change',async e=>{if(e.target.dataset.setting){preferences[e.target.dataset.setting]=e.target.checked;savePreferences();if(!reading)window.speechSynthesis?.cancel();return;}if(e.target.id==='participation'){try{const r=await api('/api/events/participation',{ref:e.target.dataset.ref,value:e.target.value});await receiveCalendar(r);render();eventPanel('options');}catch(error){toast(error.message);}return;}if(!e.target.dataset.step)return;if(!setStepIncluded(e.target.dataset.step,e.target.checked))e.target.checked=false;});
@@ -1262,6 +1265,8 @@ document.addEventListener('keydown',e=>{
  }
  if(!state)return;
  if(e.key==='Escape'&&reviewIndex!==null){e.preventDefault();return actions['review-done']();}
+ // A category chosen in the rail is the first thing Escape lets go of.
+ if(e.key==='Escape'&&appearance.filter&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){e.preventDefault();appearance.clearFilter();return;}
  if(e.key==='Escape'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){e.preventDefault();if(threadOpen()&&(!state.view.history.length||state.result||workStatus(current()).kind==='error'))closeThread();else actions['back-week']();return;}
  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();if(SURFACE==='canvas'||!floating.tucked){$('#command').focus();openPalette();}else openEntry();}
  if(SURFACE==='canvas'&&reviewIndex!==null&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&['j','k','ArrowRight','ArrowLeft','x'].includes(e.key)){

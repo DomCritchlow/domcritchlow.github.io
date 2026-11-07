@@ -1,7 +1,7 @@
 // Everything in Settings, described so the conversation can change it. A change is a
 // plan the user previews and confirms, like a calendar change; nothing applies on its own.
 export const MARKER_DEFAULTS={decision:'#c1995b',proposed:'#2f5a45',pending:'#b79a60'};
-const CATEGORY_DEFAULTS={internal:'#2878bf',external:'#cf6a25',solo:'#8753bb'};
+const CATEGORY_DEFAULTS={internal:'#2a78d6',external:'#eb6834',solo:'#1baf7a'};
 const LABELS={'colors.internal':'Internal meeting color','colors.external':'External meeting color','colors.solo':'Solo and focus color',
  'colors.decision':'Open decision marker','colors.proposed':'Proposed change outline','colors.pending':'Needs agreement marker',
  internalDomains:'Internal domains',internalAddresses:'Internal addresses',automaticReviews:'Automatic reviews per day',fastMode:'Fast replies (about twice the cost)',model:'Assistant model (default or test)',readAloud:'Read replies aloud','memory.add':'Remember'};

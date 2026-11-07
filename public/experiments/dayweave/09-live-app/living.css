@@ -193,22 +193,13 @@ body{background:var(--paper);-webkit-font-smoothing:antialiased}
 .drawer .set-switch:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .set-note{margin:6px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink-3)}
 .set-buttons{display:flex;flex:0 0 auto;align-items:center;gap:6px}
-.drawer .set-buttons button,.drawer .set-links button,.drawer .reset-colors,.drawer .category-edit-button,.drawer .category-settings-summary button{min-height:28px;padding:4px 11px;border:1px solid var(--rule-2);border-radius:999px;background:var(--paper);color:var(--ink-2);font-size:12px;font-weight:600;text-decoration:none}
-.drawer .set-buttons button:hover,.drawer .set-links button:hover,.drawer .reset-colors:hover,.drawer .category-settings-summary button:hover{color:var(--ink);border-color:var(--ink-3)}
+.drawer .set-buttons button,.drawer .set-links button,.drawer .category-edit-button,.drawer .category-settings-summary button{min-height:28px;padding:4px 11px;border:1px solid var(--rule-2);border-radius:999px;background:var(--paper);color:var(--ink-2);font-size:12px;font-weight:600;text-decoration:none}
+.drawer .set-buttons button:hover,.drawer .set-links button:hover,.drawer .category-settings-summary button:hover{color:var(--ink);border-color:var(--ink-3)}
 .drawer .set-buttons input[type=number]{width:58px;min-height:28px;padding:3px 7px;font-size:12.5px}
 .set-links{display:flex;flex-wrap:wrap;gap:6px;padding:3px 0 4px}
 .set-group .model-choice{flex:0 0 auto}
 .set-group .model-choice button{padding:5px 12px;min-height:28px;font-size:12.5px;white-space:nowrap}
 /* Colors: three across, a swatch with its hex beside it. */
-.drawer .calendar-colors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 10px;margin:6px 0 0}
-.drawer .calendar-colors[hidden]{display:none}
-.drawer .marker-colors{margin-top:11px}
-.drawer .color-choice{display:block}
-.drawer .color-choice label{display:block;margin:0 0 3px;font-size:11.5px;font-weight:500;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.drawer .color-controls{display:flex;align-items:center;gap:5px}
-.drawer .color-controls input[type=color]{flex:0 0 28px;width:28px;min-width:28px;height:28px;min-height:28px;padding:2px;border-radius:8px}
-.drawer .color-controls input[data-color-hex]{flex:1 1 auto;width:100%;min-width:0;min-height:28px;padding:4px 6px;font:11px ui-monospace,SFMono-Regular,Menlo,monospace}
-.drawer .reset-colors{margin-top:11px}
 .drawer .category-settings-summary{margin:2px 0 8px}
 .drawer .category-settings-summary p{margin:0 0 6px;font-size:12px;line-height:1.45;color:var(--ink-2)}
 .drawer .category-settings-summary .category-chips{margin-bottom:8px}
@@ -226,10 +217,7 @@ body{background:var(--paper);-webkit-font-smoothing:antialiased}
 .drawer .set-group p{margin-top:0}
 .drawer .set-note{margin:5px 0 0}
 /* With the three category colors editable right below, their chips would say the same thing twice. */
-.drawer .category-settings-summary:has(+ .calendar-colors:not([hidden])) .category-chips{display:none}
 .drawer .category-settings-summary{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
 .drawer .category-settings-summary p{flex:1 1 100%;margin:0}
 .drawer .set-field textarea{min-height:32px;height:32px}
 .drawer .set-note,.drawer .category-settings-summary p{font-size:11.5px;line-height:1.5;color:var(--ink-3)}
-.drawer .color-controls input[data-color-hex]{height:28px;border-radius:8px}
-.drawer .color-controls input[type=color]{border-radius:8px}

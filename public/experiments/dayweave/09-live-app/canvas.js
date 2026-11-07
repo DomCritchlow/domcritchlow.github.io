@@ -41,12 +41,17 @@ export function clearIdleFocus(scope){
  return changed;
 }
 
-export function timeScale(from,to,focus=[],base=68){
+// A lens {start,end,pixels} gives one time span (an opened event) exactly that much room,
+// so the event can show its whole card in place while the hours around it compress.
+export function timeScale(from,to,focus=[],base=68,lens=null){
  const bands=[];let height=0;
- for(let start=from;start<to;start+=30){
-  const end=Math.min(to,start+30);
+ const cuts=[...new Set([...Array.from({length:Math.ceil((to-from)/30)},(_,i)=>from+i*30),...(lens?[lens.start,lens.end]:[])])].filter(v=>v>=from&&v<to).sort((a,b)=>a-b);
+ for(let i=0;i<cuts.length;i++){
+  const start=cuts[i],end=Math.min(to,cuts[i+1]??to);
+  if(end<=start)continue;
+  const inLens=lens&&start>=lens.start&&end<=lens.end;
   const near=focus.some(([a,b])=>start<b+30&&end>a-30);
-  const pixels=(end-start)/60*base*(focus.length?(near?1.65:.62):1);
+  const pixels=inLens?lens.pixels*(end-start)/(lens.end-lens.start):(end-start)/60*base*(lens?.5:focus.length?(near?1.65:.62):1);
   bands.push({start,end,y:height,pixels});height+=pixels;
  }
  const at=value=>{const b=bands.find(b=>value<b.end)||bands.at(-1);return b?b.y+(value-b.start)/(b.end-b.start)*b.pixels:0;};

@@ -3,7 +3,6 @@ import {ensureView,navigateView,viewFrame,viewSummary,normalizedScope,scopeDays,
 import {monthMarkup} from './month.js';
 import {timeScale,focusGeometry,localIntent,anticipateView,confirmationAnchor,sameConfirmation,clearIdleFocus,eventHasEnded,calendarSlots,expandedGapDays,calendarViewMode,eventCardPlacement} from './canvas.js';
 import {floatingWorkspace} from './floating.js';
-import {parseDraft,draftPreview,lengthLabel} from './draft.js';
 import {settingsCatalog,planSettings,undoPlan,summarize,describeValue,isColorKey,markerVariable,MARKER_DEFAULTS} from './settings_chat.js';
 import {hydrateDecision,chooseAlternative,distinctAlternatives,relatedOverlaps} from './decision_lifecycle.js';
 import {TZ,setTimezone,timezoneLabel,dayKey,minutes,timeLabel,onDay,layoutEvents} from './logic.js';
@@ -12,7 +11,7 @@ import {canEdit,canRespond,organizerLabel,permissionLabel,participationLabel,imp
 import {makeDecision,actionBundle,includedActions,adaptContext,proposalSignature,applyModelResponse,sharedConflicts,serializeDecision,visibleProposal,captureView,returnToProposal,considerSuggestion,decisionFromSuggestion,suggestionFromDecision} from './decisions.js';
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 import {decisionFeed} from './decision_feed.js';
-import {isConversation,workStatus,saveProposalVersion,restoreProposalVersion,mergeConversationTurns,applyEarlyView,rollbackEarlyView} from './threads.js';
+import {isConversation,workStatus,saveProposalVersion,restoreProposalVersion,mergeConversationTurns,applyEarlyView,rollbackEarlyView,pruneConversations} from './threads.js';
 const HOME='calendar-home',CLIENT_BUILD='elastic-categories-v3';
 const operationTrace=ops=>ops.map(o=>Object.fromEntries(['op','mode','date','days','ids','excludeIds','range'].filter(k=>o[k]!==undefined).map(k=>[k,Array.isArray(o[k])?o[k].slice(0,60):o[k]])));
 const rangeLoads=new Map();let rangeQueue=Promise.resolve();
@@ -65,6 +64,20 @@ function confirmation(){return entryFresh?null:confirmationAnchor(current(),prop
 const appearance=createAppearance({api,waitJob,snapshot:()=>displaySnapshot(),days:()=>ensureView(state).mode==='month'?monthGrid(state.view.anchor):displayedDays(),render:()=>{applyCalendarColors();renderCalendar();},receive:receiveCalendar,openDrawer,closeDrawer,esc,colorPalette,toast});
 // Phone focus is presentation state: it never narrows a decision's calendar context.
 const phoneLayout=matchMedia('(max-width: 760px)'),phoneFocus=new Map();
+// Two surfaces share all logic. Canvas: a command bar, one headline line over the calendar and
+// changes drafted on the grid. Docked: the side column. Choose with ?surface= or in Settings.
+const SURFACE=(()=>{const asked=new URLSearchParams(location.search).get('surface');try{if(asked)localStorage.setItem('dayweave-surface',asked);return (asked||localStorage.getItem('dayweave-surface'))==='docked'?'docked':'canvas';}catch{return asked==='docked'?'docked':'canvas';}})();
+function placeSurface(){
+ if(SURFACE!=='canvas')return;
+ $('.shell').classList.add('canvas');
+ const headline=$('#headline');if(!$('#headline-main')){headline.innerHTML='<div id="headline-main" class="headline-main"></div>';headline.append($('#selection-bar'));}
+ const slot=phoneLayout.matches?$('#bottom-command'):$('#topbar-command');if($('#composer').parentElement!==slot)slot.append($('#composer'));
+ if(!$('#palette'))slot.insertAdjacentHTML('beforeend','<div id="palette" class="palette" role="listbox" aria-label="Suggestions and commands" hidden></div>');else slot.append($('#palette'));
+ // Weekends are one step away (the day control beside the dates, or the palette), so the switch reads Day, Week, Month.
+ $('[data-action="workweek"]').textContent='Week';$('[data-action="fullweek"]').hidden=true;
+ $('#conversation-return').hidden=true;
+}
+placeSurface();phoneLayout.addEventListener('change',placeSurface);
 let phoneRange=true,selectionMode=false,drawerReturnFocus,layoutScope,inspectionOwner,weekView=[];
 function focusedDate(){
  const key=state.days.join(','),saved=phoneFocus.get(activeId);
@@ -78,7 +91,7 @@ function displayedDays(){const v=ensureView(state);return v.mode==='month'?state
 function chooseDay(date,reveal=true){
  const restoreFocus=$('#week-strip').contains(document.activeElement);phoneRange=false;
  if(!state.days.includes(date))apply([{op:'view',days:[date]}]);
- else{phoneFocus.set(activeId,{key:state.days.join(','),date});renderHeader();renderCalendar();}
+ else{phoneFocus.set(activeId,{key:state.days.join(','),date});state.viewChangedSinceRequest ||= reveal;renderHeader();renderCalendar();}
  if(reveal){const refs=[...snapshot.events,...currentEvents()].filter(e=>onDay(e,date)&&(state.edits[e.ref]||e.created)).map(e=>e.ref);scrollCalendarToRefs(refs);}
  if(restoreFocus)$(`[data-focus-day="${date}"]`)?.focus({preventScroll:true});
 }
@@ -90,7 +103,7 @@ function setCalendarView(mode){
 }
 function backView(){
  closeDrawer();selectionMode=false;
- if(phoneLayout.matches&&!phoneRange&&ensureView(state).mode!=='month'&&state.days.length>1){phoneRange=true;traceInteraction(state,'unfocus-day');render();return;}
+ if(phoneLayout.matches&&!phoneRange&&ensureView(state).mode!=='month'&&state.days.length>1){phoneRange=true;state.viewChangedSinceRequest=true;traceInteraction(state,'unfocus-day');render();return;}
  if(ensureView(state).expandedWeek){state.view.expandedWeek=null;state.view.focusDate=null;state.view.revision++;traceInteraction(state,'collapse-month');render();$('#calendar-scroll').scrollTop=0;return;}
  if(state.view.history.length){apply([{op:'view',mode:'back'}]);return;}
  showWeek(weekView);
@@ -137,16 +150,23 @@ const allEvents=()=>[...snapshot.events,...state.created],eventByRef=ref=>allEve
 const human=text=>String(text||'').replace(/\be\d+\b/g,ref=>eventByRef(ref)?.title||'this meeting');
 const activeIds=()=>state.selected.length?state.selected:state.highlighted;
 const currentEvents=()=>inOverview()||state.source||current().status==='needs_review'||['dismissed','obsolete','later','done','waiting'].includes(current().status)?snapshot.events:projectedEvents(snapshot.events,visibleProposal(snapshot,state));
-const actionName=c=>({decline:'Decline',accept:'Accept',tentative:'Mark tentative',move:'Move',resize:'Resize',remove:'Remove hold',create:'Add hold',email:'Send message',request:'Ask to move'}[c.kind]||'Change');
+const actionName=c=>{const ev=c.ref&&snapshot?.events?.find(e=>e.ref===c.ref),series=c.scope==='series'?' series':'';
+ if(c.kind==='remove')return ev&&!ev.organizerSelf?'Remove from my calendar'+series:'Delete hold'+series;
+ if(c.kind==='create')return c.eventType==='focusTime'?'Add focus time':c.eventType==='outOfOffice'?'Add out of office':c.attendees?.length?'Invite':'Add hold';
+ return ({decline:'Decline'+series,accept:'Accept'+series,tentative:'Mark tentative'+series,move:'Move',resize:'Resize',cancel:'Cancel for everyone'+series,email:'Send message',request:'Ask to move'}[c.kind]||'Change');};
 async function api(path,data){const res=await fetch(path,{method:data?'POST':'GET',headers:data?{'Content-Type':'application/json','X-Calendar-Session':status?.csrf||''}:undefined,body:data?JSON.stringify(data):undefined});const result=await res.json();if(res.status===401&&result.login){location.assign(result.login);throw Error('Sign in to continue.');}if(status?.user?.id&&res.headers.get('X-Calendar-Account')&&res.headers.get('X-Calendar-Account')!==status.user.id){location.reload();throw Error('Account changed. Reloading.');}if(!res.ok)throw Error(result.error||'The request could not finish.');return result;}
 async function waitJob(id,onUpdate){
  const result=job=>{onUpdate?.(job);if(job.status==='complete')return job.result;if(job.status==='cancelled')throw Error('Stopped');if(job.status==='error')throw Error(job.error);return undefined;};
  return new Promise((resolve,reject)=>{
-  const stream=new EventSource('/api/jobs/'+encodeURIComponent(id)+'/stream');let finished=false;
-  const end=(error,value)=>{if(finished)return;finished=true;clearTimeout(timer);stream.close();error?reject(error):resolve(value);};
+  let finished=false,failures=0,stream=null;
+  const end=(error,value)=>{if(finished)return;finished=true;clearTimeout(timer);stream?.close();error?reject(error):resolve(value);};
   const timer=setTimeout(()=>end(Error('The request is taking too long. It is saved; stop or retry.')),600000);
-  stream.onmessage=e=>{try{const value=result(JSON.parse(e.data));if(value!==undefined)end(null,value);}catch(error){end(error);}};
-  stream.onerror=()=>{stream.close();(async()=>{while(!finished){try{const value=result(await api('/api/jobs/'+id));if(value!==undefined)return end(null,value);}catch(error){if(!/fetch|network/i.test(error.message))return end(error);}await new Promise(r=>setTimeout(r,1000));}})();};
+  const poll=async()=>{while(!finished){try{const value=result(await api('/api/jobs/'+id));if(value!==undefined)return end(null,value);}catch(error){if(!/fetch|network/i.test(error.message))return end(error);}await new Promise(r=>setTimeout(r,1000));}};
+  // The stream is where hosted chat turns actually run, so reconnect it rather than switching to polling.
+  const open=()=>{if(finished)return;stream=new EventSource('/api/jobs/'+encodeURIComponent(id)+'/stream');
+   stream.onmessage=e=>{failures=0;try{const value=result(JSON.parse(e.data));if(value!==undefined)end(null,value);}catch(error){end(error);}};
+   stream.onerror=()=>{stream.close();if(finished)return;failures++;if(failures<=5)setTimeout(open,Math.min(4000,400*failures));else poll();};};
+  open();
  });
 }
 
@@ -172,16 +192,18 @@ function scrollCalendarToRefs(refs){
  const left=first.left<bounds.left+58||first.right>bounds.right?Math.max(0,region.scrollLeft+first.left-bounds.left-62):region.scrollLeft;
  region.scrollTo({top,left,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
-function render(){current().state=state;persist();applyCalendarColors();renderHeader();renderCalendar();renderAssistant();renderSelection();floating.schedule({avoid:true});}
+function render(){current().state=state;persist();applyCalendarColors();renderHeader();renderCalendar();renderAssistant();renderSelection();floating.schedule({avoid:true});renderHeadline();}
 function renderHeader(){
  $('#mail-button').hidden=!status?.hosted;
  const viewMode=ensureView(state).mode==='month'?'month':phoneLayout.matches&&!phoneRange?'day':ensureView(state).mode;
  $('#phone-view').hidden=!phoneLayout.matches;$('#phone-view').value=viewMode;
  if(layoutScope!==activeId){$('#proposal-details').open=false;layoutScope=activeId;}
- const nextDay=shiftDate(phoneLayout.matches?focusedDate():state.days.at(-1),1);$('#include-next-day').dataset.includeDay=nextDay;$('#include-next-day').setAttribute('aria-label','Include '+dateLabel(nextDay));
+ const shownDays=displayedDays(),nextDay=shiftDate(shownDays.at(-1),1),addDay=$('#include-next-day');
+ addDay.dataset.includeDay=nextDay;addDay.textContent='＋ '+dateLabel(nextDay);addDay.setAttribute('aria-label','Show '+dateLabel(nextDay));
+ addDay.disabled=shownDays.length>=14;addDay.title=addDay.disabled?'Up to 14 days can be shown together':'Show '+dateLabel(nextDay)+' alongside these dates';
  const first=state.days[0],last=state.days.at(-1),sameMonth=first.slice(0,7)===last.slice(0,7);
  $('#date-title').textContent=viewMode==='month'?dateLabel(state.view.anchor,{month:'long',year:'numeric'}):phoneLayout.matches?dateLabel(focusedDate(),{month:'long',year:'numeric'}):state.days.length===1?dateLabel(first,{month:'long',day:'numeric'}):`${dateLabel(first,{month:'long',day:'numeric'})}–${dateLabel(last,sameMonth?{day:'numeric'}:{month:'short',day:'numeric'})}`;
- for(const action of ['day','workweek','fullweek','month']){const active=action===viewMode;const button=$(`[data-action="${action}"]`);button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}
+ for(const action of ['day','workweek','fullweek','month']){const active=action===viewMode||(SURFACE==='canvas'&&action==='workweek'&&viewMode==='fullweek');const button=$(`[data-action="${action}"]`);button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}
  for(const [action,direction] of [['previous-week','Previous'],['next-week','Next']]){const label=`${direction} ${viewMode==='month'?'month':!phoneLayout.matches&&state.days.length===1?'day':'week'}`;$(`[data-action="${action}"]`).setAttribute('aria-label',label);$(`[data-action="${action}"]`).title=label;}
  $('[data-action="undo"]').disabled=!state.undo.length;$('[data-action="redo"]').disabled=!state.redo.length;
  const compareLabel=state.source?'Show proposal':'Show current calendar';$('#compare-button').textContent=phoneLayout.matches?(state.source?'Proposal':'Current'):compareLabel;$('#compare-button').setAttribute('aria-label',compareLabel);$('#compare-button').setAttribute('aria-pressed',String(state.source));
@@ -197,42 +219,57 @@ function renderHeader(){
  $('#compare-button').hidden=!hasProposal;
  $('[data-action="undo"]').hidden=!state.undo.length&&!state.redo.length;$('[data-action="redo"]').hidden=!state.undo.length&&!state.redo.length;
  $('#select-toggle').setAttribute('aria-pressed',String(selectionMode));
- const context=selectionMode?'Tap events to select':state.source||['dismissed','obsolete','later','done','waiting'].includes(current().status)?'Current calendar':state.responseNote?'Exploring · proposal unchanged':hasProposal?`Proposal ${state.proposalHistory?.at(-1)?.number||1} · preview`:state.gapMinutes?`${state.gapKind==='alone'?'Time alone':'Unbooked time'} · ${state.gapMinutes} min or more`:state.selectionLabel|| (phoneLayout.matches&&!phoneRange?dateLabel(focusedDate(),{weekday:'long',month:'short',day:'numeric'}):'');
+ const context=selectionMode?(phoneLayout.matches?'Tap events to add or remove':'Click events to add or remove'):state.source||['dismissed','obsolete','later','done','waiting'].includes(current().status)?'Current calendar':state.responseNote?'Exploring · proposal unchanged':hasProposal?`Proposal ${state.proposalHistory?.at(-1)?.number||1} · preview`:state.gapMinutes?`${state.gapKind==='alone'?'Time alone':'Unbooked time'} · ${state.gapMinutes} min or more`:state.selectionLabel|| (phoneLayout.matches&&!phoneRange?dateLabel(focusedDate(),{weekday:'long',month:'short',day:'numeric'}):'');
  $('#context-label').textContent=context;$('#context-label').title=context;
  $('.calendar-main').classList.toggle('has-proposal',hasProposal);$('.shell').classList.toggle('selecting',selectionMode);
- const count=decisionFeed(decisions(),receivedRecords).filter(d=>d.bucket==='open').length;$('#open-count').innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="6" width="16" height="15" rx="3"/><path d="M8 3h8M8 11h8M8 16h5"/></svg><span>Saved</span><b>${count}</b>`;$('#open-count').setAttribute('aria-label',`${count} saved suggestions and decisions`);$('#open-count').setAttribute('aria-expanded',String(drawerType==='decisions'));
+ if(SURFACE==='canvas'){
+  // The headline already says what a proposal or an answer is about and has its own way out,
+  // so this row keeps only what the headline does not offer: compare, undo, a real way back, and notices.
+  const voiced=!!headlineView();
+  if(voiced){$('#clear-focus').hidden=true;if(!previous&&!state.view.expandedWeek&&!selectionMode&&['workweek','fullweek'].includes(viewMode))$('#clear-selection').hidden=true;}
+  // "Current calendar" only means something while a proposal is being compared against it.
+  if((hasProposal&&!state.source&&!selectionMode)||(voiced&&context&&context===state.selectionLabel)||(context==='Current calendar'&&!state.source)){$('#context-label').textContent='';$('#context-label').title='';}
+  const shown=id=>!$(id).hidden;
+  $('.context-bar').classList.toggle('quiet',!$('#context-label').textContent&&!$('#coverage-note').textContent&&!shown('#compare-button')&&!shown('[data-action="undo"]')&&!shown('#clear-focus')&&!shown('#clear-selection'));
+ }
+ const count=decisionFeed(decisions(),receivedRecords).filter(d=>d.bucket==='open').length;$('#open-count').innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="6" width="16" height="15" rx="3"/><path d="M8 3h8M8 11h8M8 16h5"/></svg><span>Saved</span><b>${count}</b>`;$('#open-count').setAttribute('aria-label',`${count} saved suggestions and decisions`);$('#open-count').setAttribute('aria-expanded',String(drawerType==='decisions'));const waiting=count-(SURFACE==='canvas'&&hasProposal&&!entryFresh?1:0);$('#open-count').classList.toggle('empty',waiting<1);if(SURFACE==='canvas'&&$('#open-count b'))$('#open-count b').textContent=waiting;measureTopbar();
  $('.shell').classList.toggle('panel-hidden',!panelOpen);$('.shell').classList.toggle('overview',inOverview());
  const sync=status.sync||{},age=sync.lastSuccessAt?Math.floor((Date.now()/1000-sync.lastSuccessAt)/60):null;$('#sync-status').textContent=!sync.connected?'Snapshot':sync.error?'Sync paused':sync.running?'Syncing…':age===null?'Waiting for sync':age<1?'Synced just now':`Synced ${age}m ago`;
  $('#sync-status').classList.toggle('offline',!sync.connected||!!sync.error);
+ if($('#model-status')){$('#model-status').hidden=!usingTest();$('#model-status').textContent=testLabel();}
+ // The footer speaks up only when something needs saying: sync trouble or the test model.
+ $('.legend').classList.toggle('attention',(!!sync.connected&&!!sync.error)||usingTest());
  $('.timezone').textContent=TZ.split('/').at(-1).replaceAll('_',' ')+' · '+timezoneLabel(state.days[0]+'T12:00Z');
  renderDayPicker();
 }
+function draftKeys(){return new Map((snapshot&&state&&isOpen(current())&&!inOverview()?actionBundle(snapshot,state):[]).filter(a=>a.ref).map(a=>[a.ref,a.key]));}
 function eventClasses(e){
  const focus=state.inspected?[state.inspected]:activeIds(),classes=['event'];if(openDecisions().some(d=>decisionRefs(d).includes(e.ref)))classes.push('has-decision');if(e.audience==='solo')classes.push('solo');if(e.audience==='external')classes.push('external');
  if(eventHasEnded(e))classes.push('past');
  if(e.response==='declined'&&!e.previewAccepted&&!e.previewTentative)classes.push('source-declined');
  if(e.previewKind||e.created)classes.push('proposed');if(e.previewDeclined)classes.push('proposed-decline');if(e.pending)classes.push('pending');
- if(state.highlighted.includes(e.ref))classes.push('highlighted');if(state.selected.includes(e.ref))classes.push('selected');if(state.inspected===e.ref)classes.push('inspected');
+ if(state.highlighted.includes(e.ref))classes.push('highlighted');if(state.selected.includes(e.ref))classes.push('selected');if(state.inspected===e.ref)classes.push('inspected');if(reviewRef===e.ref)classes.push('review-focus');
  if(focus.length&&!focus.includes(e.ref)&&!e.previewKind)classes.push('dimmed');return classes;
 }
-function eventStatus(e){return e.previewKind==='remove'?'Remove hold · proposed':e.previewDeclined?'Proposed decline':e.pending?'Proposed time · needs agreement':e.previewKind==='move'?'Proposed move':e.previewKind==='resize'?'Proposed duration':e.previewAccepted?'Proposed accept':e.previewTentative?'Proposed tentative':e.created?'New hold · proposed':e.response==='declined'?'Declined':'';}
+function eventStatus(e){return e.previewKind==='remove'?(e.organizerSelf?'Delete hold · proposed':'Remove from calendar · proposed'):e.previewKind==='cancel'?'Cancel for everyone · proposed':e.previewDeclined?'Proposed decline':e.pending?'Proposed time · needs agreement':e.previewKind==='move'?'Proposed move':e.previewKind==='resize'?'Proposed duration':e.previewAccepted?'Proposed accept':e.previewTentative?'Proposed tentative':e.created?'New hold · proposed':e.response==='declined'?'Declined':'';}
 // While someone types, the calendar renders a preview copy of the state: it can widen
 // days, open hours and light up events, but nothing it changes is kept or saved.
-function renderCalendar(){const real=state;draftShown=JSON.stringify(draft?.preview||null);if(draft?.preview)state=previewState();try{drawCalendar();}finally{state=real;}if(draft?.preview?.focusDays?.length)revealDay(draft.preview.focusDays[0]);}
+function renderCalendar(){drawCalendar();}
 function revealDay(date){const region=$('#calendar-scroll'),track=$(`.day-track[data-date="${date}"]`);if(!track)return;const a=region.getBoundingClientRect(),b=track.getBoundingClientRect();if(b.left<a.left+54||b.right>a.right)region.scrollTo({left:Math.max(0,region.scrollLeft+b.left-a.left-58),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}
-function previewState(){
- const p=draft.preview,month=ensureView(state).mode==='month',extra=month?[]:p.dates.filter(d=>!state.days.includes(d));
- const days=extra.length&&state.days.length+extra.length<=14?[...state.days,...extra].sort():state.days;
- return {...state,days,highlighted:p.highlight.length?p.highlight:state.highlighted,attentionDays:[...new Set([...(state.attentionDays||[]),...p.focusDays])],draftRanges:p.ranges,draftWindows:p.windows,draftTarget:p.target,draftFocus:p.focusDays,draftDay:phoneLayout.matches&&!phoneRange?p.focusDays[0]||null:null};
-}
+let headGuess=0,headRedraw=false;
+// The view switch sits a fixed gap left of whatever is in the corner, so the request bar never shifts.
+function measureTopbar(){if(SURFACE==='canvas'&&!phoneLayout.matches)$('.topbar').style.setProperty('--actions-width',$('.topbar-actions').offsetWidth+'px');}
 function drawCalendar(){
  const oldRects=new Map([...document.querySelectorAll('.event[data-ref]')].map(el=>[el.dataset.ref,el.getBoundingClientRect()]));
  const view=ensureView(state);calendarScale=null;
  $('#calendar').innerHTML=view.mode==='month'?monthMarkup({snapshot,state,events:currentEvents(),esc,dateLabel,eventClasses,eventStatus,timeline:timelineMarkup,phone:phoneLayout.matches,windows:[...(state.gapMinutes?timeWindows(snapshot.events,visibleProposal(snapshot,state),snapshot,state.gapMinutes):[]),...(state.draftWindows||[])],focusDates:state.draftFocus||[],loading:[...rangeLoads.values()].some(x=>x.status==='loading')}):timelineMarkup(displayedDays());
+ // Set the final palette before layout reads can start a transition from default colors.
+ appearance.paint();
+ const head=view.mode==='month'?0:$('#calendar .calendar-head')?.offsetHeight||0;
+ if(head&&Math.abs(head-headGuess)>6&&!headRedraw){headRedraw=true;try{drawCalendar();}finally{headRedraw=false;}return;}
  updateClock();
  const overflows=$('#calendar-scroll').scrollWidth>$('#calendar-scroll').clientWidth+1;$('.calendar-main').classList.toggle('wide-range',overflows);$('#range-hint').hidden=!overflows;
  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)for(const el of document.querySelectorAll('.event[data-ref]')){const before=oldRects.get(el.dataset.ref),after=el.getBoundingClientRect();if(el.dataset.ref!==state.inspected&&before&&Math.abs(before.x-after.x)+Math.abs(before.y-after.y)>2){const dx=before.x-after.x,dy=before.y-after.y,far=Math.abs(dx)>40,lift=far?-Math.min(70,Math.abs(dx)*.12+20):0;el.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:`translate(${dx*.45}px,${dy*.45+lift}px)`,offset:.5},{transform:'translate(0,0)'}],{duration:far?560:320,easing:'cubic-bezier(.3,.7,.2,1)'});}}
- appearance.paint();
  ensureVisibleCoverage();
  if(drawerType==='event')requestAnimationFrame(positionEventCard);
 }
@@ -246,19 +283,30 @@ function timelineMarkup(days){
  const geometry=focusGeometry([...snapshot.events,...events],state.inspected?{...focusState,selected:[state.inspected]}:focusState,days);
  // When something is in focus, the whole working day should fit on screen with the focus
  // expanded, so the hours shrink before anything important scrolls out of view.
- const available=$('#calendar-scroll').clientHeight-($('#calendar .calendar-head')?.offsetHeight||116);
+ headGuess=$('#calendar .calendar-head')?.offsetHeight||116;
+ const available=$('#calendar-scroll').clientHeight-headGuess;
  let hour=phoneLayout.matches?76:Math.max(64,Math.min(88,Math.floor(available/((to-from)/60))));
  if(!phoneLayout.matches&&geometry.times.length)hour=Math.max(40,Math.min(hour,Math.floor(available/timeScale(from,to,geometry.times,1).height)));
- calendarScale=timeScale(from,to,geometry.times,hour);const height=calendarScale.height,y=iso=>calendarScale.at(minutes(iso));
- const slots=calendarSlots(days);
- const columns=slots.map(slot=>slot.kind==='gap'?'42px':`minmax(${phoneLayout.matches&&days.length>1?115:70}px,${geometry.weights[days.indexOf(slot.date)]}fr)`).join(' ');
+ // Fisheye: an opened event grows in place, in its own column and time span, to hold its whole card.
+ const lensEvent=lensTarget(timed,days),lens=lensEvent?{start:minutes(lensEvent.start),end:dayKey(lensEvent)!==dayKey({start:lensEvent.end})?1440:minutes(lensEvent.end),pixels:Math.max(lensHeight,200)}:null;
+ calendarScale=timeScale(from,to,geometry.times,hour,lens);const height=calendarScale.height,y=iso=>calendarScale.at(minutes(iso));
+ const slots=calendarSlots(days),lensDay=lensEvent?dayKey(lensEvent):null;
+ const columns=slots.map(slot=>slot.kind==='gap'?'42px':lensDay?(slot.date===lensDay?`minmax(${LENS_WIDTH}px,3.2fr)`:'minmax(56px,.7fr)'):`minmax(${phoneLayout.matches&&days.length>1?115:70}px,${geometry.weights[days.indexOf(slot.date)]}fr)`).join(' ');
  const gapLabel=slot=>slot.count===1?dateLabel(slot.start):`${slot.count} days · ${dateLabel(slot.start)} – ${dateLabel(slot.end)}`;
  const gapHeading=slot=>{const label=gapLabel(slot),action=state.days.length+slot.count<=14?'Show':'Explore';return `<div class="date-gap-heading"><button data-expand-dates="${slot.start}" aria-label="${action} ${esc(label)}; currently compressed" title="${action} ${esc(label)}"><span>${slot.count===1?dateLabel(slot.start,{weekday:'short'}):slot.count}</span><strong>${slot.count===1?dateLabel(slot.start,{day:'numeric'}):'days'}</strong><i aria-hidden="true">‹ ›</i></button></div>`;};
  const rules=Array.from({length:Math.ceil((to-from)/60)},(_,i)=>`<i class="hour-rule" style="top:${calendarScale.at(from+i*60)}px"></i>`).join('');
  const gaps=!state.source&&state.gapMinutes?timeWindows(snapshot.events,visibleProposal(snapshot,state),snapshot,state.gapMinutes):[];
  let html=`<div class="calendar-grid ${days.length===1?'single':''}" style="--count:${days.length};--hour:${hour}px;--day-columns:${columns}" data-from="${from}" data-hour="${hour}"><div class="calendar-head"><div class="zone-head">${esc(timezoneLabel(days[0]+'T12:00Z'))}</div>`;
- html+=slots.map(slot=>{if(slot.kind==='gap')return gapHeading(slot);const d=slot.date;return `<div class="day-heading ${geometry.weights[days.indexOf(d)]>1?'focus-day':''} ${today===d?'today':''}"><button data-day="${d}" title="Focus ${dateLabel(d)}"><span>${dateLabel(d,{weekday:'short'})}</span><strong>${dateLabel(d,{day:'numeric'})}</strong></button>${d===days.at(-1)&&!days.includes(shiftDate(d,1))?`<button class="include-day" data-include-day="${shiftDate(d,1)}" aria-label="Include ${dateLabel(shiftDate(d,1))}" title="Include ${dateLabel(shiftDate(d,1))}">＋</button>`:''}</div>`;}).join('');
- html+='<div class="all-day-label">all day</div>'+slots.map(slot=>{if(slot.kind==='gap')return '<div class="date-gap-all-day" aria-hidden="true"></div>';const d=slot.date;return `<div class="all-day-cell">${events.filter(e=>e.allDay&&onDay(e,d)).map(e=>`<button class="all-day-event ${esc(e.audience||'internal')} ${eventHasEnded(e)?'past':''} ${state.inspected===e.ref?'inspected':''}" data-event="${e.ref}" data-end="${esc(e.end)}" data-all-day="true" aria-pressed="${state.inspected===e.ref||state.selected.includes(e.ref)}" title="${esc(e.title)}">${esc(e.title)}</button>`).join('')}</div>`;}).join('');
+ html+=slots.map(slot=>{if(slot.kind==='gap')return gapHeading(slot);const d=slot.date;return `<div class="day-heading ${geometry.weights[days.indexOf(d)]>1?'focus-day':''} ${today===d?'today':''}"><button data-day="${d}" title="Focus ${dateLabel(d)}"><span>${dateLabel(d,{weekday:'short'})}</span><strong>${dateLabel(d,{day:'numeric'})}</strong></button></div>`;}).join('');
+ // An all-day event is one bar across the consecutive days it covers; a compressed strip ends a bar.
+ const runs=[];
+ for(const e of events.filter(e=>e.allDay)){let from=null;slots.forEach((slot,i)=>{const on=slot.kind==='day'&&onDay(e,slot.date);if(on&&from===null)from=i;if(from!==null&&(!on||i===slots.length-1)){runs.push({e,from,to:on?i:i-1});from=null;}});}
+ runs.sort((a,b)=>a.from-b.from||(b.to-b.from)-(a.to-a.from));const lanes=[];
+ for(const run of runs){let lane=lanes.findIndex(end=>end<run.from);if(lane<0)lane=lanes.length;lanes[lane]=run.to;run.lane=lane;}
+ if(runs.length){
+  html+='<div class="all-day-label" style="grid-row:2;grid-column:1">all day</div>'+slots.map((slot,i)=>`<div class="${slot.kind==='gap'?'date-gap-all-day':'all-day-cell'}" ${slot.kind==='gap'?'aria-hidden="true"':''} style="grid-row:2;grid-column:${i+2};min-height:${lanes.length*26+8}px"></div>`).join('');
+  html+=runs.map(({e,from,to,lane})=>`<button class="all-day-event span ${esc(e.audience||'internal')} ${eventHasEnded(e)?'past':''} ${state.inspected===e.ref?'inspected':''}" style="grid-row:2;grid-column:${from+2}/${to+3};margin-top:${4+lane*26}px" data-event="${e.ref}" data-end="${esc(e.end)}" data-all-day="true" aria-pressed="${state.inspected===e.ref||state.selected.includes(e.ref)}" title="${esc(e.title)}">${esc(e.title)}</button>`).join('');
+ }
  html+='</div>';
  html+=`<div class="time-axis" style="height:${height}px">${Array.from({length:Math.ceil((to-from)/60)},(_,i)=>{const h=from/60+i;return `<span class="time-label" style="top:${calendarScale.at(from+i*60)}px">${h===0?'12 AM':h===12?'12 PM':h>12?h-12+' PM':h+' AM'}</span>`;}).join('')}</div>`;
  for(const slot of slots){
@@ -268,32 +316,106 @@ function timelineMarkup(days){
   html+=`<div class="day-track ${geometry.weights[days.indexOf(date)]>1?'focus-day':''} ${new Date(date+'T12:00Z').getUTCDay()%6===0?'weekend':''} ${!known?'unknown':''}" data-date="${date}" style="height:${height}px">${rules}`;
   if(!known)html+='<span class="unknown-label">Not loaded<br>Availability unknown</span>';
   html+=gaps.filter(g=>g.date===date).map(g=>`<button class="gap" ${g.kind==='solo'?`data-event="${g.ref}"`:`data-gap="${g.start}"`} style="top:${y(g.start)}px;height:${calendarScale.at(minutes(g.start)+g.minutes)-y(g.start)}px" title="${g.kind==='solo'?'Inspect booked solo time':'Preview a hold'} at ${timeLabel(g.start)}">${g.minutes}m ${g.kind==='solo'?'alone · includes holds':'unbooked'}</button>`).join('');
-  html+=(state.draftWindows||[]).filter(g=>g.date===date).map(g=>`<button class="gap draft-window" data-draft-gap="${g.start}" data-minutes="${Math.round(g.minutes)}" style="top:${y(g.start)}px;height:${Math.max(18,calendarScale.at(Math.min(1440,minutes(g.start)+g.minutes))-y(g.start))}px" title="Hold time at ${esc(timeLabel(g.start))}"><span>${esc(lengthLabel(Math.round(g.minutes)))} open</span><small>${esc(timeLabel(g.start))}</small></button>`).join('');
-  if(state.draftTarget?.date===date){const t=state.draftTarget;html+=`<div class="draft-target" style="top:${calendarScale.at(t.startMinute)}px;height:${Math.max(19,calendarScale.at(Math.min(1440,t.startMinute+t.minutes))-calendarScale.at(t.startMinute))}px"><span>Could go here</span><small>${esc(timeLabel(t.start))}</small></div>`;}
-  if(isOpen(current())&&!state.source&&current().status!=='needs_review')for(const e of daySegments(snapshot.events,date).filter(e=>['move','resize'].includes(visibleProposal(snapshot,state).edits[e.ref]?.kind))){html+=`<div class="event ghost" data-source-ref="${e.ref}" style="top:${calendarScale.at(e.startMinute)}px;height:${Math.max(19,calendarScale.at(e.endMinute)-calendarScale.at(e.startMinute))}px;left:1%;width:97%"><span class="event-title">Current · ${esc(e.title)}</span><span class="event-status">${canEdit(e)?'Current time':'Current time · still booked'}</span></div>`;}
-  for(const e of layoutEvents(daySegments(timed,date))){
+  if(isOpen(current())&&!state.source&&current().status!=='needs_review')for(const e of daySegments(snapshot.events,date).filter(e=>['move','resize'].includes(visibleProposal(snapshot,state).edits[e.ref]?.kind))){html+=`<div class="event ghost" data-source-ref="${e.ref}" style="top:${calendarScale.at(e.startMinute)}px;height:${Math.max(19,calendarScale.at(e.endMinute)-calendarScale.at(e.startMinute))}px;left:1%;width:97%"><span class="event-title">${SURFACE==='canvas'?'':'Current · '}${esc(e.title)}</span><span class="event-status">${canEdit(e)?'Current time':'Current time · still booked'}</span></div>`;}
+  for(let e of layoutEvents(daySegments(timed,date))){
    const h=calendarScale.at(e.endMinute)-calendarScale.at(e.startMinute),classes=eventClasses(e);if(h<43)classes.push('compact');
+   if(lensEvent&&e.ref===lensEvent.ref){classes.push('lens-host');e={...e,lane:0,lanes:1};}
    const title=`${e.title} · ${timeLabel(e.start)}–${timeLabel(e.end)}${eventStatus(e)?' · '+eventStatus(e):''} · Organizer: ${organizerLabel(e)} · ${permissionLabel(e)} · ${locationLabel(e)} · ${participationLabel(e)}`;
-   html+=`<button class="${classes.join(' ')}" data-ref="${e.ref}" data-event="${e.ref}" data-end="${esc(e.end)}" aria-label="${esc(title)}" aria-pressed="${state.selected.includes(e.ref)||state.inspected===e.ref}" title="${esc(title)}" style="top:${calendarScale.at(e.startMinute)}px;height:${Math.max(19,h-2)}px;left:calc(${e.lane/e.lanes*100}% + 3px);width:calc(${100/e.lanes}% - 6px)"><span class="event-title">${e.previewKind||e.created?'Proposed · ':''}${esc(e.title)}</span><span class="event-time">${esc(timeLabel(e.start))}${e.lanes<3?' – '+esc(timeLabel(e.end)):''}</span><span class="event-status">${esc(eventStatus(e))}</span>${state.eventNotes?.[e.ref]&&activeIds().includes(e.ref)?`<span class="event-note">${esc(state.eventNotes[e.ref])}</span>`:''}${eventPlace(e)?`<span class="event-location">${esc(eventPlace(e))}</span>`:''}</button>`;
+   html+=`<button class="${classes.join(' ')}" data-ref="${e.ref}" data-event="${e.ref}" data-end="${esc(e.end)}" aria-label="${esc(title)}" aria-pressed="${state.selected.includes(e.ref)||state.inspected===e.ref}" title="${esc(title)}" style="top:${calendarScale.at(e.startMinute)}px;height:${Math.max(19,h-2)}px;left:calc(${e.lane/e.lanes*100}% + 3px);width:calc(${100/e.lanes}% - 6px)"><span class="event-title">${SURFACE!=='canvas'&&(e.previewKind||e.created)?'Proposed · ':''}${esc(e.title)}</span><span class="event-time">${esc(timeLabel(e.start))}${e.lanes<3?' – '+esc(timeLabel(e.end)):''}</span><span class="event-status">${esc(eventStatus(e))}</span>${state.eventNotes?.[e.ref]&&activeIds().includes(e.ref)?`<span class="event-note">${esc(state.eventNotes[e.ref])}</span>`:''}${eventPlace(e)?`<span class="event-location">${esc(eventPlace(e))}</span>`:''}</button>`;
+   if(SURFACE==='canvas'&&!state.source){const key=draftKeys().get(e.ref);if(key){const aside=state.excluded?.includes(key);html+=`<button class="draft-toggle ${aside?'aside':''}" data-draft-toggle="${esc(key)}" aria-label="${aside?'Bring back this change':'Set this change aside'}" title="${aside?'Bring back this change':'Set this change aside'}" style="top:${calendarScale.at(e.startMinute)+3}px;left:calc(${(e.lane+1)/e.lanes*100}% - 27px)">${aside?'↺':'×'}</button>`;}}
   }html+='</div>';
  }
  return html+'</div>';
 }
 function stepMeta(a){const e=a.kind==='create'?null:eventByRef(a.ref);if(a.start)return `${e?dateLabel(dayKey(e))+' '+timeLabel(e.start)+' → ':''}${dateLabel(dayKey({start:a.start}))} ${timeLabel(a.start)}–${timeLabel(a.end)}`;return e?`${dateLabel(dayKey(e),{weekday:'short'})} · ${timeLabel(e.start)}`:a.to||'Choose recipient';}
-function executionLabel(actions){if(!actions.length)return 'Choose steps';if(actions.every(a=>a.kind==='decline'))return `Decline ${actions.length===1?'meeting':actions.length+' meetings'}`;if(actions.every(a=>a.kind==='accept'))return `Accept ${actions.length===1?'meeting':actions.length+' meetings'}`;if(actions.length===1)return actions[0].kind==='request'?'Send request':actions[0].kind==='move'?'Move meeting':actionName(actions[0]);return `Do these ${actions.length} steps`;}
+function executionLabel(actions){if(!actions.length)return 'Choose steps';const count=n=>n===1?'meeting':n+' meetings';if(actions.every(a=>a.kind==='decline'))return `Decline ${count(actions.length)}`;if(actions.every(a=>a.kind==='accept'))return `Accept ${count(actions.length)}`;if(actions.every(a=>a.kind==='cancel'))return `Cancel ${count(actions.length)} for everyone`;if(actions.length>1&&actions.every(a=>a.kind==='remove'))return `Remove ${actions.length} from my calendar`;if(actions.length===1)return actions[0].kind==='request'?'Send request':actions[0].kind==='move'?'Move meeting':actionName(actions[0]);return `Do these ${actions.length} steps`;}
 function chatMarkup(scope,limit=12,omitLatest=false){
  let turns=scope.state.transcript||[];if(omitLatest&&turns.at(-1)?.role==='assistant')turns=turns.slice(0,-1);
  return (turns.length>limit?'<button class="earlier-chat" data-action="history">Earlier conversation ↗</button>':'')+turns.slice(-limit).map(m=>`<div class="chat-turn ${m.role==='you'?'you':'assistant'}"><small>${m.role==='you'?'You':'Assistant'}</small><p>${esc(m.text.slice(0,320))}</p>${m.text.length>320||m.detail?`<details><summary>Details</summary><p>${esc(m.detail||m.text.slice(320))}</p></details>`:''}${m.decisionId&&scopes[m.decisionId]?`<button class="thread-link" data-decision="${esc(m.decisionId)}">${esc(scopes[m.decisionId].title)} <span>Open decision ↗</span></button>`:''}</div>`).join('');
 }
+// The headline is the assistant's one voice in the canvas surface: status while it works, the
+// answer when it is done, a proposal's summary with its controls, and a step-through review.
+let reviewIndex=null,reviewRef=null,whyOpen=false;
+function headlineView(){
+ const scope=current(),w=workStatus(scope),all=actionBundle(snapshot,state),included=includedActions(snapshot,state);
+ const proposal=!entryFresh&&!inOverview()&&isOpen(scope)&&scope.status!=='needs_review'&&all.length>0;
+ const last=state.transcript.findLast?.(m=>m.role==='assistant')||[...state.transcript].reverse().find(m=>m.role==='assistant');
+ const money=v=>v==null?'':v<0.01?' · under 1¢':` · about ${(v*100).toFixed(1)}¢`;
+ if(state.settingsProposal)return {kind:'proposal',text:summarize(state.settingsProposal.plan),buttons:'<button class="primary" data-action="apply-settings">Apply</button><button data-action="close-thread">Cancel</button>'};
+ const progress=state.checkProgress;
+ if(progress?.executing){const done=progress.steps.filter(x=>!['pending','unknown'].includes(x.status)).length;
+  return {kind:'working',text:done<progress.steps.length?`Applying ${done} of ${progress.steps.length}`:`Applied ${progress.steps.length}`,meta:progress.steps.map(x=>`<i class="step-dot ${esc(x.status)}" title="${esc(x.title)}"></i>`).join('')};}
+ if(state.executionRunning)return {kind:'working',text:'Checking the latest calendar before applying'};
+ if(state.pending&&state.work?.replyDraft)return {kind:'working',text:human(state.work.replyDraft),meta:esc(w.label),buttons:'<button data-action="stop">Stop</button>'};
+ if(state.pending)return {kind:'working',text:w.label+(w.elapsed>=3?` · ${w.elapsed}s`:''),meta:w.detail?esc(w.detail):'',buttons:'<button data-action="stop">Stop</button>'};
+ // Receipts and errors stay in history, but a closed conversation has no headline.
+ if(entryFresh)return null;
+ if(w.kind==='error')return {kind:'error',text:w.detail||'Could not finish.',buttons:'<button data-action="retry">Retry</button><button data-action="close-thread" aria-label="Dismiss">×</button>'};
+ if(!inOverview()&&scope.status==='needs_review'){
+  const changed=(state.sourceChanges||[]).slice(0,3).map(c=>esc(c.title)+(c.change==='removed'?' was removed':' changed')).join(' · ');
+  return {kind:'error',text:'The calendar changed since this was prepared.',meta:changed||'Review it against the current calendar before applying.',buttons:'<button class="primary" data-action="recheck">Review changes</button><button data-action="close-thread" aria-label="Dismiss">×</button>'};
+ }
+ if(proposal&&state.responseNote){
+  const note=state.responseNote;
+  return {kind:'answer',text:human(note.text),meta:`${included.length} ${included.length===1?'change is':'changes are'} still drafted · nothing applied`,
+   buttons:`${note.detail?`<button data-action="toggle-why" aria-expanded="${whyOpen}">${whyOpen?'Hide':'Why'}</button>`:''}<button data-action="return-proposal">Back to proposal</button><button data-action="close-thread">Discard</button>`,why:note.detail?`<p>${esc(human(note.detail))}</p>`:''};
+ }
+ if(proposal&&reviewIndex!==null){
+  const i=Math.min(reviewIndex,all.length-1),a=all[i],e=eventByRef(a.ref),aside=state.excluded?.includes(a.key);
+  return {kind:'review',text:`${actionName(a)} ${a.title||a.subject||''}`,meta:`Change ${i+1} of ${all.length} · ${esc(stepMeta(a))} · ${esc(actionConsequence(a,e))}${aside?' · set aside':''}`,
+   buttons:`<button data-action="review-prev" aria-label="Previous change" ${i?'':'disabled'}>‹</button><button data-action="review-next" aria-label="Next change" ${i<all.length-1?'':'disabled'}>›</button><button data-draft-toggle="${esc(a.key)}">${aside?'Bring back':'Set aside'}</button><button data-action="review-done" class="primary">Done</button>`};
+ }
+ if(proposal){
+  const primary=$('#review-actions .primary')?.outerHTML||'',notice=$('#review-actions .execution-notice')?.outerHTML||'';
+  const asideCount=all.length-included.length,checking=progress?.message&&!state.check?.ticket?esc(progress.message):'';
+  const rows=included.map(a=>state.check?.steps.find(r=>r.key===a.key)),blocked=rows.filter(r=>r&&r.status!=='ready'&&!r.message?.startsWith('Connect G'));
+  const account=status.google?.account?.toLowerCase();
+  const findings=[...new Set(rows.flatMap(r=>r?.availability?.people||[]).filter(p=>p.status!=='free').map(p=>`${p.resource?'Room '+p.name:p.email?.toLowerCase()===account?'You':p.name} ${p.status}`))];
+  const refresh=included.find((a,i)=>rows[i]&&rows[i].status!=='ready'&&rows[i].latest&&a.ref);
+  const facts=[blocked.length?`<span class="headline-blocked">Can’t apply yet: ${esc([...new Set(blocked.map(r=>r.message||'Review this step.'))].join(' '))}</span>${refresh?` <button type="button" class="headline-inline" data-refresh-event="${esc(refresh.ref)}">Refresh event</button>`:''}`:'',findings.length?esc(findings.slice(0,3).join(', ')+(findings.length>3?` and ${findings.length-3} more`:'')):''].filter(Boolean).join(' · ');
+  const changes=included.map((a,i)=>`<li><button type="button" class="headline-change" data-step-details="${esc(a.key)}" title="${['email','request'].includes(a.kind)?'Edit this message':'Open this event'}"><strong>${esc(actionName(a))} ${esc(a.title||a.subject||'')}</strong> <span>${esc(stepMeta(a))} · ${esc(actionConsequence(a,eventByRef(a.ref)))}</span>${['email','request'].includes(a.kind)?' <em>Edit</em>':''}${rows[i]&&rows[i].status!=='ready'&&rows[i].message?` <span class="headline-blocked">${esc(rows[i].message)}</span>`:''}</button></li>`).join('');
+  return {kind:'proposal',text:human(state.reply||scope.title),meta:`${included.length} ${included.length===1?'change':'changes'} drafted on the calendar${asideCount?` · ${asideCount} set aside`:''}${checking?' · '+checking:''}${facts?' · '+facts:''}`,
+   buttons:`<button data-action="toggle-why" aria-expanded="${whyOpen}">${whyOpen?'Hide':'Why'}</button>${all.length>1?'<button data-action="review-changes">Review</button>':''}<button data-action="close-thread">Discard</button>${primary}`,
+   why:`${state.detail?`<p>${esc(human(state.detail))}</p>`:''}<ul class="headline-changes">${changes}</ul>${notice}`};
+ }
+ if(state.result&&['done','waiting','needs_review'].includes(scope.status)){
+  const ok=state.result.steps.filter(x=>['success','awaiting_reply'].includes(x.status)).length;
+  return {kind:'done',text:ok===state.result.steps.length?`Done. ${state.result.steps.map(x=>x.message).filter(Boolean)[0]||'Applied.'}${ok>1?` ${ok} changes applied.`:''}`:`${ok} of ${state.result.steps.length} applied. Some steps need attention.`,
+   buttons:`<button data-action="toggle-why">${whyOpen?'Hide':'Details'}</button><button data-action="close-thread" aria-label="Dismiss">×</button>`,
+   why:`<ul class="headline-changes">${state.result.steps.map(x=>`<li><strong>${['success','awaiting_reply'].includes(x.status)?'✓':'!'} ${esc(x.title)}</strong> <span>${esc(x.message||x.status)}</span></li>`).join('')}</ul>`};
+ }
+ if(last&&!entryFresh){
+  const m=state.lastMetrics;
+  return {kind:'answer',text:human(last.text),meta:m?.totalMs&&m.model===testLabel()?`${esc(testLabel())} · ${(m.totalMs/1000).toFixed(1)}s`:'',buttons:`${last.detail?`<button data-action="toggle-why">${whyOpen?'Hide':'Why'}</button>`:''}${suggestionMarkup(current(),last)}<button data-action="close-thread" aria-label="Dismiss">×</button>`,why:last.detail?`<p>${esc(human(last.detail))}</p>`:''};
+ }
+ return null;
+}
+function renderHeadline(){
+ if(SURFACE!=='canvas'||!state||!snapshot||!current())return;
+ const box=$('#headline-main'),view=headlineView(),selecting=!$('#selection-bar').hidden;
+ $('#headline').hidden=!view&&!selecting;$('#headline').dataset.kind=view?.kind||'selection';
+ const markup=view?`<div class="headline-row"><span class="headline-mark ${view.kind}" aria-hidden="true"></span><div class="headline-text"><p>${esc(view.text)}</p>${view.meta?`<small>${view.meta}</small>`:''}</div><div class="headline-actions">${view.buttons||''}</div></div>${view.why&&whyOpen?`<div class="headline-why">${view.why}</div>`:''}`:'';
+ if(box.innerHTML!==markup)box.innerHTML=markup;
+}
+function focusReview(){
+ const all=actionBundle(snapshot,state);if(!all.length){reviewIndex=null;reviewRef=null;return renderHeadline();}
+ reviewIndex=Math.max(0,Math.min(reviewIndex??0,all.length-1));reviewRef=all[reviewIndex].ref||null;renderCalendar();renderHeadline();if(reviewRef)revealCalendar([reviewRef]);
+}
 function renderWork(){
- if(!current())return;const w=workStatus(current()),el=$('#work-status');
- const progress=state.checkProgress;$('#check-progress').hidden=entryFresh||!progress;$('#check-progress').textContent=progress?.message||'';
+ if(!current())return;queueMicrotask(renderHeadline);const w=workStatus(current()),el=$('#work-status');
+ const draftReply=state.pending&&state.work?.replyDraft?`<p class="answer-text reply-draft">${esc(human(state.work.replyDraft))}</p>`:'';if(SURFACE!=='canvas'&&$('#pending-response').innerHTML!==draftReply&&(draftReply||$('#pending-response .reply-draft')))$('#pending-response').innerHTML=draftReply;
+ const progress=state.checkProgress,box=$('#check-progress');box.hidden=entryFresh||!progress;
+ if(progress?.executing){const icon={pending:'·',unknown:'…',success:'✓',awaiting_reply:'✓',failed:'!',skipped:'–'},done=progress.steps.filter(x=>!['pending','unknown'].includes(x.status)).length;
+  box.innerHTML=`<strong>${done<progress.steps.length?`Applying ${done} of ${progress.steps.length}`:`Applied ${progress.steps.length}`}</strong><ul class="step-progress">${progress.steps.map(x=>`<li class="${esc(x.status)}"><i>${icon[x.status]||'·'}</i><span>${esc(x.title)}${x.message&&!['pending','unknown'].includes(x.status)?` <small>${esc(x.message)}</small>`:''}</span></li>`).join('')}</ul>`;}
+ else box.textContent=progress?.message||'';
  $('#conversation-return span').textContent=state.pending?'Working…':state.executionRunning?'Applying…':'';$('.shell').classList.toggle('thinking',!!state.pending);
  el.hidden=entryFresh||(!state.pending&&!['error','stopped'].includes(w.kind)&&!state.executionRunning);
  const content=`<span class="work-dot ${w.kind}"></span><span><strong>${esc(w.label)}${w.elapsed>=3?` · ${w.elapsed}s`:''}</strong>${w.detail?`<small>${esc(w.detail)}</small>`:''}</span>${w.canStop?'<button data-action="stop">Stop</button>':w.canRetry?'<button data-action="retry">Retry</button>':''}`;
  if(el.innerHTML!==content)el.innerHTML=content;
  const all=Object.values(scopes),working=all.filter(d=>d.state.pending||d.state.executionRunning),unread=all.filter(d=>d.state.unread);
  $('#work-indicator').textContent=working.length?`${working.length} working`:unread.length?`${unread.length} ready`:'History';$('#work-indicator').classList.toggle('working',!!working.length);
+ // On canvas, History sits in the palette; this only appears for work in another conversation.
+ $('#work-indicator').classList.toggle('quiet',!Object.values(scopes).some(d=>d.id!==activeId&&(d.state.pending||d.state.executionRunning||d.state.unread)));measureTopbar();
  $('#composer-target').innerHTML='';
 }
 function showThreads(){
@@ -328,11 +450,17 @@ function schedulingNotes(row,compact=false){
  return notes.length?`<div class="overlap-note">${notes.map(esc).join(' ')}</div>`:'';
 }
 function actionConsequence(action,event){
- if(['decline','accept','tentative'].includes(action.kind))return 'Sends your RSVP to the organizer';
+ const every=action.scope==='series'?' · every occurrence':'';
+ if(action.kind==='decline')return (action.note?`Tells the organizer you won't attend, with your note: “${action.note}”`:'Tells the organizer you won\'t attend · stays on your calendar as declined')+every;
+ if(['accept','tentative'].includes(action.kind))return 'Sends your RSVP to the organizer'+(action.note?` with your note: “${action.note}”`:'')+every;
+ if(action.kind==='cancel')return 'Cancels it for every guest and emails them a cancellation'+every;
+ if(action.kind==='remove')return (event&&!event.organizerSelf?'Takes it off your calendar · Google tells the organizer you declined':'Deletes your hold')+every;
+ if(action.kind==='create'&&action.eventType==='focusTime')return 'Blocks focus time · declines new conflicting invitations';
+ if(action.kind==='create'&&action.eventType==='outOfOffice')return 'Marks you out of office · declines conflicting meetings';
+ if(action.kind==='create'&&action.attendees?.length)return `Invites ${action.attendees.length===1?action.attendees[0]:action.attendees.length+' people'}${action.meet?' · with a Google Meet link':''}`;
  if(action.kind==='request')return 'Ask the organizer · current booking stays until they change it';
  if(action.kind==='email')return `To ${action.to||'recipient not set'}`;
  if(['move','resize'].includes(action.kind))return event?.attendees?.some(p=>!p.self)?'Notifies attendees':'Only your calendar changes';
- if(action.kind==='remove')return 'Removes your solo hold';
  return 'Adds a hold to your calendar';
 }
 function renderAssistant(){
@@ -340,7 +468,7 @@ function renderAssistant(){
  const hasContent=!!state.settingsProposal||(!entryFresh&&!!(state.pending||state.executionRunning||state.transcript.length||!inOverview()));
  $('.decision-panel').classList.toggle('composer-only',!hasContent);
  $('#queue-panel').hidden=true;$('#conversation-panel').hidden=!inOverview();$('#decision-content').hidden=inOverview();
- $('#command').placeholder=phoneLayout.matches?'Search or change':'Search or change your calendar';renderWork();renderQueue();
+ $('#command').placeholder=phoneLayout.matches?'Ask or change':'Ask or change anything';renderWork();renderQueue();
  $('#overview-reply').hidden=true;
  if(entryFresh||inOverview()){$('#conversation-panel').innerHTML=entryFresh?'':briefMarkup(current());$('#review-actions').innerHTML='';$('#pending-response').innerHTML='';return;}
  const scope=current(),all=actionBundle(snapshot,state),included=includedActions(snapshot,state),check=state.check;
@@ -384,7 +512,26 @@ function renderAssistant(){
  $('#pending-response').innerHTML=state.pendingResponse?'<button data-action="use-response">Review the assistant’s alternative ↗</button>':'';
  if(state.pending)setStatus('');
 }
-function renderSelection(){const ids=activeIds(),el=$('#selection-bar');el.hidden=!state.selected.length||(!selectionMode&&state.selected.length===1);const rsvp=ids.length&&ids.every(ref=>canRespond(snapshot.events.find(e=>e.ref===ref)));el.innerHTML=`<span>${ids.length} selected</span>${rsvp?'<button data-action="bulk-accept">RSVP Going</button><button data-action="bulk-decline">RSVP Decline</button>':'<span class="selection-note">RSVP applies only to invitations</span>'}<button data-action="move-set">Move…</button><button data-action="clear-selection" aria-label="Clear selected events">×</button>`;}
+function selectionGroups(ids){const events=ids.map(ref=>snapshot.events.find(e=>e.ref===ref)).filter(Boolean),guests=e=>e.attendees?.some(p=>!p.self&&!p.resource);
+ return {invites:events.filter(e=>canRespond(e)&&!e.organizerSelf),removable:events.filter(e=>!e.allDay||!e.organizerSelf).filter(e=>!(e.organizerSelf&&guests(e))),hosted:events.filter(e=>e.organizerSelf&&guests(e)),events};}
+function toggleEventSelection(ref){
+ const removing=state.selected.includes(ref),ids=removing?[ref]:[...new Set([...(state.inspected?[state.inspected]:[]),ref])];
+ // An inspected meeting already looks selected. Carry it into the explicit set,
+ // then close its card so it cannot hide or dim the rest of that set.
+ closeDrawer();selectionMode=true;
+ apply([{op:'select',ids,mode:removing?'remove':'add'}]);
+}
+let selectionNote=null;
+function renderSelection(){queueMicrotask(renderHeadline);const ids=activeIds(),el=$('#selection-bar');el.hidden=!state.selected.length||(!selectionMode&&state.selected.length===1);if(el.hidden){selectionNote=null;el.innerHTML='';return;}
+ const g=selectionGroups(ids),n=k=>k.length===ids.length?'':` (${k.length} of ${ids.length})`;
+ const buttons=[];
+ if(g.invites.length){buttons.push(`<button data-action="bulk-decline">Decline${n(g.invites)}</button>`,`<button data-action="bulk-decline-note">Decline with a note${n(g.invites)}</button>`,`<button data-action="bulk-accept">Accept${n(g.invites)}</button>`);}
+ if(g.removable.length)buttons.push(`<button data-action="bulk-remove" class="danger">Remove from my calendar${n(g.removable)}</button>`);
+ if(g.hosted.length)buttons.push(`<button data-action="bulk-cancel" class="danger">Cancel for everyone${n(g.hosted)}</button>`);
+ buttons.push('<button data-action="move-set">Move…</button>','<button data-action="ask-selection">Ask about these</button>');
+ const note=selectionNote!==null?`<form class="note-row" id="selection-note-form"><input id="selection-note" maxlength="500" placeholder="Note to the organizer" value="${esc(selectionNote)}" aria-label="Note to the organizer"><button type="submit">Decline${n(g.invites)}</button></form>`:'';
+ el.innerHTML=`<span class="selection-count">${ids.length} selected</span>${buttons.join('')}<button data-action="clear-selection" aria-label="Clear selected events">Clear ×</button>${note}`;
+ if(selectionNote!==null)requestAnimationFrame(()=>$('#selection-note')?.focus());}
 function apply(ops,reply='',options={}){
  if((entryFresh||inOverview()||['done','waiting','dismissed','obsolete','later'].includes(current().status))&&ops.some(o=>['edit','create','draft'].includes(o.op))){const event=eventByRef(ops.find(o=>o.ids?.length)?.ids[0]);newDecision();if(event)current().title=event.title;}
  if(state.executionRunning)return toast('These steps are executing. Start another decision to keep working.');
@@ -392,11 +539,18 @@ function apply(ops,reply='',options={}){
   if(before!==proposalSignature(state)){state.responseNote=null;state.returnView=null;state=adaptContext(state,snapshot.events);state.check=null;state.result=null;state.executionId=null;current().status='open';scheduleCheck();}
   if(ops.some(o=>o.op==='edit'&&['move','resize'].includes(o.action))&&!actionBundle(snapshot,state).length)reply='Already at that time. No changes to apply.';
   if(ops.some(o=>['undo','redo'].includes(o.op)))reply=actionBundle(snapshot,state).length?'Here is the proposed change.':'No changes to apply.';
+  if(ops.some(o=>o.op==='view'))state.viewChangedSinceRequest=true;
   if(reply){state.reply=reply;state.detail='';}current().state=state;traceInteraction(state,'interaction',{beforeView,operations:operationTrace(ops)});saveProposalVersion(current());render();return true;
  }catch(e){traceInteraction(state,'operation-rejected',{operations:operationTrace(ops),reason:e.message});toast(e.message);setStatus(e.message);return false;}
 }
-function activate(id,{reveal=true}={}){clearDraft({repaint:false});entryFresh=false;if(reveal)floating.tuck(false);panelOpen=true;selectionMode=false;if(!scopes[id])return;if(current()){current().state=state;saveScope(current());}activeId=id;state=adaptContext(current().state,snapshot.events);state.freshEntry=false;if(inOverview())lastConversationId=id;state.unread=false;$('#command').value=state.composer||'';resizeComposer();closeDrawer();render();$('.assistant-stage').scrollTop=0;revealCalendar(Object.keys(state.edits));scheduleCheck();setStatus('');}
-function directAction(kind,ids){if(!ids.length||!ids.every(ref=>canRespond(snapshot.events.find(e=>e.ref===ref))))return toast('RSVP applies only to existing invitations. Use the decision button to apply proposed holds.');const d=makeDecision(snapshot,{title:`${actionName({kind})} ${ids.length===1?'meeting':ids.length+' meetings'}`,ids,days:[...state.days],operations:[{op:'edit',action:kind,ids}]});scopes[d.id]=d;activate(d.id);execute();}
+function activate(id,{reveal=true}={}){entryFresh=false;if(reveal)floating.tuck(false);panelOpen=true;selectionMode=false;if(!scopes[id])return;if(current()){current().state=state;saveScope(current());}activeId=id;state=adaptContext(current().state,snapshot.events);state.freshEntry=false;if(inOverview())lastConversationId=id;state.unread=false;$('#command').value=state.composer||'';resizeComposer();closeDrawer();render();$('.assistant-stage').scrollTop=0;revealCalendar(Object.keys(state.edits));scheduleCheck();setStatus('');}
+function directAction(kind,ids,extra={}){
+ const g=selectionGroups(ids),targets=(['decline','accept','tentative'].includes(kind)?g.invites:kind==='remove'?g.removable:kind==='cancel'?g.hosted:[]).map(e=>e.ref);
+ if(!targets.length)return toast(kind==='cancel'?'Only meetings you organize with guests can be cancelled for everyone.':kind==='remove'?'Meetings you organize with guests need Cancel for everyone.':'RSVP applies only to invitations from other people.');
+ const skipped=ids.length-targets.length,label=`${actionName({kind,ref:targets[0]})} ${targets.length===1?snapshot.events.find(e=>e.ref===targets[0])?.title||'meeting':targets.length+' events'}`;
+ const d=makeDecision(snapshot,{title:label,ids:targets,days:[...state.days],operations:[{op:'edit',action:kind,ids:targets,...extra}]});scopes[d.id]=d;selectionNote=null;activate(d.id);
+ if(skipped)toast(`${skipped} selected ${skipped===1?'event does':'events do'} not fit this action and ${skipped===1?'was':'were'} left as is.`);
+ execute();}
 function newConversation(){const d=makeDecision(snapshot,{title:'New conversation'});d.state.threadType='conversation';d.state.days=[...state.days];d.state.view=clone(ensureView(state));scopes[d.id]=d;activate(d.id);$('#command').focus();}
 // Opening input changes the presentation, not the saved decision or its consent.
 function openEntry(){
@@ -406,13 +560,13 @@ function openEntry(){
 }
 function beginFreshConversation(){
  const previous=current(),context={id:previous.id,title:previous.title,conversation:clone(state.transcript.slice(-4)),proposal:actionBundle(snapshot,state),focusContext:focusContext(state),status:previous.status};
- const view=clone({view:ensureView(state),questionScope:state.questionScope,selected:state.selected,highlighted:state.highlighted,selectionLabel:state.selectionLabel,focusContext:state.focusContext});
+ const focused=focusedDate(),view=clone({view:ensureView(state),questionScope:activeIds().length?state.questionScope:normalizedScope(null,displayedDays()),selected:state.selected,highlighted:state.highlighted,selectionLabel:state.selectionLabel,focusContext:state.focusContext});
  const summary=state.contextSummary||'';
  state.composer='';state.freshEntry=false;
- newConversation();Object.assign(state,view);state.previousContext=context;state.contextSummary=summary;
+ newConversation();Object.assign(state,view);phoneFocus.set(activeId,{key:state.days.join(','),date:focused});state.previousContext=context;state.contextSummary=summary;
 }
 function showPillMenu(){
- openDrawer('Options',`<div class="pill-options"><button data-action="new">New topic</button><button data-action="history">History</button><button data-action="pin-conversation" aria-pressed="${pillPinned}">${pillPinned?'Unpin':'Pin'} in place</button>${!entryFresh&&isOpen(current())?'<button data-action="later">Later</button><button data-action="dismiss">Leave as is</button>':''}</div>`,'pill-options');
+ openDrawer('Options',`${status.testModel?.available?`<div class="model-choice-slot pill-model">${modelChoiceMarkup()}</div>`:''}<div class="pill-options"><button data-action="new">New topic</button><button data-action="history">History</button><button data-action="pin-conversation" aria-pressed="${pillPinned}">${pillPinned?'Unpin':'Pin'} in place</button>${!entryFresh&&isOpen(current())?'<button data-action="later">Later</button><button data-action="dismiss">Leave as is</button>':''}</div>`,'pill-options');
 }
 async function backToConversation(){
  const d=current();if(isConversation(d))return;
@@ -440,7 +594,7 @@ async function openSuggestion(id,viewing){
  if(origin.state.suggestion!==suggestion||requests.get(id)!==requestVersion){if(!linked)await api('/api/decisions/status',{id:d.id,status:'dismissed'});return;}
  d.state.days=[...new Set([...origin.state.days,...d.state.days])].sort().slice(0,14);d.state.unread=!viewing;saveProposalVersion(d);scopes[d.id]=d;
  origin.state.suggestion.linkedDecisionId=d.id;origin.state.unread=false;
- await saveScope(d);await saveScope(origin);
+ saveScope(d);saveScope(origin);
  if(viewing&&activeId===origin.id&&origin.state.suggestion===suggestion&&requests.get(id)===requestVersion){
   if(origin.state.composer){d.state.composer=origin.state.composer;origin.state.composer='';saveScope(origin);}
   // Persistence/reconciliation can take time. A newer topic keeps the screen.
@@ -465,7 +619,7 @@ async function finishConversationReply(scope,response,signature,navigation=null)
  traceInteraction(scope.state,'reply-applied',{requestId:scope.state.requestId,operations:operationTrace(viewOnly.operations),navigationPreserved:!!navigation});
  scope.state.pending=false;scope.state.pendingJob=null;scope.state.work={...scope.state.work,status:'complete'};scope.state.unread=!viewing;
  if(scope.id===HOME)scope.title='Calendar';
- record(scope,'assistant',response.reply,{detail:response.detail||''});await saveScope(scope);
+ record(scope,'assistant',response.reply,{detail:response.detail||''});saveScope(scope);
  const stillViewing=activeId===scope.id;
  if(response.interaction==='propose'&&scope.state.suggestion&&!navigation){if(stillViewing)state=scope.state;await openSuggestion(scope.id,stillViewing);return;}
  if(stillViewing){state=scope.state;render();setStatus('');if(applied)revealCalendar(activeIds());animateReply();say(response.reply);if(colorRequest)appearance.open(colorRequest.body||scope.state.lastInput,colorRequest.ids||activeIds());}
@@ -482,11 +636,12 @@ async function disposition(value,id=activeId){
  if(id===activeId&&value!=='open'){state.responseNote=null;state.returnView=null;render();restPill();toast(value==='dismissed'?'Left as is · calendar unchanged':'Saved for later · return from Saved',{undo:async()=>{await disposition('open',id);activate(id);}});}
  else if(id===activeId){state=scope.state;render();}else render();
 }
-function compactState(scope){const s=scope.state,p=isConversation(scope)&&s.suggestion?s.suggestion.state:s;return {calendarRevision:snapshot.calendarRevision||0,decisionId:scope.id,days:s.days,view:viewSummary(s),questionScope:s.questionScope,clientBuild:CLIENT_BUILD,requestId:s.requestId,viewRevision:ensureView(s).revision,gapKind:s.gapKind,selection:s.selected,highlights:s.highlighted,selectionLabel:s.selectionLabel,focusContext:focusContext(s),threadType:isConversation(scope)?'conversation':'decision',possibleChange:s.suggestion?{title:s.suggestion.title,hypothetical:true}:null,currentDecision:{id:scope.id,title:scope.title,ids:scope.refs},edits:p.edits,created:p.created,drafts:p.drafts,source:s.source,gapMinutes:s.gapMinutes,availabilityWarnings:(s.check?.steps||[]).filter(row=>row.warnings?.length).slice(0,12).map(row=>({ref:row.ref,title:row.title,warnings:row.warnings})),conversation:s.transcript.slice(-8),contextSummary:s.contextSummary||'',previousContext:s.previousContext||null,receivedContext:s.receivedContext,evidenceContexts:s.evidenceContexts||[],incomingSuggestion:s.incomingSuggestion,mailThreadIds:s.mailThreadIds||[],settings:currentSettings().map(({key,label,value})=>({key,label,value})),visibleGaps:s.gapMinutes?timeWindows(snapshot.events,visibleProposal(snapshot,s),snapshot,s.gapMinutes):[],excludedActions:actionBundle(snapshot,p).filter(a=>p.excluded?.includes(a.key))};}
+function compactState(scope){const s=scope.state,p=isConversation(scope)&&s.suggestion?s.suggestion.state:s,days=displayedDays(),view={...viewSummary(s),...(days.length===1?{mode:'day'}:{}),start:days[0],end:shiftDate(days.at(-1),1),dates:days};return {calendarRevision:snapshot.calendarRevision||0,decisionId:scope.id,days,view,visibleScope:normalizedScope(null,days),questionScope:s.questionScope,clientBuild:CLIENT_BUILD,requestId:s.requestId,viewRevision:ensureView(s).revision,gapKind:s.gapKind,selection:s.selected,highlights:s.highlighted,selectionLabel:s.selectionLabel,focusContext:focusContext(s),threadType:isConversation(scope)?'conversation':'decision',possibleChange:s.suggestion?{title:s.suggestion.title,hypothetical:true}:null,currentDecision:{id:scope.id,title:scope.title,ids:scope.refs},edits:p.edits,created:p.created,drafts:p.drafts,source:s.source,gapMinutes:s.gapMinutes,availabilityWarnings:(s.check?.steps||[]).filter(row=>row.warnings?.length).slice(0,12).map(row=>({ref:row.ref,title:row.title,warnings:row.warnings})),conversation:s.transcript.slice(-8),contextSummary:s.contextSummary||'',previousContext:s.previousContext||null,receivedContext:s.receivedContext,evidenceContexts:s.evidenceContexts||[],incomingSuggestion:s.incomingSuggestion,mailThreadIds:s.mailThreadIds||[],settings:currentSettings().map(({key,label,value})=>({key,label,value})),visibleGaps:s.gapMinutes?timeWindows(snapshot.events,visibleProposal(snapshot,s),snapshot,s.gapMinutes):[],excludedActions:actionBundle(snapshot,p).filter(a=>p.excluded?.includes(a.key))};}
 async function submit(text){
  if(!state)return;text=text.trim();if(!text)return $('#command').focus();if(state.executionRunning)return toast('This change is being applied.');
- const carried=draft?.preview;clearDraft({repaint:false});
- const intent=localIntent(text,state.days);
+ 
+ // Only plain assent, dismissal, "later" and returning to the week are handled locally; everything else goes to the model.
+ const local=localIntent(text,state.days),intent=['confirm','dismiss','later','back-week','today'].includes(local?.kind)?local:null;
  if(intent?.kind==='back-week'||intent?.kind==='today'){
   state.composer='';$('#command').value='';resizeComposer();showWeek(intent.kind==='today'?weekDates(dayKey({start:new Date().toISOString()})):weekView);setStatus('');return;
  }
@@ -503,25 +658,24 @@ async function submit(text){
   if(inOverview()){await stopThinking();state.suggestion=null;render();restPill();return;}
   return disposition('later');
  }
- if(entryFresh)beginFreshConversation();
- const month=monthCommand(text,state.view?.anchor||state.days[0]);
- const fast=month?[month]:intent?.kind==='view'?(ensureView(state).mode==='month'?[{op:'view',mode:'expand',date:intent.days.find(d=>!state.days.includes(d))||state.view.focusDate||state.days[0]}]:[{op:'view',days:intent.days}]):quickCommand(text,{...state,days:displayedDays()});
- if(fast){record(current(),'you',text);state.composer='';$('#command').value='';resizeComposer();const view=fast.find(op=>op.op==='view');if(phoneLayout.matches&&view?.days)phoneRange=view.days.length>1;if(view?.days?.length>1&&intent?.kind!=='view')showWeek(view.days);else apply(fast,'');record(current(),'assistant','View updated.');renderAssistant();setStatus('');return;}
+ whyOpen=false;reviewIndex=null;reviewRef=null;if(entryFresh)beginFreshConversation();
  if(['dismissed','obsolete','later','done','waiting'].includes(current().status))await backToConversation();
  setStatus('');const scope=current();scope.state=state;record(scope,'you',text);state.lastInput=text;state.composer='';$('#command').value='';resizeComposer();
  const seq=(requests.get(scope.id)||0)+1;requests.set(scope.id,seq);
  if(scope.state.pendingJob){const previous=scope.state.pendingJob;delete scope.state.earlyView;api('/api/jobs/cancel',{id:previous.id}).catch(()=>{});scope.state.pending=false;scope.state.pendingJob=null;}
  state.navigationReset=false;
- const period=explicitPeriod(text,state.days[0]);scope.state.questionScope=period||scope.state.questionScope||normalizedScope(null,state.days);scope.state.requestId=crypto.randomUUID();
- const early=anticipateView(text,snapshot.events,state.days);
- if(early){const before=captureView(state);state=runOperations(state,[{op:'view',days:early.days},{op:'highlight',ids:early.refs}],snapshot.events);state.attentionDays=[early.destination];state.earlyView={before,after:captureView(state),calendarRevision:snapshot.calendarRevision||0};scope.state=state;if(phoneLayout.matches)phoneFocus.set(activeId,{key:state.days.join(','),date:early.destination});renderHeader();renderCalendar();floating.schedule();}
- else if(carried?.focusDays?.length&&ensureView(state).mode!=='month'){state.attentionDays=carried.focusDays.filter(d=>state.days.includes(d));scope.state=state;}
- renderCalendar();
+ const visibleDays=displayedDays(),period=explicitPeriod(text,visibleDays[0]);
+ // Manual navigation changes the default for the next question without retargeting
+ // work already in flight or an explicitly highlighted set being discussed.
+ scope.state.questionScope=period||(state.viewChangedSinceRequest&&!activeIds().length?normalizedScope(null,visibleDays):scope.state.questionScope)||normalizedScope(null,visibleDays);
+ state.viewChangedSinceRequest=false;scope.state.requestId=crypto.randomUUID();
  traceInteraction(scope.state,'request',{requestId:scope.state.requestId,build:CLIENT_BUILD});
  const signature=proposalSignature(state),requestView=captureView(state);
  const workspace=compactState(scope);
- state.pending=true;state.work={status:'queued',phase:'command',startedAt:Date.now(),lastHeardAt:Date.now(),request:text};state.unread=false;persist();saveScope(scope);renderAssistant();
- try{await ensureScopeCoverage(scope.state.questionScope);if(requests.get(scope.id)!==seq)return;workspace.calendarRevision=snapshot.calendarRevision||0;const job=await api('/api/command',{text,state:workspace});if(requests.get(scope.id)!==seq){await api('/api/jobs/cancel',{id:job.jobId});return;}scope.state.pendingJob={id:job.jobId,seq,signature,workspace,text,phase:'command',requestView,manualView:JSON.stringify(captureView(scope.state))!==JSON.stringify(requestView)};await saveScope(scope);persist();await finishReply(scope);}
+ state.pending=true;state.work={status:'queued',phase:'command',startedAt:Date.now(),lastHeardAt:Date.now(),request:text};state.unread=false;persist();renderAssistant();
+ try{await ensureScopeCoverage(scope.state.questionScope);if(requests.get(scope.id)!==seq)return;workspace.calendarRevision=snapshot.calendarRevision||0;const job=await api('/api/command',{text,state:workspace});if(requests.get(scope.id)!==seq){await api('/api/jobs/cancel',{id:job.jobId});return;}scope.state.pendingJob={id:job.jobId,seq,signature,workspace,text,phase:'command',requestView,manualView:JSON.stringify(captureView(scope.state))!==JSON.stringify(requestView)};
+  // The reply stream opens at once; the pending job is saved to the server alongside it, not before it.
+  persist();saveScope(scope);await finishReply(scope);}
  catch(error){if(requests.get(scope.id)===seq)replyError(scope,error,text);}
 }
 function replyError(scope,error,text){traceInteraction(scope.state,'request-error',{requestId:scope.state.requestId,error:error.message});scope.state.attentionDays=[];rollbackEarlyView(scope,snapshot);scope.state.pending=false;scope.state.pendingJob=null;scope.state.work={...scope.state.work,status:'error',error:error.message};scope.state.unread=activeId!==scope.id;scope.state.composer=text;if(isConversation(scope))scope.state.reply=error.message;saveScope(scope);if(activeId===scope.id){state=scope.state;$('#command').value=text;resizeComposer();renderAssistant();setStatus('Could not finish. Your request is ready to retry.');}}
@@ -532,15 +686,19 @@ function showEarlyView(scope,job,pending){
 async function finishReply(scope){
  const pending=scope.state.pendingJob;if(!pending)return;const {signature,seq,text,workspace}=pending;
  try{
-  const update=job=>{if(requests.get(scope.id)!==seq)return;showEarlyView(scope,job,pending);scope.state.work={...scope.state.work,status:job.status,phase:job.partial?.phase||scope.state.pendingJob?.phase||pending.phase,lastHeardAt:Date.now()};renderWork();};
+  const update=job=>{if(requests.get(scope.id)!==seq)return;showEarlyView(scope,job,pending);scope.state.work={...scope.state.work,status:job.status,message:job.partial?.message||scope.state.work?.message,replyDraft:job.partial?.replyDraft||scope.state.work?.replyDraft,phase:job.partial?.phase||scope.state.pendingJob?.phase||pending.phase,lastHeardAt:Date.now()};renderWork();};
   let response=await waitJob(pending.id,update);
   if(requests.get(scope.id)!==seq)return;
   if(response.result.needsResearch){const job=await api('/api/research',{text,state:workspace});scope.state.pendingJob={...pending,id:job.jobId,phase:'research'};await saveScope(scope);if(activeId===scope.id)persist();scope.state.work.phase='research';renderWork();response=await waitJob(job.jobId,update);}
   if(requests.get(scope.id)!==seq)return;
+  // The assistant may have loaded more dates from Google while answering; take them in before comparing revisions.
+  if(response.calendarLoaded){try{await receiveCalendar(await api('/api/calendar-state'));}catch{}}
   if(activeId===scope.id)scope.state=state;
   if((response.calendarRevision??workspace.calendarRevision)!==(snapshot.calendarRevision||0)){rollbackEarlyView(scope,snapshot);scope.status=scope.id===HOME?'open':'needs_review';scope.state.stale=scope.id!==HOME;delete scope.state.earlyView;scope.state.pending=false;scope.state.pendingJob=null;scope.state.reply=scope.id===HOME?'The calendar changed while I was answering. Please ask again.':'';await saveScope(scope);if(activeId===scope.id){state=scope.state;render();}return;}
   scope.state.attentionDays=[];
-  if(response.result.operations.some(o=>['edit','create'].includes(o.op))){response.result.operations=response.result.operations.filter(o=>!(o.op==='view'&&o.days?.every(d=>scope.state.days.includes(d))));}
+  // A proposal's own dates replace Month; in a day or week view, dates already on screen need no navigation.
+  response.result.navigated=response.result.operations.some(o=>o.op==='view');
+  if(response.result.operations.some(o=>['edit','create'].includes(o.op))&&ensureView(scope.state).mode!=='month'){response.result.operations=response.result.operations.filter(o=>!(o.op==='view'&&o.days?.every(d=>scope.state.days.includes(d))));}
   const navigation=(scope.state.navigationReset||pending.manualView||scope.state.pendingJob?.manualView)?captureView(scope.state):null;
   if(pending.manualView||scope.state.pendingJob?.manualView||navigation){response.result.operations=response.result.operations.filter(o=>!['view','highlight','select','inspect','compare','gaps'].includes(o.op));}
   traceInteraction(scope.state,'reply-received',{requestId:workspace.requestId,navigationPreserved:!!navigation,operations:operationTrace(response.result.operations)});
@@ -552,7 +710,7 @@ async function finishReply(scope){
   scope.state.work={...scope.state.work,status:'complete'};scope.state.unread=activeId!==scope.id;
   if(scope.id===HOME)scope.title='Calendar';
   record(scope,'assistant',response.result.reply,{detail:response.result.detail||''});if(applied&&proposalBefore!==proposalSignature(scope.state))scope.refs=[...new Set([...scope.refs,...Object.keys(scope.state.edits),...scope.state.drafts.flatMap(d=>d.ids||[])])];
-  saveProposalVersion(scope);await saveScope(scope);
+  saveProposalVersion(scope);saveScope(scope);
   if(activeId===scope.id){state=scope.state;render();scheduleCheck();setStatus(applied?'':'Alternative ready · your edits are preserved');if(applied)revealCalendar([...new Set([...Object.keys(state.edits),...state.created.map(e=>e.ref),...activeIds()])]);animateReply();say(response.result.reply);}
   else{persist();renderWork();toast(`${scope.title} · reply ready`);}
  }catch(error){if(requests.get(scope.id)===seq)replyError(scope,error,text);}
@@ -588,7 +746,8 @@ async function execute(anchor=confirmation()){
   if(proposalSignature(scope.state)!==signature||(snapshot.calendarRevision||0)!==revision||scope.status!=='open')throw Error('The steps changed. Review them before confirming.');
   if(!check.ready){if(activeId===scope.id)setStatus('Review the marked steps before confirming.');return;}
   scope.state.executionId ||= 'run-'+crypto.randomUUID();await saveScope(scope);
-  const running=await api('/api/actions/execute',{ticket:check.ticket,requestId:scope.state.executionId}),result=await waitJob(running.jobId);scope.state.result=result;
+  scope.state.checkProgress={executing:true,steps:check.steps.map(x=>({key:x.key,title:x.title,status:'pending'}))};if(activeId===scope.id)renderWork();
+  const running=await api('/api/actions/execute',{ticket:check.ticket,requestId:scope.state.executionId}),result=await waitJob(running.jobId,job=>{if(job.partial?.steps?.length){scope.state.checkProgress={executing:true,steps:job.partial.steps};if(activeId===scope.id)renderWork();}});scope.state.result=result;
   for(const step of result.steps||[]){if(!['success','awaiting_reply','unknown'].includes(step.status))continue;const action=actions.find(a=>a.key===step.key);if(!action)continue;
    if(step.status==='unknown'){scope.state.excluded=[...(scope.state.excluded||[]),action.key];continue;}
    if(action.kind==='create')scope.state.created=scope.state.created.filter(e=>e.ref!==action.ref);
@@ -607,7 +766,8 @@ async function execute(anchor=confirmation()){
 function openDrawer(title,body,type='details'){
  const drawer=$('#drawer');if(drawer.hidden)drawerReturnFocus=document.activeElement;
  drawer.innerHTML=`<div class="drawer-head"><h2 id="drawer-title">${esc(title)}</h2><button data-action="close-drawer" aria-label="Close details">×</button></div><div class="drawer-body">${body}</div>`;
- drawer.hidden=false;drawer.dataset.kind=type;drawer.style.left='';drawer.style.top='';drawer.style.width='';drawer.style.maxHeight='';const modal=!['event','colors'].includes(type)||phoneLayout.matches;drawer.setAttribute('aria-modal',String(modal));$('#drawer-shade').hidden=!modal;drawerType=type;$('.shell').inert=modal;
+ drawer.hidden=false;drawer.dataset.kind=type;drawer.style.left='';drawer.style.top='';drawer.style.width='';drawer.style.maxHeight='';// On desktop every side view docks into the panel column, so the calendar stays usable; phones keep modal sheets.
+ const modal=phoneLayout.matches;drawer.setAttribute('aria-modal',String(modal));$('#drawer-shade').hidden=!modal;drawerType=type;$('.shell').inert=modal;
  drawer.querySelector('[data-action="close-drawer"]').focus({preventScroll:true});
 }
 function closeDrawer(){
@@ -640,12 +800,30 @@ function eventWhen(e){
  const date=dayKey(e),endDate=dayKey({start:e.end});
  return `${dateLabel(date)} · ${timeLabel(e.start)}–${date!==endDate?dateLabel(endDate)+' ':''}${timeLabel(e.end)} ${timezoneLabel(e.start)}`;
 }
-let eventCardFrame=0;
+let eventCardFrame=0,lensHeight=420;const LENS_WIDTH=400;
+// The opened event becomes the lens on desktop timed views; phones keep their sheet, all-day events their card.
+function lensTarget(timed,days){
+ if(drawerType!=='event'||!state.inspected||phoneLayout.matches||ensureView(state).mode==='month')return null;
+ const e=timed.find(e=>e.ref===state.inspected);return e&&days.includes(dayKey(e))?e:null;
+}
 function positionEventCard(){
  if(drawerType!=='event')return;
  const drawer=$('#drawer'),mobile=phoneLayout.matches,main=$('.calendar-main');
  drawer.setAttribute('aria-modal',String(mobile));$('.shell').inert=mobile;$('#drawer-shade').hidden=!mobile;
- if(mobile){drawer.style.left='';drawer.style.top='';drawer.style.width='';drawer.style.maxHeight='';main.style.marginRight='';return;}
+ if(mobile){drawer.classList.remove('lens');drawer.style.left='';drawer.style.top='';drawer.style.width='';drawer.style.maxHeight='';drawer.style.height='';main.style.marginRight='';return;}
+ const host=$('#calendar').querySelector(`.event.lens-host[data-event="${CSS.escape(state.inspected||'')}"]`);
+ if(host){
+  // Measure the card's natural height at the lens width; if the lens is the wrong size, redraw the calendar around it.
+  drawer.classList.add('lens');const box=host.getBoundingClientRect();
+  drawer.style.width=box.width+'px';drawer.style.height='auto';drawer.style.maxHeight='none';
+  const natural=Math.min(drawer.scrollHeight,Math.max(260,$('#calendar-scroll').clientHeight-40));
+  if(Math.abs(natural-lensHeight)>12){lensHeight=natural;renderCalendar();return;}
+  const view=$('#calendar-scroll').getBoundingClientRect();
+  drawer.style.left=box.left+'px';drawer.style.top=box.top+'px';drawer.style.height=box.height+'px';drawer.style.maxHeight=box.height+'px';
+  drawer.classList.toggle('offscreen',box.bottom<view.top+20||box.top>view.bottom-20);
+  return;
+ }
+ drawer.classList.remove('lens','offscreen');drawer.style.height='';
  const targets=[...$('#calendar').querySelectorAll(`[data-event="${CSS.escape(state.inspected||'')}"]`)];
  const bounds=$('#calendar-scroll').getBoundingClientRect();
  const target=targets.find(el=>{const r=el.getBoundingClientRect();return r.bottom>bounds.top&&r.top<bounds.bottom&&r.right>bounds.left&&r.left<bounds.right;})||targets[0];
@@ -684,7 +862,9 @@ function inspect(ref){
  if(!e.organizerSelf&&canRespond(e))body+=`<div class="event-rsvp" role="group" aria-label="Your response"><span>Your response</span><div>${[['accept','Going'],['tentative','Maybe'],['decline','Decline']].map(([action,label])=>{const selected={accept:'accepted',decline:'declined',tentative:'tentative'}[action]===e.response;return `<button data-event-action="${action}" data-id="${esc(ref)}" aria-pressed="${selected}" ${selected?'disabled':''}>${selected?'✓ ':''}${label}</button>`;}).join('')}</div></div>`;
  body+=`<div class="event-footer"><button class="event-discuss" data-action="discuss-event">Discuss</button>${!e.allDay?`<button data-action="event-move">${canEdit(e)?'Change time':'Suggest time'}</button>`:''}<button class="event-overflow" data-action="event-options" aria-label="More event options" title="More event options">⋯</button></div>`;
  const source=googleEventUrl(e);if(source)body+=`<a class="source-link" href="${esc(source)}" target="_blank" rel="noopener noreferrer">Open in Google Calendar ↗</a>`;
- renderHeader();renderCalendar();openDrawer(e.title,body,'event');positionEventCard();
+ openDrawer(e.title,body,'event');renderHeader();renderCalendar();
+ if(!phoneLayout.matches){const host=$('#calendar').querySelector(`.event.lens-host[data-event="${CSS.escape(ref)}"]`);host?.scrollIntoView({block:'nearest',behavior:'instant'});}
+ positionEventCard();
 }
 function eventPanel(kind){
  const e=inspectedEvent();if(!e)return;
@@ -744,9 +924,13 @@ async function refreshReview(){
  }catch(error){setStatus(error.message);}
 }
 function savePreferences(){localStorage.setItem(PREFERENCES,JSON.stringify(preferences));reading=preferences.readAloud;}
+// Settings is five short groups of label and control rows. Anything longer than a line of explanation,
+// and anything used once a month, sits behind More.
+const switchRow=(label,note,checked,attrs)=>`<label class="set-row"><span><b>${label}</b>${note?`<small>${note}</small>`:''}</span><input type="checkbox" class="set-switch" ${attrs} ${checked?'checked':''}></label>`;
 function calendarSettingsMarkup(){
- const settings=calendarSettings();
- return `<section class="settings-section"><h3>Event colors</h3>${appearance.summary()}<p ${snapshot.appearance?.policy.mode==='semantic'?'hidden':''}>Choose a swatch or enter a hex color, then save.</p><form id="calendar-settings-form"><div class="calendar-colors" ${snapshot.appearance?.policy.mode==='semantic'?'hidden':''}>${[['internal','Internal'],['external','External'],['solo','Solo / focus']].map(([key,label])=>`<div class="color-choice"><label for="color-${key}">${label}</label><div class="color-controls"><input id="color-${key}" name="${key}" type="color" value="${esc(settings.colors[key])}" aria-label="${label} color"><input id="hex-${key}" data-color-hex="${key}" aria-label="${label} hex color" value="${esc(settings.colors[key])}" pattern="#[0-9a-fA-F]{6}" maxlength="7" spellcheck="false" required></div></div>`).join('')}</div><div class="calendar-colors marker-colors"><p class="field-note">Markers on events</p>${[['decision','Open decision'],['proposed','Proposed change'],['pending','Needs agreement']].map(([key,label])=>`<div class="color-choice"><label for="color-${key}">${label}</label><div class="color-controls"><input id="color-${key}" name="${key}" type="color" value="${esc(markerColors()[key])}" aria-label="${label} color"><input id="hex-${key}" data-color-hex="${key}" aria-label="${label} hex color" value="${esc(markerColors()[key])}" pattern="#[0-9a-fA-F]{6}" maxlength="7" spellcheck="false" required></div></div>`).join('')}</div><button type="button" data-action="reset-colors" class="reset-colors">Reset colors</button><label for="internal-domains">Internal domains</label><textarea id="internal-domains" rows="3" spellcheck="false" autocapitalize="none" autocomplete="off" maxlength="12000" placeholder="example.com">${esc(settings.internalDomains.join('\n'))}</textarea><label for="internal-addresses">Individual internal addresses</label><textarea id="internal-addresses" rows="2" spellcheck="false" autocapitalize="none" autocomplete="off" maxlength="12000" placeholder="person@example.com">${esc(settings.internalAddresses.join('\n'))}</textarea><p class="field-note">One per line or separated by commas. All other attendees must match; rooms are ignored.</p><div class="actions"><button type="submit" class="primary">Save</button><span id="calendar-settings-status" role="status" aria-live="polite"></span></div></form></section>`;
+ const settings=calendarSettings(),semantic=snapshot.appearance?.policy.mode==='semantic';
+ const color=(key,label,value)=>`<div class="color-choice"><label for="color-${key}">${label}</label><div class="color-controls"><input id="color-${key}" name="${key}" type="color" value="${esc(value)}" aria-label="${label} color"><input id="hex-${key}" data-color-hex="${key}" aria-label="${label} hex color" value="${esc(value)}" pattern="#[0-9a-fA-F]{6}" maxlength="7" spellcheck="false" required></div></div>`;
+ return `<form id="calendar-settings-form"><section class="set-group"><h3>Colors</h3>${appearance.summary()}<div class="calendar-colors" ${semantic?'hidden':''}>${[['internal','Internal'],['external','External'],['solo','Solo / focus']].map(([key,label])=>color(key,label,settings.colors[key])).join('')}</div><div class="calendar-colors marker-colors">${[['decision','Open decision'],['proposed','Proposed change'],['pending','Needs agreement']].map(([key,label])=>color(key,label,markerColors()[key])).join('')}</div><button type="button" data-action="reset-colors" class="reset-colors">Reset colors</button></section><section class="set-group"><h3>Who counts as internal</h3><label class="set-field" for="internal-domains"><span>Domains</span><textarea id="internal-domains" rows="1" spellcheck="false" autocapitalize="none" autocomplete="off" maxlength="12000" placeholder="example.com">${esc(settings.internalDomains.join(', '))}</textarea></label><label class="set-field" for="internal-addresses"><span>People</span><textarea id="internal-addresses" rows="1" spellcheck="false" autocapitalize="none" autocomplete="off" maxlength="12000" placeholder="person@example.com">${esc(settings.internalAddresses.join(', '))}</textarea></label><p class="set-note">Separate with commas. A meeting is internal when everyone else on it matches.</p></section><div class="set-save"><button type="submit" class="primary">Save</button><span id="calendar-settings-status" role="status" aria-live="polite"></span></div></form>`;
 }
 async function saveCalendarSettings(form){
  const button=form.querySelector('[type=submit]'),message=form.querySelector('[role=status]');button.disabled=true;message.textContent='Saving…';
@@ -758,10 +942,37 @@ async function saveCalendarSettings(form){
  }catch(error){message.textContent=error.message;}
  finally{button.disabled=false;}
 }
-function performanceMarkup(){const m=state.lastMetrics;return `<details><summary>Models & response time</summary><p>Interaction: ${esc(status.interactionModel)} · low effort<br>Reasoning: ${esc(status.researchModel)}<br>${status.transport==='api'?'Claude API':'Claude CLI · API key not configured'}</p>${m?`<p>Last reply: ${esc(m.model)}<br>${m.firstVisualMs!=null?'Calendar updated in '+(m.firstVisualMs/1000).toFixed(2)+'s<br>':''}Completed in ${(m.totalMs/1000).toFixed(2)}s</p>`:''}</details>`;}
-function inferenceMarkup(){const u=status.inference||{};return `<section class="settings-section"><h3>Assistant usage</h3><p>New MCP suggestions can trigger a review. Idle time, calendar sync and arriving email never run models. Each request uses at most two model calls.</p><form id="assistant-settings-form"><label for="automatic-limit">Automatic MCP reviews per day</label><input id="automatic-limit" type="number" min="0" max="50" value="${u.maxAutomaticReviews??5}"><button>Save limit</button></form><p>${u.automaticReviews||0} automatic reviews reserved today · ${u.modelCalls||0} completed model calls<br>${u.inputTokens||0} input · ${u.cachedInputTokens||0} cached input · ${u.outputTokens||0} output tokens</p><small>Daily limit resets at midnight UTC. Extra suggestions remain available for manual review. Token totals cover completed jobs; failed or stopped requests may also incur usage.</small></section>`;}
-function settingsStatusMarkup(){const g=status.google||{},sync=status.sync||{};return `${inferenceMarkup()}${received?.capabilitiesMarkup(status.capabilities)||''}<div class="settings-section"><h3>Google Calendar</h3><p>${g.calendar?esc(g.account):'Not connected to this app'}</p><p>${sync.error?esc(sync.error):g.calendar?(status.hosted?'Checks for changes while this app is open.':'Checks for changes every 30 seconds.'):'Automatic updates are off.'}</p><div class="actions"><button data-action="about">${g.calendar?'Connection':'Connect Google'}</button><button data-action="sync" ${g.calendar?'':'disabled'}>Sync now</button></div></div><div class="settings-section"><h3>Assistant</h3><p>${status.researcher?'Configured · independent of Grok':'Needs configuration'}</p>${performanceMarkup()}<div class="settings-links"><button data-action="view-trace">View diagnostics ↗</button><button data-action="activity">Memory & activity ↗</button><button data-action="refresh-review">Refresh suggestions ↗</button></div></div><div class="settings-section"><h3>Audio</h3><label class="check-label"><input type="checkbox" data-setting="readAloud" ${preferences.readAloud?'checked':''}> Read replies aloud</label></div><details><summary>Calendar data</summary><p>Primary calendar · ${dateLabel(snapshot.range.start)} onward. ${snapshot.lastSyncedAt?'Last sync '+new Date(snapshot.lastSyncedAt*1000).toLocaleString(): 'Snapshot from '+new Date(snapshot.capturedAt).toLocaleString()}. Other calendars and Slack sending are not connected.</p></details>`;}
-function showSettings(refresh=true){if(refresh)api('/api/status').then(fresh=>{status=fresh;if(drawerType==='settings'){const section=$('#settings-live-status');if(section&&!section.contains(document.activeElement)&&!section.dataset.dirty){const replacement=document.createElement('div');replacement.innerHTML=settingsStatusMarkup();section.replaceChildren(...replacement.childNodes);}}}).catch(()=>{});openDrawer('Settings',`${calendarSettingsMarkup()}<div id="settings-live-status">${settingsStatusMarkup()}</div>`,'settings');}
+// Default or test model. The test model's real name stays on the server; the page only has its label.
+const testLabel=()=>status?.testModel?.label||'Test model',usingTest=()=>!!status?.testModel?.available&&status.inference?.model==='test';
+function modelChoiceMarkup(){
+ const t=status.testModel;if(!t)return '';
+ return `<div class="model-choice" role="radiogroup" aria-label="Assistant model">${[['default','Default'],['test',testLabel()]].map(([value,label])=>`<button type="button" role="radio" data-model-choice="${value}" aria-checked="${(usingTest()?'test':'default')===value}" ${value==='test'&&!t.available?'disabled':''}>${esc(label)}</button>`).join('')}</div>`;
+}
+async function setModel(choice){
+ try{const saved=await api('/api/assistant-settings',{model:choice});status.inference={...status.inference,...saved};try{status=await api('/api/status');}catch{}
+  renderHeader();for(const slot of document.querySelectorAll('.model-choice-slot'))slot.innerHTML=modelChoiceMarkup();
+  toast(usingTest()?`Using ${testLabel()}`:'Using the default model');}
+ catch(error){toast(error.message);}
+}
+function assistantSettingsMarkup(){
+ const u=status.inference||{},m=state.lastMetrics,t=status.testModel,cost=v=>v<0.01?'under 1¢':v<1?`${(v*100).toFixed(1)}¢`:'$'+v.toFixed(2);
+ return `<section class="set-group"><h3>Assistant</h3>${t?`<div class="set-row"><span><b>Model</b>${t.available?'':`<small>${esc(testLabel())} needs ${esc((t.missing||[]).join(' and '))} on the server</small>`}</span><span class="model-choice-slot">${modelChoiceMarkup()}</span></div>`:''}${switchRow('Fast replies','About twice as fast, at twice the price per token',u.fastMode,'id="fast-mode"')}${switchRow('Read replies aloud','',preferences.readAloud,'data-setting="readAloud"')}<p class="set-note">${esc(status.interactionModel||'')}${status.transport==='api'?'':' · Claude CLI, no API key'}<br>Today: ${u.modelCalls||0} model ${u.modelCalls===1?'call':'calls'}${u.costUsd?`, about ${cost(u.costUsd)}`:''}${m?.totalMs?` · Last reply: ${(m.totalMs/1000).toFixed(1)} s${m.costUsd!=null?`, ${cost(m.costUsd)}`:''}`:''}</p></section>`;
+}
+function connectionSettingsMarkup(){
+ const g=status.google||{},sync=status.sync||{},age=sync.lastSuccessAt?Math.floor((Date.now()/1000-sync.lastSuccessAt)/60):null;
+ const line=!g.calendar?'Changes cannot be applied until Google is connected':sync.error?esc(sync.error):age===null?'Connected':age<1?'Synced just now':`Synced ${age} min ago`;
+ return `<section class="set-group"><h3>Google Calendar</h3><div class="set-row"><span><b>${g.calendar?esc(g.account||'Connected'):'Not connected'}</b><small>${line}</small></span><span class="set-buttons">${g.calendar?'<button data-action="sync">Sync</button>':''}<button data-action="about">${g.calendar?'Connection':'Connect'}</button></span></div></section>`;
+}
+function layoutSettingsMarkup(){
+ const option=(value,label)=>`<button type="button" role="radio" aria-checked="${SURFACE===value}" ${SURFACE===value?'':'data-action="set-surface"'}>${label}</button>`;
+ return `<section class="set-group"><h3>Layout</h3><div class="set-row"><span><b>${SURFACE==='canvas'?'Canvas':'Side panel'}</b><small>${SURFACE==='canvas'?'Answers on one line above the calendar':'Answers in a column beside the calendar'}</small></span><div class="model-choice" role="radiogroup" aria-label="Layout">${option('canvas','Canvas')}${option('docked','Side panel')}</div></div></section>`;
+}
+function settingsStatusMarkup(){return assistantSettingsMarkup()+connectionSettingsMarkup()+layoutSettingsMarkup();}
+function moreSettingsMarkup(){
+ const u=status.inference||{},hosted=received?.capabilitiesMarkup(status.capabilities)||'';
+ return `<section class="set-group"><h3>More</h3><div class="set-links"><button data-action="activity">Memory and activity</button><button data-action="threads">History</button><button data-action="refresh-review">Refresh suggestions</button><button data-action="view-trace">Diagnostics</button></div>${hosted?`<details class="set-details"><summary>Account and connected assistant</summary>${hosted}<form id="assistant-settings-form" class="set-row"><span><b>Automatic reviews per day</b><small>Suggestions from a connected assistant</small></span><span class="set-buttons"><input id="automatic-limit" type="number" min="0" max="50" value="${u.maxAutomaticReviews??5}" aria-label="Automatic reviews per day"><button>Save</button></span></form></details>`:''}<p class="set-note">Primary calendar from ${dateLabel(snapshot.range.start)}. ${snapshot.lastSyncedAt?'Last sync '+new Date(snapshot.lastSyncedAt*1000).toLocaleString():'Snapshot from '+new Date(snapshot.capturedAt).toLocaleString()}. Other calendars and Slack are not connected.</p></section>`;
+}
+function showSettings(refresh=true){if(refresh)api('/api/status').then(fresh=>{status=fresh;if(drawerType==='settings'){const section=$('#settings-live-status');if(section&&!section.contains(document.activeElement)&&!section.dataset.dirty){const replacement=document.createElement('div');replacement.innerHTML=settingsStatusMarkup();section.replaceChildren(...replacement.childNodes);}}}).catch(()=>{});openDrawer('Settings',`<div id="settings-live-status">${settingsStatusMarkup()}</div>${calendarSettingsMarkup()}${moreSettingsMarkup()}`,'settings');}
 async function receiveCalendar(data){
  const calendarChanged=(data.snapshot.calendarRevision||0)!==(snapshot.calendarRevision||0),appearanceChanged=(data.snapshot.appearance?.revision||0)!==(snapshot.appearance?.revision||0);
  const changed=calendarChanged||appearanceChanged||JSON.stringify(data.snapshot.calendarSettings)!==JSON.stringify(snapshot.calendarSettings)||JSON.stringify(data.snapshot.coverage)!==JSON.stringify(snapshot.coverage);snapshot=data.snapshot;status.sync=data.sync;
@@ -829,9 +1040,18 @@ const actions={
  'toggle-selection-mode':()=>{selectionMode=!selectionMode;renderHeader();},
  undo:()=>apply([{op:'undo'}]),redo:()=>apply([{op:'redo'}]),compare:()=>apply([{op:'compare',mode:state.source?'scenario':'source'}]),
  'clear-selection':()=>{closeDrawer();selectionMode=false;apply([{op:'clear',mode:'selection'},{op:'clear',mode:'gaps'}]);},
- 'show-blocked-steps':()=>{$('#proposal-details').open=true;$('.step-warning')?.scrollIntoView({block:'center',behavior:'smooth'});},
+ 'show-blocked-steps':()=>{if(SURFACE==='canvas'){whyOpen=true;return renderHeadline();}$('#proposal-details').open=true;$('.step-warning')?.scrollIntoView({block:'center',behavior:'smooth'});},
  'bulk-accept':()=>directAction('accept',activeIds()),
+ 'review-changes':()=>{reviewIndex=0;whyOpen=false;focusReview();},
+ 'review-next':()=>{reviewIndex++;focusReview();},'review-prev':()=>{reviewIndex--;focusReview();},
+ 'review-done':()=>{reviewIndex=null;reviewRef=null;renderCalendar();renderHeadline();},
+ 'toggle-why':()=>{whyOpen=!whyOpen;renderHeadline();},
+ 'set-surface':()=>{const next=SURFACE==='canvas'?'docked':'canvas';try{localStorage.setItem('dayweave-surface',next);}catch{}const url=new URL(location.href);url.searchParams.set('surface',next);location.assign(url);},
  'bulk-decline':()=>directAction('decline',activeIds()),
+ 'bulk-decline-note':()=>{selectionNote=selectionNote===null?'':null;renderSelection();},
+ 'bulk-remove':()=>directAction('remove',activeIds()),
+ 'bulk-cancel':()=>directAction('cancel',activeIds()),
+ 'ask-selection':()=>{const field=$('#command');if(!field.value.trim())field.value='About these '+activeIds().length+' selected: ';resizeComposer();field.focus();},
  'move-set':moveSet,threads:showThreads,stop:stopThinking,retry:()=>submit(state.lastInput),'proposal-history':showProposalHistory,queue:showQueue,home:()=>home(true),back:showQueue,new:newConversation,next:nextDecision,later:()=>{closeDrawer();return disposition('later');},dismiss:()=>{closeDrawer();return disposition('dismissed');},reopen:()=>disposition('open'),settings:showSettings,sync:syncNow,recheck:reviewChanges,execute,about:showAbout,activity:showActivity,
  history:()=>openDrawer('This conversation',chatMarkup(current(),40)||'<p>Your conversation will appear here.</p>','history'),
  'review-suggestion':()=>openSuggestion(current().id,true),'hide-suggestion':()=>{state.suggestion=null;state.hiddenSuggestion=true;render();},'back-conversation':backToConversation,'return-proposal':()=>{returnToProposal(current());state=current().state;render();},'close-drawer':closeDrawer,'response-details':()=>openDrawer('Context',`<p style="white-space:pre-wrap">${esc(human(state.detail))}</p>`),
@@ -845,11 +1065,15 @@ document.addEventListener('submit',e=>{
  else showWeek(weekDates(date));
 });
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!state)return;
+ if(b.dataset.draftToggle){e.stopPropagation();const key=b.dataset.draftToggle;setStepIncluded(key,!!state.excluded?.includes(key));return;}
+ if(b.dataset.modelChoice){setModel(b.dataset.modelChoice);return;}
  if(b.dataset.prompt){$('#command').value=b.dataset.prompt;$('#command').dispatchEvent(new Event('input'));$('#command').focus();return;}
  if(b.dataset.monthDay){closeDrawer();apply([{op:'view',mode:'expand',date:b.dataset.monthDay}]);const expanded=$('.month-week.expanded');if(expanded)$('#calendar-scroll').scrollTop=expanded.offsetTop-$('.month-grid').offsetTop-32;return;}
  if(b.dataset.focusDay)return chooseDay(b.dataset.focusDay);
  if(b.dataset.expandDates)return expandDates(b.dataset.expandDates);
- if(b.dataset.includeDay){phoneRange=true;return apply([{op:'view',days:[...new Set([...state.days,b.dataset.includeDay])].sort()}]);}
+ if(b.dataset.includeDay){const shown=displayedDays(),days=[...new Set([...shown,b.dataset.includeDay])].sort();
+  if(phoneLayout.matches&&!phoneRange&&state.days.length>1)navigateView(state,{mode:'day',date:shown[0]},{remember:false});
+  phoneRange=true;return apply([{op:'view',days}]);}
  if(b.dataset.action){Promise.resolve().then(()=>actions[b.dataset.action]?.()).catch(e=>{toast(e.message);setStatus(e.message);});return;}
  if(b.dataset.decision)return activate(b.dataset.decision);
  if(b.dataset.restoreProposal){restoreProposalVersion(current(),+b.dataset.restoreProposal);state=current().state;closeDrawer();render();scheduleCheck();animateReply();return;}
@@ -860,8 +1084,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||
  if(b.dataset.refreshEvent){api('/api/events/refresh',{ref:b.dataset.refreshEvent}).then(r=>{snapshot=r.snapshot;state.check=null;render();scheduleCheck();}).catch(e=>toast(e.message));return;}
  if(b.dataset.forget){api('/api/memory',{remove:+b.dataset.forget}).then(showActivity).catch(e=>toast(e.message));return;}
  if(b.dataset.eventAction){const ref=b.dataset.id;if(inOverview()){const title=eventByRef(ref)?.title;newDecision();current().title=title||'Change event';}if(apply([{op:'edit',ids:[ref],action:b.dataset.eventAction}],'Updated the steps.')){closeDrawer();}return;}
- if(b.dataset.event){if(suppressClick){suppressClick=false;return;}const ref=b.dataset.event;if(!selectionMode&&!e.shiftKey&&!e.metaKey&&(floating.tucked||entryFresh||state.responseNote)&&isOpen(current())&&state.edits[ref]){returnToProposal(current());activate(activeId);return;}if(selectionMode||e.shiftKey||e.metaKey)apply([{op:'select',ids:[ref],mode:state.selected.includes(ref)?'remove':'add'}]);else if(state.inspected===ref){closeDrawer();}else if(state.selected.includes(ref)){apply([{op:'select',ids:[ref],mode:'remove'}]);closeDrawer();}else{inspect(ref);}return;}
- if(b.dataset.draftGap){const parsed=draft?.parsed,length=Math.min(+b.dataset.minutes||60,parsed?.minutes||60),title=parsed?.title||'Focus';$('#command').value='';state.composer='';clearDraft({repaint:false});resizeComposer();apply([{op:'create',title,date:dayKey({start:b.dataset.draftGap}),time:timeString(b.dataset.draftGap),minutes:length}],`Hold ${timeLabel(b.dataset.draftGap)} for ${title.toLowerCase()}?`);return;}
+ if(b.dataset.event){if(suppressClick){suppressClick=false;return;}const ref=b.dataset.event,multiple=selectionMode||e.shiftKey||e.metaKey||e.ctrlKey;if(!multiple&&(floating.tucked||entryFresh||state.responseNote)&&isOpen(current())&&state.edits[ref]){returnToProposal(current());activate(activeId);return;}if(multiple)toggleEventSelection(ref);else if(state.inspected===ref){closeDrawer();}else if(state.selected.includes(ref)){apply([{op:'select',ids:[ref],mode:'remove'}]);closeDrawer();}else{inspect(ref);}return;}
  if(b.dataset.gap)apply([{op:'create',title:state.gapTitle,date:dayKey({start:b.dataset.gap}),time:timeString(b.dataset.gap),minutes:state.gapMinutes}],'Here is the new hold.');
 });
 $('#drawer-shade').onclick=closeDrawer;
@@ -870,46 +1093,8 @@ document.addEventListener('pointerdown',e=>{if(drawerType==='event'&&!phoneLayou
 $('#drawer').addEventListener('toggle',()=>{if(drawerType==='event')positionEventCard();},true);
 $('#composer').onsubmit=e=>{e.preventDefault();submit($('#command').value);};
 $('#phone-view').onchange=e=>setCalendarView(e.target.value);
-function resizeComposer(){const field=$('#command');if(!field.value)field.style.height='';else{field.style.height='0px';field.style.height=Math.max(44,Math.min(112,field.scrollHeight))+'px';}if(state&&snapshot){computeDraft();renderDraftInput();}}
-// The draft preview is presentation only: it never enters decision state, undo or storage.
-let draft=null,draftTimer=null,draftShown='null';
-function sceneState(){return inOverview()||state.source||current().status==='needs_review'||['dismissed','obsolete','later','done','waiting'].includes(current().status)?{...state,edits:{},created:[],drafts:[]}:visibleProposal(snapshot,state);}
-function draftWindows(dates,length,[from,to],ignore){
- const known=dates.filter(d=>dayCovered(snapshot,d));if(!known.length)return [];
- const events=ignore?snapshot.events.filter(e=>e.ref!==ignore):snapshot.events;
- return findGaps(events,{...sceneState(),days:known,questionScope:null},snapshot,length,Math.max(0,from),Math.min(to,1439)).slice(0,14);
-}
-function draftDays(){
- const v=ensureView(state),today=dayKey({start:new Date().toISOString()});
- if(v.mode!=='month')return displayedDays();
- const grid=monthGrid(v.anchor),browsed=weekView.find(d=>grid.includes(d));return weekDates(v.focusDate||(grid.includes(today)?today:browsed||v.anchor),true);
-}
-function computeDraft(){
- const text=$('#command').value;
- if(!text.trim()||state.pending||state.executionRunning){draft=null;return;}
- const intent=localIntent(text,state.days);
- if(intent&&intent.kind!=='view'){draft={parsed:null,preview:null,intent:intent.kind};return;}
- const days=draftDays(),parsed=parseDraft(text,{events:allEvents(),days,today:dayKey({start:new Date().toISOString()})});
- let preview=null;try{preview=draftPreview(parsed,{events:currentEvents(),days,findWindows:draftWindows});}catch{preview=null;}
- draft={parsed,preview};
-}
-function renderDraftInput(){
- const field=$('#command'),mirror=$('#command-mirror'),text=field.value,tokens=draft?.parsed?.tokens||[];
- let html='',i=0;for(const tok of tokens){html+=esc(text.slice(i,tok.start))+`<mark class="${tok.kind}">${esc(text.slice(tok.start,tok.end))}</mark>`;i=tok.end;}
- html+=esc(text.slice(i))+' ';if(mirror.innerHTML!==html)mirror.innerHTML=html;
- const style=getComputedStyle(field);for(const k of ['fontFamily','fontSize','fontWeight','letterSpacing','lineHeight','paddingTop','paddingRight','paddingBottom','paddingLeft'])mirror.style[k]=style[k];
- mirror.scrollTop=field.scrollTop;
- const labels=[],seen=new Set(),add=(kind,label)=>{if(!seen.has(kind+label)){seen.add(kind+label);labels.push([kind,label]);}};
- if(draft?.intent==='confirm')add('act',confirmation()?'Confirms the change shown':'Nothing waiting to confirm');
- for(const tok of tokens)add(tok.kind,tok.label);
- const p=draft?.preview;if(p?.windows?.length)add('free',`${p.windows.length} open ${p.windows.length===1?'window':'windows'}`);
- if(p?.target)add('free',`Fits ${dateLabel(p.target.date,{weekday:'short'})} ${timeLabel(p.target.start)}`);
- const chips=$('#draft-chips'),markup=labels.map(([k,l])=>`<span class="draft-chip ${k}">${esc(l)}</span>`).join('');
- chips.hidden=!markup;if(chips.innerHTML!==markup)chips.innerHTML=markup;
-}
-function scheduleDraftPaint(){clearTimeout(draftTimer);draftTimer=setTimeout(()=>{if(JSON.stringify(draft?.preview||null)!==draftShown)renderCalendar();},90);}
-function clearDraft({repaint=true}={}){clearTimeout(draftTimer);const painted=draftShown!=='null';draft=null;if(snapshot)renderDraftInput();if(repaint&&painted)renderCalendar();}
-function currentSettings(){return settingsCatalog({calendar:snapshot?.calendarSettings||CALENDAR_DEFAULTS,audienceMode:snapshot?.appearance?.policy.mode!=='semantic',inference:status?.inference,preferences,hosted:!!status?.hosted});}
+function resizeComposer(){const field=$('#command');if(!field.value)field.style.height='';else{field.style.height='0px';field.style.height=Math.max(44,Math.min(112,field.scrollHeight))+'px';}}
+function currentSettings(){return settingsCatalog({calendar:snapshot?.calendarSettings||CALENDAR_DEFAULTS,audienceMode:snapshot?.appearance?.policy.mode!=='semantic',inference:status?.inference,preferences,hosted:!!status?.hosted,testModel:!!status?.testModel?.available});}
 const SETTING_VIEWS={settings:'settings',memory:'activity',diagnostics:'view-trace',connection:'about',history:'threads',saved:'queue',sync:'sync'};
 function takeSettings(scope,result){
  const ops=(result.operations||[]).filter(o=>o.op==='settings');if(!ops.length)return result;
@@ -930,6 +1115,8 @@ async function commitSettings(plan){
  for(const p of plan){if(isColorKey(p.key))colors[p.key.slice(7)]=p.after;else if(['internalDomains','internalAddresses'].includes(p.key))calendar[p.key]=p.after;}
  if(Object.keys(colors).length)calendar.colors=colors;
  if(Object.keys(calendar).length)await receiveCalendar(await api('/api/calendar-settings',calendar));
+ const fast=plan.find(p=>p.key==='fastMode');if(fast){const saved=await api('/api/assistant-settings',{fastMode:fast.after});status.inference={...status.inference,...saved};}
+ const model=plan.find(p=>p.key==='model');if(model){const saved=await api('/api/assistant-settings',{model:model.after});status.inference={...status.inference,...saved};try{status=await api('/api/status');}catch{}}
  const reviews=plan.find(p=>p.key==='automaticReviews');if(reviews){const saved=await api('/api/assistant-settings',{maxAutomaticReviews:reviews.after});status.inference={...status.inference,...saved};}
  const read=plan.find(p=>p.key==='readAloud');if(read){preferences.readAloud=read.after;try{savePreferences();}catch{reading=preferences.readAloud;}}
  const memory=plan.find(p=>p.key==='memory.add');if(memory)await api('/api/memory',{body:memory.after});
@@ -944,16 +1131,66 @@ async function applySettings(){
  }catch(error){setStatus(error.message);toast(error.message);}
  finally{applyingSettings=false;}
 }
+// The palette (canvas): under the request bar, a few things worth asking, recent requests, and the
+// commands that used to be buttons. Nothing is chosen until a row is picked; Enter alone still asks the model.
+let paletteItems=[],paletteIndex=-1;
+function paletteCatalog(){
+ const view=ensureView(state).mode,weekends=state.days.length===7,scope=current();
+ const proposal=!inOverview()&&isOpen(scope)&&actionBundle(snapshot,state).length>0;
+ const span=view==='month'?'this month':displayedDays().length===1?'this day':'this week';
+ const asks=(proposal?['Show me other options','Why this change?']:[`What does ${span} look like?`,`Find two hours of focus time ${span==='this day'?'today':span}`,`Which meetings could I skip ${span==='this day'?'today':span}?`]).map(text=>({kind:'ask',group:'Ask',label:text}));
+ const seen=new Set(asks.map(a=>a.label.toLowerCase()));
+ const recent=Object.values(scopes).flatMap(d=>(d.state.transcript||[]).filter(m=>m.role==='you'&&m.text&&m.text.length>3&&!localIntent(m.text,state.days))).sort((a,b)=>(b.at||0)-(a.at||0))
+  .filter(m=>!seen.has(m.text.toLowerCase())&&seen.add(m.text.toLowerCase())).slice(0,3).map(m=>({kind:'ask',group:'Recent',label:m.text.slice(0,120)}));
+ const thisWeek=JSON.stringify(state.days)===JSON.stringify(weekDates(dayKey({start:new Date().toISOString()})))&&view==='workweek';
+ const count=decisionFeed(decisions(),receivedRecords).filter(d=>d.bucket==='open').length;
+ // `search` rows have a button or a shortcut already, so they only appear when typed for.
+ const go=[!thisWeek&&{label:'Today',hint:'This week',run:()=>actions.today()},
+  ['workweek','fullweek'].includes(view)&&{label:weekends?'Hide weekends':'Show weekends',keywords:'full week saturday sunday',run:()=>setCalendarView(weekends?'workweek':'fullweek')},
+  {label:view==='month'?'Next month':'Next week',search:true,run:()=>shiftCalendar(1)},{label:view==='month'?'Previous month':'Previous week',search:true,run:()=>shiftCalendar(-1)},
+  view!=='month'&&{label:'Month',hint:'View',search:true,run:()=>setCalendarView('month')},!['workweek','fullweek'].includes(view)&&{label:'Week',hint:'View',search:true,run:()=>setCalendarView('workweek')},view!=='day'&&{label:'Day',hint:'View',search:true,run:()=>setCalendarView('day')}].filter(Boolean).map(c=>({kind:'command',group:'Go to',...c}));
+ const open=[{label:count?`Saved (${count})`:'Saved',keywords:'decisions proposals later',search:!count,run:showQueue},{label:'History',keywords:'conversations past',run:showThreads},
+  threadOpen()&&{label:'New topic',keywords:'conversation fresh',search:true,run:newConversation},
+  {label:selectionMode?'Stop selecting':'Select events',keywords:'multiple bulk',search:!selectionMode,run:actions['toggle-selection-mode']},
+  status?.testModel?.available&&{label:usingTest()?'Use the default model':`Use ${testLabel()}`,keywords:'model switch',run:()=>setModel(usingTest()?'default':'test')},
+  status?.hosted&&mail&&{label:'Mail',search:true,run:()=>mail.open()},{label:'Settings',keywords:'preferences colors connection',run:showSettings}].filter(Boolean).map(c=>({kind:'command',group:'Open',...c}));
+ return [...asks,...recent,...go,...open];
+}
+function renderPalette(){
+ const el=$('#palette');if(!el||!state||!snapshot)return;
+ const query=$('#command').value.trim().toLowerCase(),all=paletteCatalog();
+ // While typing, only matching rows stay: the palette steps aside for a real request.
+ paletteItems=query?all.filter(item=>(item.label+' '+(item.keywords||'')).toLowerCase().includes(query)&&(item.kind!=='ask'||item.label.toLowerCase()!==query)).slice(0,6):all.filter(item=>!item.search);
+ paletteIndex=Math.min(paletteIndex,paletteItems.length-1);
+ el.hidden=!paletteItems.length;if(el.hidden){el.innerHTML='';return;}
+ let group='';
+ el.innerHTML=paletteItems.map((item,i)=>`${item.group!==group?`<div class="palette-group">${esc(group=item.group)}</div>`:''}<button type="button" class="palette-row ${item.kind}" role="option" data-palette="${i}" aria-selected="${i===paletteIndex}"><span>${esc(item.label)}</span>${item.hint?`<small>${esc(item.hint)}</small>`:''}</button>`).join('')+'<div class="palette-foot"><span><kbd>↵</kbd> ask</span><span><kbd>↑</kbd><kbd>↓</kbd> choose</span><span><kbd>esc</kbd> close</span></div>';
+ el.querySelector('[aria-selected=true]')?.scrollIntoView({block:'nearest'});
+}
+function openPalette(){if(SURFACE!=='canvas'||!state)return;paletteIndex=-1;renderPalette();}
+function closePalette(){const el=$('#palette');if(el){el.hidden=true;el.innerHTML='';}paletteItems=[];paletteIndex=-1;}
+const paletteShown=()=>!!$('#palette')&&!$('#palette').hidden;
+function runPalette(i){
+ const item=paletteItems[i];if(!item)return;closePalette();
+ if(item.kind==='ask'){$('#command').value=item.label;submit(item.label);return;}
+ state.composer='';$('#command').value='';resizeComposer();$('#command').blur();
+ Promise.resolve().then(item.run).catch(error=>toast(error.message));
+}
+document.addEventListener('pointerdown',e=>{const row=e.target.closest?.('[data-palette]');if(row){e.preventDefault();return;}if(paletteShown()&&!e.target.closest?.('#composer'))closePalette();});
+document.addEventListener('click',e=>{const row=e.target.closest?.('[data-palette]');if(row)runPalette(+row.dataset.palette);});
+$('#command').addEventListener('click',()=>{if(!paletteShown())openPalette();});
+$('#command').addEventListener('blur',()=>setTimeout(()=>{if(document.activeElement!==$('#command'))closePalette();},150));
 // Anything on screen can be put away the same way: the close button, Escape, or "never mind".
 function threadOpen(){return !!state.settingsProposal||(!entryFresh&&!!(state.pending||state.transcript.length||!inOverview()))||activeIds().length>0||!!state.gapMinutes;}
 async function closeThread(){
- closeDrawer();clearDraft({repaint:false});selectionMode=false;
+ closeDrawer();selectionMode=false;reviewIndex=null;reviewRef=null;whyOpen=false;
  if(state.settingsProposal){state.settingsProposal=null;render();restPill();toast('Settings unchanged');return;}
  if(state.pending)await stopThinking();
  const scope=current(),proposal=!inOverview()&&isOpen(scope)&&scope.status!=='needs_review'&&actionBundle(snapshot,state).length>0;
  if(proposal){await disposition('dismissed',scope.id);}
  if(ensureView(state).mode==='month')apply([{op:'clear',mode:'selection'},{op:'clear',mode:'gaps'}]);
  else showWeek(weekView.length?weekView:state.days);
+ state.view.history=[];state.composer='';$('#command').value='';resizeComposer();renderHeader();
  restPill();
 }
 // Whatever the conversation is about stays on screen: days of highlighted or changed events join the view.
@@ -965,21 +1202,24 @@ function includeReferencedDays(s){
  try{Object.assign(s,runOperations(s,[{op:'view',days}],snapshot.events));}catch{}
 }
 // The pill never disappears on its own; finishing a thread returns it to a bare input.
-function restPill(){entryFresh=true;state.freshEntry=true;clearDraft();renderAssistant();setStatus('');persist();floating.tuck(false,{focus:false});}
-// Keystrokes update the draft immediately but serialize every conversation only after a pause,
+function restPill(){entryFresh=true;state.freshEntry=true;renderAssistant();setStatus('');persist();floating.tuck(false,{focus:false});}
+// Keystrokes serialize every conversation only after a pause,
 // and reach the server only after a longer one. Leaving or hiding the page flushes the local write.
 let composerTimer=null;
 function flushComposer(){if(composerTimer===null)return;clearTimeout(composerTimer);composerTimer=null;persist(1500);}
-$('#command').oninput=()=>{if(!state)return;state.composer=$('#command').value;resizeComposer();clearTimeout(composerTimer);composerTimer=setTimeout(flushComposer,300);scheduleDraftPaint();};
+$('#command').oninput=()=>{if(!state)return;state.composer=$('#command').value;resizeComposer();clearTimeout(composerTimer);composerTimer=setTimeout(flushComposer,300);if(SURFACE==='canvas'&&document.activeElement===$('#command')){paletteIndex=-1;renderPalette();}};
 addEventListener('pagehide',flushComposer);document.addEventListener('visibilitychange',()=>{if(document.hidden)flushComposer();});
 $('#command').onkeydown=e=>{
+ if(paletteShown()&&['ArrowDown','ArrowUp'].includes(e.key)&&!$('#command').value.includes('\n')){e.preventDefault();const n=paletteItems.length;paletteIndex=e.key==='ArrowDown'?(paletteIndex+1)%n:paletteIndex<=0?-1:paletteIndex-1;renderPalette();return;}
+ if(paletteShown()&&e.key==='Enter'&&!e.shiftKey&&!e.metaKey&&!e.ctrlKey&&!e.isComposing&&paletteIndex>=0){e.preventDefault();runPalette(paletteIndex);return;}
+ if(e.key==='Escape'&&paletteShown()){e.preventDefault();const idle=!$('#command').value.trim()&&!threadOpen();closePalette();if(idle){$('#command').blur();return;}}
+ if(e.key==='Enter')closePalette();
  // Cmd/Ctrl+Enter applies the proposal on screen; plain Enter only ever sends text.
  if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)&&!$('#command').value.trim()&&state.settingsProposal){e.preventDefault();applySettings();return;}
  if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)&&!$('#command').value.trim()){const anchor=confirmation();if(anchor&&includedActions(snapshot,state).length){e.preventDefault();execute(anchor);}return;}
  if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();submit($('#command').value);return;}
- if(e.key==='Escape'){e.preventDefault();if(draftShown!=='null'){clearDraft();return;}if(!$('#command').value.trim())closeThread();}
+ if(e.key==='Escape'){e.preventDefault();if(!$('#command').value.trim())closeThread();}
 };
-$('#command').addEventListener('scroll',()=>{$('#command-mirror').scrollTop=$('#command').scrollTop;});
 document.addEventListener('input',e=>{
  if(e.target.closest('#settings-live-status'))$('#settings-live-status').dataset.dirty='true';
  const form=e.target.closest('#calendar-settings-form');if(!form)return;
@@ -987,12 +1227,22 @@ document.addEventListener('input',e=>{
  if(e.target.dataset.colorHex&&/^#[0-9a-f]{6}$/i.test(e.target.value))form.querySelector('#color-'+e.target.dataset.colorHex).value=e.target.value;
  form.querySelector('[role=status]').textContent='Unsaved changes';
 });
-document.addEventListener('change',async e=>{if(e.target.dataset.setting){preferences[e.target.dataset.setting]=e.target.checked;savePreferences();if(!reading)window.speechSynthesis?.cancel();return;}if(e.target.id==='participation'){try{const r=await api('/api/events/participation',{ref:e.target.dataset.ref,value:e.target.value});await receiveCalendar(r);render();eventPanel('options');}catch(error){toast(error.message);}return;}if(!e.target.dataset.step)return;const key=e.target.dataset.step,all=actionBundle(snapshot,state),selected=all.find(a=>a.key===key);
- if(e.target.checked&&selected.dependsOn.some(k=>state.excluded?.includes(k))){e.target.checked=false;return toast('Include the earlier step first.');}
- state.excluded=e.target.checked?(state.excluded||[]).filter(k=>k!==key):[...(state.excluded||[]),key];
- if(!e.target.checked){let changed=true;while(changed){changed=false;for(const a of all)if(!state.excluded.includes(a.key)&&a.dependsOn.some(k=>state.excluded.includes(k))){state.excluded.push(a.key);changed=true;}}}
- state.check=null;state.executionId=null;state.responseNote=null;state.returnView=null;render();scheduleCheck();});
+document.addEventListener('change',async e=>{if(e.target.dataset.setting){preferences[e.target.dataset.setting]=e.target.checked;savePreferences();if(!reading)window.speechSynthesis?.cancel();return;}if(e.target.id==='participation'){try{const r=await api('/api/events/participation',{ref:e.target.dataset.ref,value:e.target.value});await receiveCalendar(r);render();eventPanel('options');}catch(error){toast(error.message);}return;}if(!e.target.dataset.step)return;if(!setStepIncluded(e.target.dataset.step,e.target.checked))e.target.checked=false;});
+// Include or set aside one proposed change; dependent steps follow the step they depend on.
+function setStepIncluded(key,on){
+ const all=actionBundle(snapshot,state),selected=all.find(a=>a.key===key);if(!selected)return false;
+ if(on&&selected.dependsOn.some(k=>state.excluded?.includes(k))){toast('Include the earlier step first.');return false;}
+ state.excluded=on?(state.excluded||[]).filter(k=>k!==key):[...new Set([...(state.excluded||[]),key])];
+ if(!on){let changed=true;while(changed){changed=false;for(const a of all)if(!state.excluded.includes(a.key)&&a.dependsOn.some(k=>state.excluded.includes(k))){state.excluded.push(a.key);changed=true;}}}
+ state.check=null;state.executionId=null;state.responseNote=null;state.returnView=null;render();scheduleCheck();return true;
+}
+document.addEventListener('change',async e=>{
+ if(e.target.id!=='fast-mode')return;
+ try{const saved=await api('/api/assistant-settings',{fastMode:e.target.checked});status.inference={...status.inference,...saved};toast(saved.fastMode?'Fast replies on':'Fast replies off');}
+ catch(error){e.target.checked=!e.target.checked;toast(error.message);}
+});
 document.addEventListener('submit',async e=>{
+ if(e.target.id==='selection-note-form'){e.preventDefault();const note=$('#selection-note').value.trim();return directAction('decline',activeIds(),note?{note}:{});}
  const id=e.target.id;if(!['move-form','shift-form','message-form','connect-form','preference-form','calendar-settings-form','assistant-settings-form'].includes(id))return;e.preventDefault();
  try{
  if(id==='move-form'){if(inOverview()){const title=eventByRef(e.target.dataset.ids.split(',')[0])?.title;newDecision();current().title=title||'Move meeting';}if(apply([{op:'edit',ids:e.target.dataset.ids.split(','),action:'move',date:$('#move-date').value,time:$('#move-time').value,minutes:+$('#move-duration').value}],'Here is the proposed time.'))closeDrawer();}
@@ -1011,11 +1261,15 @@ document.addEventListener('keydown',e=>{
   return;
  }
  if(!state)return;
- if(e.key==='Escape'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){e.preventDefault();if(!state.view.history.length&&threadOpen())closeThread();else actions['back-week']();return;}
- if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();if(floating.tucked)openEntry();else $('#command').focus();}
+ if(e.key==='Escape'&&reviewIndex!==null){e.preventDefault();return actions['review-done']();}
+ if(e.key==='Escape'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){e.preventDefault();if(threadOpen()&&(!state.view.history.length||state.result||workStatus(current()).kind==='error'))closeThread();else actions['back-week']();return;}
+ if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();if(SURFACE==='canvas'||!floating.tucked){$('#command').focus();openPalette();}else openEntry();}
+ if(SURFACE==='canvas'&&reviewIndex!==null&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&['j','k','ArrowRight','ArrowLeft','x'].includes(e.key)){
+  e.preventDefault();if(e.key==='x'){const a=actionBundle(snapshot,state)[reviewIndex];if(a)setStepIncluded(a.key,!!state.excluded?.includes(a.key));return;}
+  reviewIndex+=['j','ArrowRight'].includes(e.key)?1:-1;return focusReview();}
  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();actions[e.shiftKey?'redo':'undo']();}
 });
-$('#calendar').addEventListener('pointerdown',e=>{const el=e.target.closest('.event[data-ref]');if(!el||e.pointerType==='touch'||selectionMode||e.button!==0||e.shiftKey||e.metaKey||state.source||state.executionRunning)return;const track=el.closest('.day-track');if(!track)return;drag={el,ref:el.dataset.ref,x:e.clientX,y:e.clientY,startDate:track.dataset.date,originMinute:calendarScale.minute(e.clientY-track.getBoundingClientRect().top),moved:false,dy:0,target:track.dataset.date};el.setPointerCapture(e.pointerId);});
+$('#calendar').addEventListener('pointerdown',e=>{const el=e.target.closest('.event[data-ref]');if(!el||e.pointerType==='touch'||selectionMode||e.button!==0||e.shiftKey||e.metaKey||e.ctrlKey||state.source||state.executionRunning)return;const track=el.closest('.day-track');if(!track)return;drag={el,ref:el.dataset.ref,x:e.clientX,y:e.clientY,startDate:track.dataset.date,originMinute:calendarScale.minute(e.clientY-track.getBoundingClientRect().top),moved:false,dy:0,target:track.dataset.date};el.setPointerCapture(e.pointerId);});
 $('#calendar').addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!drag.moved&&Math.abs(dx)+Math.abs(dy)<8)return;drag.moved=true;const track=[...document.querySelectorAll('.day-track')].find(t=>{const r=t.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<r.right;});drag.target=track?.dataset.date;drag.dy=track?Math.round((calendarScale.minute(e.clientY-track.getBoundingClientRect().top)-drag.originMinute)/15)*15:0;drag.el.classList.add('dragging');drag.el.style.transform=`translate(${dx}px,${dy}px)`;setStatus(`Preview · ${drag.target?dateLabel(drag.target):'choose a visible day'} · ${drag.dy>0?'+':''}${drag.dy} minutes`);});
 $('#calendar').addEventListener('pointerup',()=>{if(!drag)return;const d=drag;drag=null;if(!d.moved)return;suppressClick=true;setTimeout(()=>suppressClick=false,150);if(!d.target){renderCalendar();return toast('Drop inside a visible day, or choose a date in event details.');}const deltaDays=Math.round((Date.parse(d.target)-Date.parse(d.startDate))/86400000);apply([{op:'edit',ids:state.selected.includes(d.ref)?state.selected:[d.ref],action:'move',deltaDays,deltaMinutes:d.dy}],'Here is the proposed move.');setStatus('Proposed move · drag again or Undo');});
 $('#calendar').addEventListener('pointercancel',()=>{drag=null;renderCalendar();});
@@ -1063,7 +1317,7 @@ async function start(){
   for(const d of Object.values(scopes))pruneSelection(d.state,snapshot.events);
   for(const [id,d] of Object.entries(scopes))scopes[id]=hydrateDecision(snapshot,d);
   for(const d of Object.values(scopes)){d.state.pending=!!d.state.pendingJob;d.state.executionRunning=false;d.state.check=null;d.state.requestMessages||={};d.refs||=[];if(!d.state.edits||!Object.keys(d.state.edits).length){if(!d.state.created?.length&&!d.state.drafts?.length&&d.status==='open'&&!d.state.receivedContext&&d.state.threadType!=='decision')d.state.threadType='conversation';}saveProposalVersion(d);}
-  lastConversationId=scopes[saved?.lastConversationId]&&isConversation(scopes[saved.lastConversationId])?saved.lastConversationId:HOME;activeId=saved?.uiVersion===7&&scopes[activeId]?activeId:lastConversationId;clearIdleFocus(current());state=current().state;state.inspected=null;navigateView(state,{mode:'workweek',date:snapshot.defaultDate||dayKey({start:new Date().toISOString()})},{remember:false});state.view.history=[];weekView=[...state.days];if(state.pendingJob)state.pendingJob.manualView=true;entryFresh=!!state.freshEntry;state.unread=false;$('#command').disabled=false;reading=preferences.readAloud;render();$('#command').value=state.composer||'';resizeComposer();if(!state.composer?.trim()&&!state.pending){entryFresh=true;state.freshEntry=true;renderAssistant();}floating.tuck(false,{focus:false});revealCalendar(Object.keys(state.edits));setStatus('');lastCalendarPoll=Date.now();requestAnimationFrame(()=>{initializeHostedTools().catch(()=>toast('Additional tools could not load. Reload to retry.'));});for(const d of Object.values(scopes))if(d.state.pendingJob){requests.set(d.id,d.state.pendingJob.seq);finishReply(d);}
+  lastConversationId=scopes[saved?.lastConversationId]&&isConversation(scopes[saved.lastConversationId])?saved.lastConversationId:HOME;activeId=saved?.uiVersion===7&&scopes[activeId]?activeId:lastConversationId;pruneConversations(scopes,40,[activeId,lastConversationId]);clearIdleFocus(current());state=current().state;state.inspected=null;navigateView(state,{mode:'workweek',date:snapshot.defaultDate||dayKey({start:new Date().toISOString()})},{remember:false});state.view.history=[];weekView=[...state.days];if(state.pendingJob)state.pendingJob.manualView=true;entryFresh=!!state.freshEntry;state.unread=false;$('#command').disabled=false;reading=preferences.readAloud;render();$('#command').value=state.composer||'';resizeComposer();if(!state.composer?.trim()&&!state.pending){entryFresh=true;state.freshEntry=true;renderAssistant();}floating.tuck(false,{focus:false});revealCalendar(Object.keys(state.edits));setStatus('');lastCalendarPoll=Date.now();requestAnimationFrame(()=>{initializeHostedTools().catch(()=>toast('Additional tools could not load. Reload to retry.'));});for(const d of Object.values(scopes))if(d.state.pendingJob){requests.set(d.id,d.state.pendingJob.seq);finishReply(d);}
  }catch(e){$('#assistant-title').textContent='Could not load the calendar';$('#assistant-detail').textContent=e.message;}
 }
 window.addEventListener('focus',async()=>{if(!status)return;try{const fresh=await api('/api/status');status=fresh;renderHeader();pollCalendar();}catch{}});

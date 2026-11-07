@@ -1,0 +1,218 @@
+/* Canvas surface: the calendar is the interface.
+   The request bar lives in the header, the assistant speaks in one headline line above the
+   calendar, and proposed changes are drafted on the grid with a control on each change. */
+
+.topbar-command,.bottom-command{display:none}
+.shell.canvas .decision-panel,.shell.canvas .conversation-return{display:none!important}
+.shell.canvas .workspace{display:flex}
+.shell.canvas .calendar-main{flex:1 1 auto;min-width:0}
+
+/* Request bar */
+.shell.canvas .topbar-command{display:flex;flex:1 1 360px;max-width:560px;min-width:220px;margin:0 12px}
+.shell.canvas #composer{width:100%;display:flex;align-items:center;gap:8px;min-height:38px;padding:3px 4px 3px 12px;
+  border:1px solid var(--rule-2,#dce4d4);border-radius:12px;background:var(--paper,#fcfdf9);box-shadow:none;
+  transition:box-shadow .18s ease,border-color .18s ease}
+.shell.canvas #composer:focus-within{border-color:color-mix(in srgb,var(--accent,#2f5a45) 45%,var(--rule-2,#dce4d4));
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--accent,#2f5a45) 10%,transparent),0 8px 24px rgba(29,42,35,.08)}
+.shell.canvas #composer .pill-mark{width:20px;height:20px;flex:0 0 20px;opacity:.8}
+.shell.canvas #composer .command-field{flex:1;min-width:0}
+.shell.canvas #command{font-size:14px;line-height:20px;min-height:20px;padding:6px 0;border:0;background:transparent;resize:none}
+.shell.canvas #composer [data-action="tuck"]{display:none}
+.shell.canvas #composer .submit-button{width:30px;height:30px;min-width:30px;border-radius:9px}
+.shell.canvas #composer::after{content:"⌘K";font-size:11px;color:var(--ink-3,#7b8a80);padding:0 6px;letter-spacing:.02em}
+/* Hidden, not removed: removing the hint on focus shifted the buttons mid-click, so the first click on one missed. */
+.shell.canvas #composer:focus-within::after{visibility:hidden}
+.shell.canvas.thinking #composer .pill-mark{animation:voice-pulse 1.4s ease-in-out infinite}
+
+/* Headline: one line of voice, part of the calendar's own header */
+.headline{display:block;border-bottom:1px solid var(--rule,#e4e9de);background:linear-gradient(to bottom,var(--paper,#fcfdf9),color-mix(in srgb,var(--paper,#fcfdf9) 92%,#eef3ea))}
+.headline[hidden]{display:none}
+.headline-main:empty{display:none}
+.headline-row{display:flex;align-items:center;gap:12px;padding:10px 18px;min-height:52px}
+.headline-mark{width:10px;height:10px;border-radius:50%;flex:0 0 10px;background:var(--accent,#2f5a45)}
+.headline-mark.working{background:transparent;border:2px solid var(--accent,#2f5a45);border-right-color:transparent;animation:voice-spin .9s linear infinite;width:12px;height:12px;flex-basis:12px}
+.headline-mark.proposal,.headline-mark.review{background:var(--marker-proposed,#2f5a45);box-shadow:0 0 0 4px color-mix(in srgb,var(--marker-proposed,#2f5a45) 16%,transparent)}
+.headline-mark.error{background:#b5452a}
+.headline-mark.done{background:#2f7a4f}
+.headline-text{flex:1 1 auto;min-width:0}
+.headline-text p{margin:0;font-size:15px;line-height:1.45;color:var(--ink,#1d2a23);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.headline-text small{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:2px;font-size:12px;color:var(--ink-3,#6f7d73)}
+.headline-actions{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.headline-actions button{border:0;background:transparent;color:var(--ink-2,#3f5246);font-size:13px;padding:7px 10px;border-radius:9px;min-height:34px;cursor:pointer}
+.headline-actions button:hover{background:color-mix(in srgb,var(--ink,#1d2a23) 6%,transparent)}
+.headline-actions button:disabled{opacity:.35;cursor:default}
+.headline-actions .primary{background:var(--accent,#2f5a45);color:#fff;padding:7px 16px;border-radius:999px;font-weight:600}
+.headline-actions .primary:hover{background:color-mix(in srgb,var(--accent,#2f5a45) 88%,#000)}
+.headline-actions .possible-change{display:flex;align-items:center;gap:6px}
+.headline-actions .possible-change small{display:none}
+.headline-actions .possible-change span{font-size:13px;color:var(--ink-2,#3f5246)}
+.headline-actions .execution-notice{display:none}
+.headline-why{padding:0 18px 12px 40px;max-height:32vh;overflow:auto;font-size:13px;line-height:1.55;color:var(--ink-2,#3f5246);white-space:pre-line}
+.headline-why p{margin:0 0 8px}
+.headline-changes{list-style:none;margin:0;padding:0;display:grid;gap:4px;white-space:normal}
+.headline-changes span{color:var(--ink-3,#6f7d73)}
+.headline-why .execution-notice{display:block;color:#8c5a19;margin:8px 0 0}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--rule-2,#d5dcd0);display:inline-block}
+.step-dot.success,.step-dot.awaiting_reply{background:#2f7a4f}
+.step-dot.failed,.step-dot.skipped{background:#b5452a}
+.step-dot.unknown{background:#c1995b;animation:voice-pulse 1s ease-in-out infinite}
+
+/* Selection actions share the headline's place */
+.shell.canvas .headline .selection-bar{margin:0;border:0;border-radius:0;border-top:1px solid var(--rule,#e4e9de);padding:8px 18px;background:transparent;flex-wrap:wrap}
+.shell.canvas .headline .selection-bar .selection-count{flex:0 0 auto;margin-right:6px}
+.shell.canvas .headline .selection-bar .note-row{flex:1 0 100%}
+
+/* Draft layer: a control on every proposed change, right on the calendar */
+.draft-toggle{position:absolute;z-index:30;width:22px;height:22px;min-height:22px;padding:0;border-radius:50%;display:grid;place-items:center;
+  font-size:13px;line-height:1;border:1px solid color-mix(in srgb,var(--marker-proposed,#2f5a45) 40%,transparent);
+  background:var(--paper,#fcfdf9);color:var(--marker-proposed,#2f5a45);box-shadow:0 1px 3px rgba(29,42,35,.12);opacity:.85;cursor:pointer}
+.draft-toggle:hover,.draft-toggle:focus-visible{opacity:1;transform:scale(1.08)}
+.draft-toggle.aside{border-style:dashed;color:var(--ink-3,#6f7d73)}
+.shell.canvas .event.review-focus{outline:2px solid var(--marker-proposed,#2f5a45);outline-offset:2px;z-index:3;box-shadow:0 10px 28px rgba(29,42,35,.18)}
+
+/* Phone: the request bar sits at the bottom of the calendar, in the layout, not over it */
+@media (max-width:760px){
+  .shell.canvas .topbar-command{display:none}
+  .shell.canvas .bottom-command{display:block;padding:6px 10px max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--rule,#e4e9de);background:var(--paper,#fcfdf9)}
+  .shell.canvas #composer::after{content:""}
+  .shell.canvas .calendar-scroll{margin-bottom:0}
+  .headline-row{padding:8px 12px;flex-wrap:wrap;min-height:0}
+  .headline-actions{flex:1 0 100%;justify-content:flex-end;flex-wrap:wrap}
+  .headline-text p{font-size:14px}
+  .headline-why{padding:0 12px 10px 12px}
+}
+
+@keyframes voice-spin{to{transform:rotate(360deg)}}
+@keyframes voice-pulse{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.headline-mark.working,.step-dot.unknown,.shell.canvas.thinking #composer .pill-mark{animation:none}}
+
+/* Drafted changes read as drafts: a hatched wash, the original kept legible, the change named in a tag. */
+.shell.canvas .event.proposed{background-image:repeating-linear-gradient(135deg,color-mix(in srgb,var(--marker-proposed,#2f5a45) 7%,transparent) 0 6px,transparent 6px 12px)}
+.shell.canvas .event.proposed-decline{text-decoration:none;opacity:.78;border-left:3px solid #b5452a}
+.shell.canvas .event.proposed-decline .event-title{text-decoration:line-through;text-decoration-color:color-mix(in srgb,#b5452a 70%,transparent);text-decoration-thickness:1.5px}
+.shell.canvas .event.proposed-decline .event-time{text-decoration:none}
+.shell.canvas .event.proposed .event-status{display:inline-block;margin-top:3px;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.01em;
+  background:color-mix(in srgb,var(--marker-proposed,#2f5a45) 12%,var(--paper,#fcfdf9));color:var(--marker-proposed,#2f5a45)}
+.shell.canvas .event.proposed-decline .event-status{background:color-mix(in srgb,#b5452a 12%,var(--paper,#fcfdf9));color:#8a2f1d}
+
+/* Each drafted change in the headline's list opens its event, or its message to edit. */
+.headline-change{all:unset;cursor:pointer;display:block;padding:2px 6px;margin:0 -6px;border-radius:6px}
+.headline-change:hover,.headline-change:focus-visible{background:color-mix(in srgb,var(--ink,#1d2a23) 6%,transparent)}
+.headline-change em{font-style:normal;text-decoration:underline;text-underline-offset:2px;color:var(--ink-2,#3f5246)}
+@media (max-width:760px){
+  /* The mark stays on the line of text it belongs to. */
+  .headline-row{align-items:flex-start}
+  .headline-mark{margin-top:6px}
+  .headline-text{flex:1 1 0}
+}
+.headline-blocked{color:#8c5a19}
+.headline-inline{all:unset;cursor:pointer;text-decoration:underline;text-underline-offset:2px;color:var(--ink-2,#3f5246)}
+
+/* ------------------------------------------------------------------------------------------
+   Quiet canvas. At rest the screen is the calendar and one request bar. Everything else shows
+   only when it has something to say: on hover, on focus, or when the state makes it relevant.
+   ------------------------------------------------------------------------------------------ */
+
+/* Header: dates on the left, the request bar in the middle, three views and settings on the right. */
+.shell.canvas .topbar{background:var(--paper);border-bottom:1px solid var(--rule);gap:12px;padding:0 16px 0 20px}
+.shell.canvas .date-nav{flex:1 1 0;margin-right:0;gap:8px;min-width:0}
+.shell.canvas .date-arrows button{color:var(--ink-3);width:26px;height:30px;font-size:22px;border-radius:8px}
+.shell.canvas .date-arrows button:hover{color:var(--ink);background:var(--paper-2)}
+.shell.canvas #today-button{border:0;background:var(--paper-2);color:var(--ink-2);border-radius:999px;padding:4px 11px;font-size:12px;font-weight:600}
+.shell.canvas .topbar-command{flex:0 1 580px;max-width:580px;min-width:240px;margin:0;position:relative}
+.shell.canvas .view-switch{flex:1 1 0;justify-content:flex-end;gap:2px;min-width:0}
+.shell.canvas .view-switch button{color:var(--ink-3);font-weight:600;font-size:12.5px;padding:5px 10px;min-height:28px;border-radius:8px;box-shadow:none}
+.shell.canvas .view-switch button:hover{color:var(--ink)}
+.shell.canvas .view-switch button.active{color:var(--ink);background:var(--paper-2);box-shadow:none}
+.shell.canvas .topbar-actions{gap:2px}
+.shell.canvas #open-count{border:0;background:var(--amber-soft,#f6ead3);color:#7a5413;border-radius:999px;padding:4px 10px;min-height:28px;font-size:12px;font-weight:600;gap:6px}
+.shell.canvas #open-count svg{display:none}
+.shell.canvas #open-count b{background:transparent;font-weight:700;min-width:0;padding:0}
+.shell.canvas #open-count.empty,.shell.canvas #work-indicator.quiet{display:none}
+.shell.canvas #work-indicator{font-size:12px;font-weight:600;color:var(--ink-2);padding:4px 10px;min-height:28px;border-radius:999px;background:var(--paper-2)}
+.shell.canvas .settings-button{color:var(--ink-3)}
+.shell.canvas .settings-button:hover{color:var(--ink)}
+
+/* Request bar: a quiet field until it has focus; the send arrow appears with the first character. */
+.shell.canvas #composer{background:var(--paper-2);border-color:transparent;border-radius:12px;min-height:36px;padding:2px 4px 2px 12px}
+.shell.canvas #composer:focus-within{background:var(--paper)}
+.shell.canvas #composer [data-action="pill-menu"]{display:none}
+.shell.canvas #composer .pill-mark{width:18px;height:18px;flex-basis:18px;opacity:.7}
+.shell.canvas #composer .submit-button{transition:opacity .12s,transform .12s}
+.shell.canvas #composer .command-field:has(#command:placeholder-shown) ~ .composer-tools .submit-button{opacity:0;transform:scale(.8);pointer-events:none}
+.shell.canvas #composer::after{color:var(--ink-3);opacity:.8}
+
+/* Palette: what to ask, what was asked, and the commands that used to be buttons. */
+.palette{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;max-height:min(64vh,520px);overflow:auto;padding:6px;background:var(--paper);border:1px solid var(--rule-2);border-radius:14px;box-shadow:var(--float);animation:palette-in .14s var(--spring,ease-out) both}
+.palette[hidden]{display:none}
+.palette-group{padding:8px 10px 3px;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.palette-row{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:7px 10px;border-radius:9px;font-size:13.5px;line-height:1.35;color:var(--ink);cursor:pointer}
+.palette-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.palette-row small{flex:0 0 auto;font-size:11.5px;color:var(--ink-3)}
+.palette-row:hover,.palette-row[aria-selected=true]{background:var(--paper-2)}
+.palette-row[aria-selected=true]{box-shadow:inset 0 0 0 1px var(--rule-2)}
+.palette-foot{display:flex;gap:14px;padding:8px 10px 4px;margin-top:4px;border-top:1px solid var(--rule);font-size:11px;color:var(--ink-3)}
+.palette-foot kbd{font:inherit;font-size:10.5px;padding:1px 5px;margin-right:3px;border:1px solid var(--rule-2);border-radius:5px;background:var(--paper-2);color:var(--ink-2)}
+@keyframes palette-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+/* Answer line: appears with the answer, flat, no footer of numbers. */
+.shell.canvas .headline{background:var(--paper);animation:headline-in .2s var(--spring,ease-out) both}
+.shell.canvas .headline-row{padding:11px 20px;gap:12px}
+.shell.canvas .headline-text p{font-size:15px;line-height:1.5}
+@keyframes headline-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+/* The row under the answer exists only for what the answer line does not offer. With nothing
+   to say it takes no room, and its two controls (add a day, select several) show on hover. */
+.shell.canvas .context-bar{border:0;padding:0 14px 0 20px}
+.shell.canvas .context-bar.quiet{height:0;min-height:0;padding:0;overflow:visible;position:relative;z-index:13}
+.shell.canvas .context-bar.quiet .context-actions{position:absolute;right:10px;top:9px;padding:2px 4px;border-radius:999px;background:color-mix(in srgb,var(--paper) 92%,transparent);opacity:0;transition:opacity .15s}
+.shell.canvas .calendar-main:hover .context-bar.quiet .context-actions,.shell.canvas .context-bar.quiet .context-actions:focus-within,.shell.canvas.selecting .context-bar .context-actions{opacity:1}
+.shell.canvas .context-actions button{color:var(--ink-3);font-size:11.5px}
+.shell.canvas .context-actions button:hover{color:var(--ink)}
+.shell.canvas #compare-button{border:0;background:var(--paper-2);border-radius:999px;color:var(--ink-2);padding:4px 11px}
+
+/* Footer: gone at rest. It returns for sync trouble, another timezone, or the test model. */
+.shell.canvas .legend{display:none}
+.shell.canvas .legend.attention{display:flex;justify-content:flex-end;gap:14px;height:24px;min-height:24px;border-top:1px solid var(--rule);background:var(--paper)}
+.shell.canvas .legend .timezone{display:none}
+.shell.canvas .legend #category-legend,.shell.canvas .legend .decision-legend,.shell.canvas .legend .proposal-legend,.shell.canvas .legend .agreement-legend,.shell.canvas .legend #range-hint{display:none}
+.shell.canvas .legend .sync-status:not(.offline):not(.model-status){display:none}
+.shell.canvas .legend .sync-status{margin-left:0}
+
+/* Calendar surface: lighter rules, quieter secondary text. */
+.shell.canvas .calendar-head{background:var(--paper);box-shadow:none;border-bottom:1px solid var(--rule)}
+.shell.canvas .zone-head,.shell.canvas .time-axis,.shell.canvas .all-day-label,.shell.canvas .all-day-cell,.shell.canvas .day-heading{background:var(--paper)}
+.shell.canvas .zone-head{font-size:9.5px;color:var(--ink-3);border-bottom:0}
+.shell.canvas .day-heading{border-bottom:0}
+.shell.canvas .all-day-label{font-size:9.5px;color:var(--ink-3);border-bottom:0;padding:9px 7px 0}
+.shell.canvas .all-day-cell{border-bottom:0;border-left-color:transparent;padding:0}
+.shell.canvas .day-track{border-left-color:var(--rule);background-image:none}
+.shell.canvas .hour-rule{border-top-color:color-mix(in srgb,var(--rule) 70%,transparent)}
+.shell.canvas .event .event-location{opacity:.62}
+
+@media (max-width:760px){
+  .palette{top:auto;bottom:calc(100% + 6px);left:8px;right:8px}
+  .shell.canvas .bottom-command{position:relative}
+  .shell.canvas .context-bar.quiet .context-actions{opacity:1;position:static;background:transparent}
+  .shell.canvas .context-bar.quiet{height:30px;min-height:30px;padding:0 8px;justify-content:flex-end}
+}
+@media (prefers-reduced-motion:reduce){.palette,.shell.canvas .headline{animation:none}}
+
+/* The request bar stays centered whatever appears beside it. */
+@media (min-width:761px){
+  .shell.canvas .topbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,580px) minmax(0,1fr);align-items:center;column-gap:16px}
+  .shell.canvas .date-nav{grid-column:1;grid-row:1}
+  .shell.canvas .topbar-command{grid-column:2;grid-row:1;max-width:none;width:100%}
+  .shell.canvas .view-switch{grid-column:3;grid-row:1;justify-self:end;margin-right:calc(var(--actions-width,36px) + 8px)}
+  .shell.canvas .topbar-actions{grid-column:3;grid-row:1;justify-self:end}
+  /* Add a day and select several are there on hover, whether or not the row has anything else in it. */
+  .shell.canvas .context-bar #include-next-day,.shell.canvas .context-bar #select-toggle{opacity:0;transition:opacity .15s}
+  .shell.canvas .calendar-main:hover .context-bar #include-next-day,.shell.canvas .calendar-main:hover .context-bar #select-toggle,.shell.canvas .context-bar #include-next-day:focus-visible,.shell.canvas .context-bar #select-toggle:focus-visible,.shell.canvas.selecting .context-bar #select-toggle{opacity:1}
+}
+.shell.canvas #composer .pill-mark{margin-right:4px}
+.shell.canvas .calendar-scroll,.shell.canvas #calendar,.shell.canvas .calendar-main{background:var(--paper)}
+
+/* Skipped dates: a slim strip with its label at the top; the running caption down its length is dropped. */
+.shell.canvas .date-gap-track span{display:none}
+.shell.canvas .date-gap-heading,.shell.canvas .date-gap-all-day,.shell.canvas .date-gap-track{background:var(--paper-2);border-inline-color:var(--rule)}
+.shell.canvas .date-gap-track{background-image:none}

@@ -31,7 +31,7 @@ export function considerSuggestion(snapshot,origin,response){
  applyModelResponse(d,response,proposalSignature(d.state),snapshot.events);
  if(response.decision?.relationship!=='evidence'&&!Object.keys(d.state.edits).length&&!d.state.created.length&&!d.state.drafts.length){origin.state.suggestion=null;return null;}
  if(d.title==='Possible change'){
-  const actions=actionBundle(snapshot,d.state),first=actions[0],verb={create:'Add',move:'Move',resize:'Resize',remove:'Remove',accept:'Accept',decline:'Decline',tentative:'Mark tentative:',request:'Reschedule',email:'Send'}[first?.kind]||'Review';
+  const actions=actionBundle(snapshot,d.state),first=actions[0],verb={create:'Add',move:'Move',resize:'Resize',remove:'Remove',cancel:'Cancel',accept:'Accept',decline:'Decline',tentative:'Mark tentative:',request:'Reschedule',email:'Send'}[first?.kind]||'Review';
   d.title=actions.length===1?`${verb} ${first.title||first.subject||'message'}`:`Review ${actions.length} changes`;
  }
  const suggestion=suggestionFromDecision(d,snapshot.calendarRevision||0);suggestion.linkedDecisionId=previous?.linkedDecisionId||null;
@@ -52,7 +52,7 @@ export function actionBundle(snapshot,state){
  const actions=[];
  for(const [ref,c] of Object.entries(state.edits)){
   const e=snapshot.events.find(e=>e.ref===ref);if(!e||unchangedTime(e,c))continue;
-  const action={ref,kind:c.kind,title:e.title,stepId:c.stepId,after:c.after||[]};
+  const action={ref,kind:c.kind,title:e.title,stepId:c.stepId,after:c.after||[]};if(c.note)action.note=c.note;if(c.scope==='series')action.scope='series';
   if(c.start){action.start=c.start;action.end=c.end;}
   if(['move','resize'].includes(c.kind)&&!canEdit(e)){
    const when=new Intl.DateTimeFormat('en-US',{timeZone:snapshot.timezone,weekday:'long',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(c.start));
@@ -60,7 +60,7 @@ export function actionBundle(snapshot,state){
   }
   action.key='event-'+ref+'-'+hash(JSON.stringify(action));actions.push(action);
  }
- for(const e of state.created){const c=state.edits[e.ref];if(c?.kind==='remove')continue;const action={kind:'create',stepId:e.stepId,after:e.after||[],ref:e.ref,title:e.title,start:c?.start||e.start,end:c?.end||e.end};action.key='create-'+e.ref+'-'+hash(JSON.stringify(action));actions.push(action);}
+ for(const e of state.created){const c=state.edits[e.ref];if(c?.kind==='remove')continue;const action={kind:'create',stepId:e.stepId,after:e.after||[],ref:e.ref,title:e.title,start:c?.start||e.start,end:c?.end||e.end};const guests=(e.attendees||[]).map(a=>a.email).filter(Boolean);if(guests.length)action.attendees=guests;if(e.meet)action.meet=true;if(e.type&&e.type!=='default')action.eventType=e.type;if(e.description)action.description=e.description;action.key='create-'+e.ref+'-'+hash(JSON.stringify(action));actions.push(action);}
  for(const d of state.drafts){const action={kind:'email',stepId:d.stepId,after:d.after||[],draftId:d.id,channel:d.channel,to:d.recipient,subject:d.subject||'Calendar coordination',body:d.body};action.key='message-'+d.id+'-'+hash(JSON.stringify(action));actions.push(action);}
  const stepKeys=new Map();for(const a of actions)if(a.stepId)stepKeys.set(a.stepId,[...(stepKeys.get(a.stepId)||[]),a.key]);
  for(const a of actions){a.dependsOn=(a.after||[]).flatMap(id=>{const matched=stepKeys.get(id)||[];return matched.length?matched:['missing-'+id];});delete a.stepId;delete a.after;}
@@ -88,11 +88,24 @@ export function adaptContext(state,events){
  state.proposalFrame=[...state.days];
  return state;
 }
+// A reply that moves the view elsewhere without naming a set leaves the earlier highlights behind,
+// so events from a previous question do not pull their days back onto the screen.
+// `navigated` covers a view the screen already followed while the reply was streaming.
+export function releaseOffscreenFocus(state,operations,events,navigated=false){
+ if(!(navigated||operations.some(o=>o.op==='view'))||operations.some(o=>['highlight','select','inspect'].includes(o.op))||ensureView(state).mode==='month')return state;
+ const shown=new Set(state.days),all=[...events,...(state.created||[])];
+ const stays=ref=>{if(state.edits?.[ref])return true;const e=all.find(e=>e.ref===ref);return !!e&&(e.allDay||shown.has(dayKey(e)));};
+ const had=state.highlighted.length+state.selected.length;
+ state.highlighted=state.highlighted.filter(stays);state.selected=state.selected.filter(stays);
+ if(state.eventNotes)state.eventNotes=Object.fromEntries(Object.entries(state.eventNotes).filter(([ref])=>state.highlighted.includes(ref)||state.selected.includes(ref)));
+ if(had&&!state.highlighted.length&&!state.selected.length){state.selectionLabel='';state.focusContext=null;}
+ return state;
+}
 export function applyModelResponse(scope,response,expectedSignature,events){
  if(proposalSignature(scope.state)!==expectedSignature){scope.state.pendingResponse=response;return false;}
  if(response.contextSummary)scope.state.contextSummary=response.contextSummary;
  const before=scope.state,hadProposal=Object.keys(before.edits).length||before.created.length||before.drafts.length;
- const next=runOperations(scope.state,response.operations.filter(o=>o.op!=='review'),events,{decisionId:scope.id});
+ const next=releaseOffscreenFocus(runOperations(scope.state,response.operations.filter(o=>o.op!=='review'),events,{decisionId:scope.id}),response.operations,events,!!response.navigated);
  const changed=proposalSignature(next)!==expectedSignature;
  next.guided=false;next.pendingResponse=null;
  if(hadProposal&&!changed){

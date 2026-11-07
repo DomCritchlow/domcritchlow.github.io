@@ -14,6 +14,8 @@ export function floatingWorkspace(panel,container,launcher,{onReserve}={}){
   if(tucked){setReserve(0);return;}
   const bounds=container.getBoundingClientRect(),mobile=innerWidth<=760;
   const legend=container.querySelector('.legend')?.offsetHeight||0,composer=panel.querySelector('.composer-wrap')?.offsetHeight||panel.offsetHeight;
+  // Desktop: the panel is a docked column beside the calendar, laid out by CSS.
+  if(!mobile){panel.style.left=panel.style.top=panel.style.bottom=panel.style.width='';container.style.setProperty('--pill-clearance','0px');setReserve(0);return;}
   if(mobile){panel.style.width='';panel.style.left='10px';panel.style.top='';panel.style.bottom='12px';container.style.setProperty('--pill-clearance','0px');setReserve(Math.min(panel.offsetHeight+14,bounds.height*.42));return;}
   const bottom=legend+10,pad=16,full=Math.min(640,bounds.width-32),narrow=Math.min(460,full);
   if(avoid&&!pinned){
@@ -46,7 +48,7 @@ export function floatingWorkspace(panel,container,launcher,{onReserve}={}){
  return {
   schedule,
   pin(){pinned=!pinned;panel.dataset.pinned=String(pinned);return pinned;},
-  tuck(value=true,{focus=true}={}){tucked=value;panel.hidden=value;launcher.hidden=!value;container.classList.toggle('conversation-tucked',value);if(!value){anchor='center';panel.style.width='';}place();if(!value){if(focus)panel.querySelector('textarea').focus({preventScroll:true});}else if(focus)launcher.focus({preventScroll:true});},
+  tuck(value=true,{focus=true}={}){tucked=value;panel.hidden=value;launcher.hidden=!value;container.classList.toggle('conversation-tucked',value);if(!value){anchor='center';panel.style.width='';}place();if(!value){if(focus)(panel.querySelector('textarea')||document.querySelector('#command'))?.focus({preventScroll:true});}else if(focus)launcher.focus({preventScroll:true});},
   get tucked(){return tucked;}
  };
 }

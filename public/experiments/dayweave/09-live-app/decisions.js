@@ -52,15 +52,15 @@ export function actionBundle(snapshot,state){
  const actions=[];
  for(const [ref,c] of Object.entries(state.edits)){
   const e=snapshot.events.find(e=>e.ref===ref);if(!e||unchangedTime(e,c))continue;
-  const action={ref,kind:c.kind,title:e.title,stepId:c.stepId,after:c.after||[]};if(c.note)action.note=c.note;if(c.scope==='series')action.scope='series';
+  const action={ref,kind:c.kind,title:e.title,stepId:c.stepId,after:c.after||[]};if(c.note)action.note=c.note;if(c.scope==='series')action.scope='series';if(c.set)action.set=clone(c.set);
   if(c.start){action.start=c.start;action.end=c.end;}
   if(['move','resize'].includes(c.kind)&&!canEdit(e)){
-   const when=new Intl.DateTimeFormat('en-US',{timeZone:snapshot.timezone,weekday:'long',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(c.start));
+   const when=e.allDay?new Intl.DateTimeFormat('en-US',{timeZone:'UTC',weekday:'long',month:'short',day:'numeric'}).format(new Date(c.start+'T12:00:00Z')):new Intl.DateTimeFormat('en-US',{timeZone:snapshot.timezone,weekday:'long',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(c.start));
    Object.assign(action,{kind:'request',channel:'email',to:e.organizer||'',subject:'New time for '+e.title,body:`Could we move ${e.title} to ${when}? Please let me know if that works.`},state.requestMessages?.[ref]||{});
   }
   action.key='event-'+ref+'-'+hash(JSON.stringify(action));actions.push(action);
  }
- for(const e of state.created){const c=state.edits[e.ref];if(c?.kind==='remove')continue;const action={kind:'create',stepId:e.stepId,after:e.after||[],ref:e.ref,title:e.title,start:c?.start||e.start,end:c?.end||e.end};const guests=(e.attendees||[]).map(a=>a.email).filter(Boolean);if(guests.length)action.attendees=guests;if(e.meet)action.meet=true;if(e.type&&e.type!=='default')action.eventType=e.type;if(e.description)action.description=e.description;action.key='create-'+e.ref+'-'+hash(JSON.stringify(action));actions.push(action);}
+ for(const e of state.created){const c=state.edits[e.ref];if(c?.kind==='remove')continue;const action={kind:'create',stepId:e.stepId,after:e.after||[],ref:e.ref,title:e.title,start:c?.start||e.start,end:c?.end||e.end};const guests=(e.attendees||[]).map(a=>a.email).filter(Boolean);if(guests.length)action.attendees=guests;if(e.meet)action.meet=true;if(e.type&&e.type!=='default')action.eventType=e.type;if(e.description)action.description=e.description;if(e.repeat)action.repeat=clone(e.repeat);if(e.type==='workingLocation'){const w=e.workingLocation||{};action.workingLocation={type:w.type,label:w[w.type]?.label||''};}action.key='create-'+e.ref+'-'+hash(JSON.stringify(action));actions.push(action);}
  for(const d of state.drafts){const action={kind:'email',stepId:d.stepId,after:d.after||[],draftId:d.id,channel:d.channel,to:d.recipient,subject:d.subject||'Calendar coordination',body:d.body};action.key='message-'+d.id+'-'+hash(JSON.stringify(action));actions.push(action);}
  const stepKeys=new Map();for(const a of actions)if(a.stepId)stepKeys.set(a.stepId,[...(stepKeys.get(a.stepId)||[]),a.key]);
  for(const a of actions){a.dependsOn=(a.after||[]).flatMap(id=>{const matched=stepKeys.get(id)||[];return matched.length?matched:['missing-'+id];});delete a.stepId;delete a.after;}

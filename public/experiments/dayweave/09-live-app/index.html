@@ -3,14 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
-  <meta name="theme-color" content="#f7f8f4">
+  <meta name="theme-color" content="#e2e6da">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%232f5a45'/%3E%3Cg fill='none' stroke-width='5' stroke-linecap='round'%3E%3Cpath stroke='%23f8f9f5' d='M10 25c9 0 9 14 18 14s9-14 18-14 5 9 8 12'/%3E%3Cpath stroke='%23e0a54a' d='M10 39c9 0 9-14 18-14s9 14 18 14 5-9 8-12'/%3E%3C/g%3E%3C/svg%3E">
   <title>Dayweave demo</title>
   <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./canvas.css">
-  <link rel="stylesheet" href="./living.css">
-  <link rel="stylesheet" href="./dock.css">
-  <link rel="stylesheet" href="./surface.css">
   <link rel="preload" href="./figtree.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./bricolage.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="modulepreload" href="./appearance.js">
   <link rel="modulepreload" href="./view_state.js">
   <link rel="modulepreload" href="./month.js">
@@ -29,14 +27,14 @@
   <style>.demo-badge{position:fixed;left:14px;bottom:10px;z-index:30;font-size:10.5px;font-weight:650;color:var(--amber,#b97a1f);background:var(--paper,#f8f9f5);border:1px solid currentColor;border-radius:999px;padding:2px 9px;white-space:nowrap;pointer-events:none}@media(max-width:760px){.demo-badge{display:none}}</style>
 </head>
 <body>
-  <div class="shell">
+  <div class="shell loading">
     <header class="topbar">
       <div class="date-nav">
-        <div class="date-title-wrap"><h1 id="date-title">November</h1></div>
+        <div class="date-title-wrap"><h1 id="date-title"></h1></div>
         <select id="phone-view" aria-label="Calendar view" hidden><option value="day">Day</option><option value="workweek">Week</option><option value="fullweek">7 days</option><option value="month">Month</option><option value="custom" disabled>Dates</option></select>
         <div class="date-arrows">
-          <button data-action="previous-week" aria-label="Previous week" title="Previous week">‹</button>
-          <button data-action="next-week" aria-label="Next week" title="Next week">›</button>
+          <button data-action="previous-week" aria-label="Previous week" title="Previous week"><span class="ico ico-left" aria-hidden="true"></span></button>
+          <button data-action="next-week" aria-label="Next week" title="Next week"><span class="ico ico-right" aria-hidden="true"></span></button>
         </div>
         <button data-action="today" id="today-button" title="Return to this week">Today</button>
       </div>
@@ -61,12 +59,12 @@
         <div class="context-bar">
           <span id="context-label"></span><button id="coverage-note" class="coverage-note" data-action="load-dates"></button>
           <div class="context-actions">
-            <button id="include-next-day" data-include-day="" aria-label="Include another day" title="Include another day">＋ Day</button>
+            <button id="include-next-day" data-include-day="" aria-label="Include another day" title="Include another day"><span class="ico ico-plus" aria-hidden="true"></span> Day</button>
             <button data-action="toggle-selection-mode" id="select-toggle" aria-label="Select multiple events" title="Select multiple events" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8 12 3 3 5-6"/></svg></button>
-            <button data-action="undo" aria-label="Undo preview" title="Undo preview">↶</button>
-            <button data-action="redo" aria-label="Redo preview" title="Redo preview">↷</button>
+            <button data-action="undo" aria-label="Undo preview" title="Undo preview"><span class="ico ico-undo" aria-hidden="true"></span></button>
+            <button data-action="redo" aria-label="Redo preview" title="Redo preview"><span class="ico ico-redo" aria-hidden="true"></span></button>
             <button data-action="compare" id="compare-button">Show current calendar</button>
-            <button id="clear-focus" data-action="clear-selection" hidden>Clear highlights ×</button>
+            <button id="clear-focus" data-action="clear-selection" hidden>Clear highlights</button>
             <button data-action="back-week" id="clear-selection" hidden>Back to week</button>
           </div>
         </div>
@@ -83,10 +81,10 @@
         </div>
         <div class="bottom-command" id="bottom-command"></div>
       </main>
-      <button id="conversation-return" class="conversation-return" data-action="untuck" aria-label="Open input"><i aria-hidden="true">✳</i><span></span></button>
+      <button id="conversation-return" class="conversation-return" data-action="untuck" aria-label="Open input"><i class="ico ico-spark" aria-hidden="true"></i><span></span></button>
       <aside class="decision-panel composer-only" aria-label="Floating calendar conversation" hidden>
         <div class="answer-card">
-        <button type="button" class="card-close" data-action="close-thread" aria-label="Close" title="Close · Esc">×</button>
+        <button type="button" class="card-close" data-action="close-thread" aria-label="Close" title="Close · Esc"><span class="ico ico-close" aria-hidden="true"></span></button>
         <div class="assistant-stage">
           <div id="conversation-panel" class="conversation-panel" hidden></div>
           <div id="queue-panel" class="queue-panel" hidden></div>
@@ -111,11 +109,11 @@
           <div id="composer-target"></div><div id="overview-reply" aria-live="polite" hidden></div><div id="pending-response"></div>
           <form id="composer">
             <span class="pill-mark" aria-hidden="true"><svg viewBox="0 0 26 26"><path class="a" d="M2 9c4 0 4 8 8 8s4-8 8-8 4 8 6 8"/><path class="b" d="M2 17c4 0 4-8 8-8s4 8 8 8 4-8 6-8"/></svg></span>
-            <div class="command-field"><textarea id="command" disabled aria-label="Calendar instruction" autocomplete="off" maxlength="4000" rows="1" placeholder="Search or change your calendar"></textarea></div>
+            <div class="command-field"><textarea id="command" disabled aria-label="Calendar instruction" autocomplete="off" maxlength="4000" rows="1" placeholder="Ask or change anything"></textarea></div>
             <div class="composer-tools">
-              <button type="button" data-action="pill-menu" class="icon-button" aria-label="Conversation options" title="Options">⋯</button>
-              <button type="button" data-action="tuck" class="icon-button" aria-label="Tuck conversation away" title="Tuck away">−</button>
-              <button type="submit" class="submit-button" aria-label="Send instruction">↑</button>
+              <button type="button" data-action="pill-menu" class="icon-button" aria-label="Conversation options" title="Options"><span class="ico ico-more" aria-hidden="true"></span></button>
+              <button type="button" data-action="tuck" class="icon-button" aria-label="Tuck conversation away" title="Tuck away"><span class="ico ico-minus" aria-hidden="true"></span></button>
+              <button type="submit" class="submit-button" aria-label="Send instruction"><span class="ico ico-up" aria-hidden="true"></span></button>
             </div>
           </form>
           <div class="composer-meta"><span id="request-status" role="status" aria-live="polite">Loading…</span></div>

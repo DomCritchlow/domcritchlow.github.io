@@ -10,13 +10,8 @@ const RealDate=Date,loaded=RealDate.now();
 const pinned=(()=>{const d=new RealDate();d.setDate(d.getDate()-((d.getDay()+6)%7));d.setHours(8,10,0,0);return d.getTime();})();
 window.Date=class extends RealDate{constructor(...args){if(args.length)super(...args);else super(pinned+RealDate.now()-loaded);}static now(){return pinned+RealDate.now()-loaded;}};
 
-// ?scene=name plays one scripted scene and keeps its state to itself, so several scenes can sit on one
-// page (each in its own frame). ?captions=1 adds on-screen captions for recording.
-const params=new URLSearchParams(location.search),SCENE=params.get('scene'),CAPTIONS=params.get('captions')==='1';
-if(SCENE)document.documentElement.classList.add('scene');
 const realFetch=window.fetch.bind(window);
-const KEY='dayweave-demo-v2'+(SCENE?':'+SCENE:''),zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
-if(SCENE)try{sessionStorage.removeItem(KEY);for(const k of Object.keys(localStorage))if(k.endsWith(':scene-'+SCENE))localStorage.removeItem(k);}catch{}
+const KEY='dayweave-demo-v2',zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
 const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const addDays=(date,n)=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+n);return ymd(d);};
@@ -54,7 +49,7 @@ function freshSnapshot(){
  events.push({ref:'e900',id:'demo-900',title:'Studio week',start:monday,end:addDays(monday,5),allDay:true,transparent:true,calendarId:'primary',organizerSelf:true,canEdit:true,organizer:ME.email,response:'accepted',attendees:[],audience:'solo',peopleCount:1,format:'solo',participation:'unknown'});
  const start=addDays(monday,-70),end=addDays(monday,77);
  return {events,snapshotKey:'dayweave-demo-'+monday,calendarRevision:1,timezone:zone,defaultDate:today,range:{start:addDays(monday,-7),end:addDays(monday,28)},coverage:[{start,end}],capturedAt:new Date().toISOString(),
-  calendarSettings:{internalDomains:['example.test'],internalAddresses:[],colors:{internal:'#2a78d6',external:'#eb6834',solo:'#1baf7a',decision:'#c1995b',proposed:'#2f5a45',pending:'#b79a60'}},
+  calendarSettings:{internalDomains:['example.test'],internalAddresses:[],colors:{internal:'#2a78d6',external:'#dd5b25',solo:'#14995f',decision:'#c1995b',proposed:'#2f5a45',pending:'#b79a60'}},
   appearance:{revision:1,canUndo:false,policy:purposePolicy('Color by the purpose of my time. Leave unclear events neutral.')}};
 }
 let db;
@@ -62,7 +57,7 @@ try{db=JSON.parse(sessionStorage.getItem(KEY)||'null');}catch{db=null;}
 if(!db||db.snapshot?.snapshotKey!=='dayweave-demo-'+monday)db={snapshot:freshSnapshot(),decisions:{},preferences:[{id:1,body:'Keep lunch free from 12 to 1.'}],outcomes:[],tickets:{},next:100};
 const save=()=>{try{sessionStorage.setItem(KEY,JSON.stringify({...db,tickets:{}}));}catch{}};
 const jobs=new Map(),listeners=new Map();
-const status=()=>({hosted:false,demo:true,...(SCENE?{user:{id:'scene-'+SCENE,email:'you@example.test',name:'You'}}:{}),researcher:true,interactionModel:'Scripted demo',researchModel:'Scripted demo',transport:'demo',csrf:'demo',google:{calendar:true,availability:true,email:false,account:'you@example.test',configured:true},
+const status=()=>({hosted:false,demo:true,researcher:true,interactionModel:'Scripted demo',researchModel:'Scripted demo',transport:'demo',csrf:'demo',google:{calendar:true,availability:true,email:false,account:'you@example.test',configured:true},
  sync:{connected:true,running:false,lastSuccessAt:Date.now()/1000,error:null,intervalSeconds:30},inference:{automaticReviews:0,modelCalls:0,inputTokens:0,outputTokens:0,cachedInputTokens:0,maxAutomaticReviews:5,maxCallsPerTurn:2,idleModelCalls:0}});
 const list=()=>Object.values(db.decisions).sort((a,b)=>b.updated-a.updated);
 const calendarState=()=>({snapshot:db.snapshot,decisions:list(),sync:status().sync});
@@ -70,14 +65,14 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ---------- categories: a scripted stand-in for the model that sorts meetings ---------- */
 function purposePolicy(description){return {mode:'semantic',description,categories:[
- {id:'focus',label:'Focus & preparation',color:'#1baf7a',definition:'Concentrated individual work, reading, writing and preparation.'},
+ {id:'focus',label:'Focus & preparation',color:'#14995f',definition:'Concentrated individual work, reading, writing and preparation.'},
  {id:'together',label:'Working together',color:'#2a78d6',definition:'Sessions to make, review, decide, solve or develop something together.'},
- {id:'coordination',label:'Updates & coordination',color:'#eb6834',definition:'Sharing status, aligning people, checking in or arranging work.'},
+ {id:'coordination',label:'Updates & coordination',color:'#dd5b25',definition:'Sharing status, aligning people, checking in or arranging work.'},
  {id:'life',label:'Life & logistics',color:'#b8328a',definition:'Breaks, personal appointments, travel and practical commitments.'}]};}
 function peoplePolicy(description){return {mode:'semantic',description,categories:[
  {id:'team',label:'My team',color:'#2a78d6',definition:'Everyone invited is on my team.'},
- {id:'outside',label:'Outside the company',color:'#eb6834',definition:'At least one guest is from another company.'},
- {id:'own',label:'On my own',color:'#1baf7a',definition:'Time with nobody else invited.'}]};}
+ {id:'outside',label:'Outside the company',color:'#dd5b25',definition:'At least one guest is from another company.'},
+ {id:'own',label:'On my own',color:'#14995f',definition:'Time with nobody else invited.'}]};}
 const HINT={focus:/focus|deep|solo|my own|prep|writing|research/i,together:/together|collab|review|client|customer|project|making/i,coordination:/coord|update|status|sync|check-in|admin/i,life:/life|personal|break|lunch|logistic/i};
 const WHY={focus:'Time on your own with nobody else invited.',together:'A session with other people to make or decide something.',coordination:'A recurring update or check-in.',life:'A break in the day.'};
 const bucketOf=e=>/lunch|break|dentist|gym/i.test(e.title)?'life':/standup|sync|check-in|office hours|all hands|update/i.test(e.title)?'coordination':e.audience==='solo'?'focus':'together';
@@ -301,70 +296,3 @@ window.EventSource=class{
  }
  close(){this.closed=true;listeners.get(this.id)?.delete(this.send);}
 };
-
-
-/* ---------- scripted scenes: the real front end, played like a person would use it ---------- */
-const pause=ms=>new Promise(r=>setTimeout(r,ms));
-const $=q=>document.querySelector(q);
-async function until(test,timeout=8000){const end=RealDate.now()+timeout;while(RealDate.now()<end){const v=test();if(v)return v;await pause(60);}return null;}
-function tap(el){
- // A short ring where a click lands, so a viewer can follow a scene that has no visible pointer.
- const r=el.getBoundingClientRect(),ring=document.createElement('i');ring.className='scene-tap';ring.style.left=r.left+r.width/2+'px';ring.style.top=r.top+r.height/2+'px';document.body.append(ring);setTimeout(()=>ring.remove(),650);
-}
-async function click(selector,{quiet=false}={}){const el=await until(()=>{const e=typeof selector==='string'?$(selector):selector();return e&&e.getClientRects().length?e:null;});if(!el)return false;if(!quiet)tap(el);await pause(quiet?0:220);el.click();return true;}
-async function type(text,{speed=34}={}){
- const field=await until(()=>{const f=$('#command');return f&&!f.disabled?f:null;});if(!field)return;
- field.focus();field.click();await pause(260);
- for(let i=1;i<=text.length;i++){field.value=text.slice(0,i);field.dispatchEvent(new Event('input',{bubbles:true}));await pause(speed+(text[i-1]===' '?30:0)+Math.random()*24);}
- await pause(320);
-}
-async function send(){const field=$('#command');field.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));await until(()=>document.querySelector('.shell.thinking'),1200);await until(()=>!document.querySelector('.shell.thinking'),9000);await pause(500);}
-async function key(name){$('#command').dispatchEvent(new KeyboardEvent('keydown',{key:name,bubbles:true,cancelable:true}));await pause(260);}
-function caption(text){
- if(!CAPTIONS)return;let el=$('#scene-caption');if(!el){el=document.createElement('div');el.id='scene-caption';document.body.append(el);}
- el.classList.remove('on');void el.offsetWidth;el.textContent=text;el.classList.toggle('on',!!text);
-}
-const ask=async text=>{await type(text);await send();};
-// Arrow down to the palette row with this label, then run it. Rows come and go (recent requests,
-// Today), so a scene names the row it wants instead of counting.
-async function choose(label){
- for(let i=0;i<14;i++){await key('ArrowDown');if(document.querySelector('#palette [aria-selected=true]')?.innerText.trim().startsWith(label)){await pause(450);await key('Enter');return true;}}
- return false;
-}
-const SCENES={
- // The answer lands on the events, with a reason inside each one.
- skip:async()=>{caption('Ask a question.');await pause(900);await ask('Which meetings could I skip this week?');caption('The answer lands on the calendar, with a reason inside each meeting.');await pause(1200);},
- // The view follows the question: two days side by side, the day between kept as a strip.
- compare:async()=>{await pause(700);await ask('Compare Tuesday and Thursday');await pause(1200);},
- // A change is drawn before it is made, and the button names what will happen.
- move:async()=>{caption('Ask for a change.');await pause(900);await ask('Move project review to Wednesday morning');caption('It is drawn first. The current time stays until you confirm.');await pause(2600);
-  await click('#headline .primary');await until(()=>/Done/.test($('#headline')?.innerText||''),9000);caption('The button names what will happen. Then it happens.');await pause(1400);},
- // Several changes at once, each one separately droppable.
- decline:async()=>{await pause(700);await ask('Which meetings could I skip this week?');await pause(1500);await ask('Decline those');await pause(1800);await click(()=>document.querySelectorAll('[data-draft-toggle]')[1]);await pause(1400);},
- // Everything else waits in the palette.
- quiet:async()=>{caption('Everything else stays out of the way until you ask for it.');await pause(900);const field=$('#command');field.focus();tap(field);await pause(200);field.click();await pause(1300);
-  await choose('Show weekends');await pause(1600);
-  field.focus();field.click();await pause(600);await type('month',{speed:70});await choose('Month');await pause(1400);},
-};
-// One continuous take for a short video.
-SCENES.reel=async()=>{
- caption('A calendar assistant that answers on the calendar.');await pause(2200);
- await SCENES.skip();await pause(1600);
- await click('#headline [aria-label="Dismiss"]',{quiet:true});await pause(500);
- await SCENES.move();await pause(900);
- await click('#headline [aria-label="Dismiss"]',{quiet:true});await pause(500);
- caption('Everything else stays out of the way until you ask for it.');const field=$('#command');field.focus();tap(field);await pause(200);field.click();await pause(1700);
- await choose('Show weekends');await pause(1500);
- caption('critchlow.us · working demo and write-up');await pause(2600);
-};
-if(SCENE&&SCENES[SCENE]){
- const style=document.createElement('style');
- style.textContent=`.scene .demo-badge{display:none!important}
- .scene-tap{position:fixed;z-index:9999;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:2px solid #2f5a45;background:rgba(47,90,69,.18);pointer-events:none;animation:scene-tap .6s ease-out both}
- @keyframes scene-tap{from{transform:scale(.4);opacity:1}to{transform:scale(1.5);opacity:0}}
- #scene-caption{position:fixed;left:50%;bottom:34px;z-index:9998;transform:translate(-50%,12px);max-width:min(880px,86vw);padding:13px 24px;border-radius:16px;background:rgba(24,36,29,.94);color:#fbfcf9;font:600 23px/1.35 "Figtree",system-ui,sans-serif;text-align:center;letter-spacing:-.005em;box-shadow:0 12px 40px rgba(18,28,22,.28);opacity:0;transition:opacity .35s ease,transform .35s ease;pointer-events:none}
- #scene-caption.on{opacity:1;transform:translate(-50%,0)}`;
- document.head.append(style);
- window.addEventListener('load',async()=>{await until(()=>{const f=$('#command');return f&&!f.disabled;},10000);await pause(500);
-  try{await SCENES[SCENE]();}finally{document.documentElement.dataset.sceneDone='true';parent.postMessage({dayweaveScene:SCENE,done:true},'*');}});
-}

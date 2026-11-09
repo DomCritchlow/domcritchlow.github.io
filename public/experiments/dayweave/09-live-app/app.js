@@ -1,7 +1,7 @@
 import {createAppearance} from './appearance.js';
 import {ensureView,navigateView,viewFrame,viewSummary,normalizedScope,scopeDays,monthRange,monthGrid,monthCommand,explicitPeriod,dayCovered,traceInteraction} from './view_state.js';
 import {monthMarkup} from './month.js';
-import {timeScale,focusGeometry,localIntent,anticipateView,confirmationAnchor,sameConfirmation,clearIdleFocus,eventHasEnded,calendarSlots,expandedGapDays,calendarViewMode,eventCardPlacement} from './canvas.js';
+import {FISHEYE,timeScale,focusGeometry,localIntent,anticipateView,confirmationAnchor,sameConfirmation,clearIdleFocus,eventHasEnded,calendarSlots,expandedGapDays,calendarViewMode,eventCardPlacement} from './canvas.js';
 import {floatingWorkspace} from './floating.js';
 import {settingsCatalog,planSettings,undoPlan,summarize,describeValue,isColorKey,markerVariable,MARKER_DEFAULTS} from './settings_chat.js';
 import {hydrateDecision,chooseAlternative,distinctAlternatives,relatedOverlaps} from './decision_lifecycle.js';
@@ -18,7 +18,7 @@ const rangeLoads=new Map();let rangeQueue=Promise.resolve();
 let STORE='calendar-decisions-v3',PREFERENCES='calendar-settings-v4',lastCalendarPoll=0,mail=null,received=null,receivedRecords=[];
 let queueTab='open',panelOpen=true,polling=false,lastConversationId='calendar-home',entryFresh=false,pillPinned=false;
 let preferences={readAloud:false};
-const CALENDAR_DEFAULTS={internalDomains:['fractional.ai'],internalAddresses:[],colors:{internal:'#2a78d6',external:'#eb6834',solo:'#1baf7a',decision:'#c1995b',proposed:'#2f5a45',pending:'#b79a60'}};
+const CALENDAR_DEFAULTS={internalDomains:['fractional.ai'],internalAddresses:[],colors:{internal:'#2a78d6',external:'#dd5b25',solo:'#14995f',decision:'#c1995b',proposed:'#2f5a45',pending:'#b79a60'}};
 const calendarSettings=()=>{const shown=displaySnapshot(),settings=shown?.calendarSettings||CALENDAR_DEFAULTS;return shown?.appearance?.policy.mode==='audience'?{...settings,colors:Object.fromEntries(shown.appearance.policy.categories.map(c=>[c.id,c.color]))}:settings;};
 function displaySnapshot(){
  const plan=state?.settingsProposal?.plan;if(!snapshot||!plan)return snapshot;
@@ -46,13 +46,13 @@ function updateClock(){
  if(!snapshot||!calendarScale)return;
  const now=new Date(),iso=now.toISOString(),today=dayKey({start:iso}),minute=minutes(iso),label=timeLabel(iso);
  const track=$(`.day-track[data-date="${today}"]`);
- if(track&&!drag&&(minute<calendarScale.bands[0].start||minute>=calendarScale.bands.at(-1).end)){renderCalendar();return;}
+ if(track&&!drag&&(minute<calendarScale.from||minute>=calendarScale.to)){renderCalendar();return;}
  for(const heading of document.querySelectorAll('.day-heading'))heading.classList.toggle('today',heading.querySelector('[data-day]')?.dataset.day===today);
  for(const line of document.querySelectorAll('.now-line'))if(line.parentElement!==track)line.remove();
  if(track){
   let line=track.querySelector('.now-line');
   if(!line){line=document.createElement('div');line.className='now-line';track.append(line);}
-  line.style.top=calendarScale.at(minute)+'px';line.setAttribute('aria-label','Current time '+label);
+  const top=calendarScale.at(minute);line.style.top=top+'px';line.classList.toggle('below',top<20);line.setAttribute('aria-label','Current time '+label);
   line.innerHTML=`<span>${esc(label)}</span>`;
  }
  for(const el of document.querySelectorAll('[data-event][data-end]'))el.classList.toggle('past',eventHasEnded({end:el.dataset.end,allDay:el.dataset.allDay==='true'},now.getTime()));
@@ -79,6 +79,8 @@ function placeSurface(){
  try{$('.shell').classList.toggle('no-mix',localStorage.getItem('dayweave-rail')==='hidden');}catch{}
 }
 placeSurface();phoneLayout.addEventListener('change',placeSurface);
+// Until the calendar arrives the header names the month and the rest of the chrome waits (.shell.loading).
+$('#date-title').textContent=new Date().toLocaleDateString('en-US',{month:'long'});
 let phoneRange=true,selectionMode=false,drawerReturnFocus,layoutScope,inspectionOwner,weekView=[];
 function focusedDate(){
  const key=state.days.join(','),saved=phoneFocus.get(activeId);
@@ -134,7 +136,7 @@ function shiftCalendar(direction){
  else {weekView=days.length===1?weekDates(days[0],weekView.length===7):weekView.map(d=>shiftDate(d,delta));apply([{op:'view',days}]);}
 }
 function renderDayPicker(){
- const el=$('#week-strip');el.hidden=!phoneLayout.matches||ensureView(state).mode==='month';
+ const el=$('#week-strip');el.hidden=!phoneLayout.matches||ensureView(state).mode==='month'||(phoneRange&&displayedDays().length>1);
  if(el.hidden)return;
  const date=focusedDate(),days=state.days.length===1?weekDates(date,true):state.days;
  const changed=new Set([...Object.keys(state.edits).map(ref=>eventByRef(ref)).filter(Boolean).map(dayKey),...Object.values(state.edits).filter(e=>e.start).map(e=>dayKey({start:e.start})),...state.created.map(dayKey)]);
@@ -153,8 +155,8 @@ const activeIds=()=>state.selected.length?state.selected:state.highlighted;
 const currentEvents=()=>inOverview()||state.source||current().status==='needs_review'||['dismissed','obsolete','later','done','waiting'].includes(current().status)?snapshot.events:projectedEvents(snapshot.events,visibleProposal(snapshot,state));
 const actionName=c=>{const ev=c.ref&&snapshot?.events?.find(e=>e.ref===c.ref),series=c.scope==='series'?' series':'';
  if(c.kind==='remove')return ev&&!ev.organizerSelf?'Remove from my calendar'+series:'Delete hold'+series;
- if(c.kind==='create')return c.eventType==='focusTime'?'Add focus time':c.eventType==='outOfOffice'?'Add out of office':c.attendees?.length?'Invite':'Add hold';
- return ({decline:'Decline'+series,accept:'Accept'+series,tentative:'Mark tentative'+series,move:'Move',resize:'Resize',cancel:'Cancel for everyone'+series,email:'Send message',request:'Ask to move'}[c.kind]||'Change');};
+ if(c.kind==='create')return (c.eventType==='focusTime'?'Add focus time':c.eventType==='outOfOffice'?'Add out of office':c.eventType==='workingLocation'?'Set working location':c.attendees?.length?'Invite':'Add hold')+(c.repeat?' series':'');
+ return ({decline:'Decline'+series,accept:'Accept'+series,tentative:'Mark tentative'+series,move:'Move'+series,resize:'Resize'+series,update:'Edit'+series,cancel:'Cancel for everyone'+series,email:'Send message',request:'Ask to move'}[c.kind]||'Change');};
 async function api(path,data){const res=await fetch(path,{method:data?'POST':'GET',headers:data?{'Content-Type':'application/json','X-Calendar-Session':status?.csrf||''}:undefined,body:data?JSON.stringify(data):undefined});const result=await res.json();if(res.status===401&&result.login){location.assign(result.login);throw Error('Sign in to continue.');}if(status?.user?.id&&res.headers.get('X-Calendar-Account')&&res.headers.get('X-Calendar-Account')!==status.user.id){location.reload();throw Error('Account changed. Reloading.');}if(!res.ok)throw Error(result.error||'The request could not finish.');return result;}
 async function waitJob(id,onUpdate){
  const result=job=>{onUpdate?.(job);if(job.status==='complete')return job.result;if(job.status==='cancelled')throw Error('Stopped');if(job.status==='error')throw Error(job.error);return undefined;};
@@ -200,7 +202,7 @@ function renderHeader(){
  $('#phone-view').hidden=!phoneLayout.matches;$('#phone-view').value=viewMode;
  if(layoutScope!==activeId){$('#proposal-details').open=false;layoutScope=activeId;}
  const shownDays=displayedDays(),nextDay=shiftDate(shownDays.at(-1),1),addDay=$('#include-next-day');
- addDay.dataset.includeDay=nextDay;addDay.textContent='＋ '+dateLabel(nextDay);addDay.setAttribute('aria-label','Show '+dateLabel(nextDay));
+ addDay.dataset.includeDay=nextDay;addDay.innerHTML='<span class="ico ico-plus" aria-hidden="true"></span> '+esc(dateLabel(nextDay));addDay.setAttribute('aria-label','Show '+dateLabel(nextDay));
  addDay.disabled=shownDays.length>=14;addDay.title=addDay.disabled?'Up to 14 days can be shown together':'Show '+dateLabel(nextDay)+' alongside these dates';
  const first=state.days[0],last=state.days.at(-1),sameMonth=first.slice(0,7)===last.slice(0,7);
  $('#date-title').textContent=viewMode==='month'?dateLabel(state.view.anchor,{month:'long',year:'numeric'}):phoneLayout.matches?dateLabel(focusedDate(),{month:'long',year:'numeric'}):state.days.length===1?dateLabel(first,{month:'long',day:'numeric'}):`${dateLabel(first,{month:'long',day:'numeric'})}–${dateLabel(last,sameMonth?{day:'numeric'}:{month:'short',day:'numeric'})}`;
@@ -215,7 +217,7 @@ function renderHeader(){
  const unknown=displayedDays().filter(d=>!dayCovered(snapshot,d)).length,loading=[...rangeLoads.values()].some(x=>x.status==='loading');
  $('#coverage-note').textContent=unknown?(loading?'Loading calendar…':status.google?.calendar?'Some dates not loaded · Retry':'Some dates not loaded · Connect Google'):'';
  const thisWeek=weekDates(dayKey({start:new Date().toISOString()}));
- $('#today-button').hidden=JSON.stringify(state.days)===JSON.stringify(thisWeek)&&viewMode==='workweek';
+ $('#today-button').classList.toggle('away',JSON.stringify(state.days)===JSON.stringify(thisWeek)&&viewMode==='workweek');
  const hasProposal=isOpen(current())&&current().status!=='needs_review'&&actionBundle(snapshot,state).length>0;
  $('#compare-button').hidden=!hasProposal;
  $('[data-action="undo"]').hidden=!state.undo.length&&!state.redo.length;$('[data-action="redo"]').hidden=!state.undo.length&&!state.redo.length;
@@ -245,32 +247,80 @@ function renderHeader(){
 }
 function draftKeys(){return new Map((snapshot&&state&&isOpen(current())&&!inOverview()?actionBundle(snapshot,state):[]).filter(a=>a.ref).map(a=>[a.ref,a.key]));}
 function eventClasses(e){
- const focus=state.inspected?[state.inspected]:activeIds(),classes=['event'];if(openDecisions().some(d=>decisionRefs(d).includes(e.ref)))classes.push('has-decision');if(e.audience==='solo')classes.push('solo');if(e.audience==='external')classes.push('external');
+ const focus=activeIds(),classes=['event'];if(openDecisions().some(d=>decisionRefs(d).includes(e.ref)))classes.push('has-decision');if(e.audience==='solo')classes.push('solo');if(e.audience==='external')classes.push('external');
  if(eventHasEnded(e))classes.push('past');
  if(e.response==='declined'&&!e.previewAccepted&&!e.previewTentative)classes.push('source-declined');
  if(e.previewKind||e.created)classes.push('proposed');if(e.previewDeclined)classes.push('proposed-decline');if(e.pending)classes.push('pending');
  if(state.highlighted.includes(e.ref))classes.push('highlighted');if(state.selected.includes(e.ref))classes.push('selected');if(state.inspected===e.ref)classes.push('inspected');if(reviewRef===e.ref)classes.push('review-focus');
- if(focus.length&&!focus.includes(e.ref)&&!e.previewKind)classes.push('dimmed');return classes;
+ if(focus.length&&!focus.includes(e.ref)&&e.ref!==state.inspected&&!e.previewKind)classes.push('dimmed');return classes;
 }
-function eventStatus(e){return e.previewKind==='remove'?(e.organizerSelf?'Delete hold · proposed':'Remove from calendar · proposed'):e.previewKind==='cancel'?'Cancel for everyone · proposed':e.previewDeclined?'Proposed decline':e.pending?'Proposed time · needs agreement':e.previewKind==='move'?'Proposed move':e.previewKind==='resize'?'Proposed duration':e.previewAccepted?'Proposed accept':e.previewTentative?'Proposed tentative':e.created?'New hold · proposed':e.response==='declined'?'Declined':'';}
+function eventStatus(e){return e.previewKind==='remove'?(e.organizerSelf?'Delete hold · proposed':'Remove from calendar · proposed'):e.previewKind==='cancel'?'Cancel for everyone · proposed':e.previewDeclined?'Proposed decline':e.pending?'Proposed time · needs agreement':e.previewKind==='move'?'Proposed move':e.previewKind==='resize'?'Proposed duration':e.previewKind==='update'?'Proposed edit':e.previewAccepted?'Proposed accept':e.previewTentative?'Proposed tentative':e.created?'New hold · proposed':e.response==='declined'?'Declined':'';}
 // While someone types, the calendar renders a preview copy of the state: it can widen
 // days, open hours and light up events, but nothing it changes is kept or saved.
 function renderCalendar(){drawCalendar();}
 function revealDay(date){const region=$('#calendar-scroll'),track=$(`.day-track[data-date="${date}"]`);if(!track)return;const a=region.getBoundingClientRect(),b=track.getBoundingClientRect();if(b.left<a.left+54||b.right>a.right)region.scrollTo({left:Math.max(0,region.scrollLeft+b.left-a.left-58),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}
-let headGuess=0,headRedraw=false;
+let headGuess=0,headRedraw=false,lensRedraw=false,shownKey='',morphing=false;
 // The view switch sits a fixed gap left of whatever is in the corner, so the request bar never shifts.
 function measureTopbar(){if(SURFACE==='canvas'&&!phoneLayout.matches)$('.topbar').style.setProperty('--actions-width',$('.topbar-actions').offsetWidth+'px');}
-function drawCalendar(){
- const oldRects=new Map([...document.querySelectorAll('.event[data-ref]')].map(el=>[el.dataset.ref,el.getBoundingClientRect()]));
+// What the fisheye moves between: the widths of the day columns, and where every hour line, hour
+// label and meeting sits inside its day. Read from what is painted, so a change made while an
+// earlier one is still moving carries on from where things are.
+function calendarFrame(){
+ const grid=$('#calendar>.calendar-grid');if(!grid)return null;
+ const origin=grid.getBoundingClientRect(),marks=new Map(),byRef=new Map();
+ const note=(key,el,box,extra={})=>{const r=el.getBoundingClientRect(),mark={el,top:r.top-box.top,height:r.height,x:r.left-origin.left,y:r.top-origin.top,...extra};marks.set(key,mark);return mark;};
+ for(const track of grid.querySelectorAll('.day-track')){
+  const box=track.getBoundingClientRect(),date=track.dataset.date;
+  track.querySelectorAll('.hour-rule').forEach((el,i)=>note(`rule ${date} ${i}`,el,box));
+  for(const el of track.querySelectorAll('.now-line'))note(`now ${date}`,el,box);
+  for(const el of track.querySelectorAll('.event[data-ref]')){const style=getComputedStyle(el);byRef.set(el.dataset.ref,note(`event ${date} ${el.dataset.ref}`,el,box,{event:true,opacity:style.opacity,shadow:style.boxShadow,forward:el.matches('.highlighted,.selected,.inspected')}));}
+ }
+ const axis=grid.querySelector('.time-axis');if(axis){const box=axis.getBoundingClientRect();axis.querySelectorAll('.time-label').forEach((el,i)=>note(`label ${i}`,el,box));}
+ return {key:grid.dataset.grid,grid,columns:getComputedStyle(grid).gridTemplateColumns,marks,byRef};
+}
+// One motion for the whole grid: columns, hour lines, labels and meetings move together on one curve.
+// The meetings in focus grow with their slot and their shadow comes up; the rest ease back.
+function morphCalendar(before){
+ const after=calendarFrame();if(!before||!after||before.key!==after.key)return false;
+ const timing={duration:380,easing:'cubic-bezier(.2,.9,.25,1)'},running=[];
+ if(before.columns!==after.columns&&before.columns.split(' ').length===after.columns.split(' ').length)running.push(after.grid.animate({gridTemplateColumns:[before.columns,after.columns]},timing));
+ for(const [key,now] of after.marks){
+  const was=before.marks.get(key),frames={};
+  if(was){
+   if(Math.abs(was.top-now.top)>.5)frames.translate=[`0 ${was.top-now.top}px`,'0 0'];
+   if(now.event&&Math.abs(was.height-now.height)>.5)frames.height=[was.height+'px',now.height+'px'];
+  }else if(now.event){
+   // A meeting that changed day travels straight to its new place; a new one fades in.
+   const moved=before.byRef.get(now.el.dataset.ref);
+   if(moved)frames.translate=[`${moved.x-now.x}px ${moved.y-now.y}px`,'0 0'];else frames.opacity=[0,now.opacity];
+  }
+  const earlier=was||(now.event&&before.byRef.get(now.el.dataset.ref));
+  if(now.event&&earlier){
+   if(!frames.opacity&&earlier.opacity!==now.opacity)frames.opacity=[earlier.opacity,now.opacity];
+   if(now.forward&&!earlier.forward)frames.boxShadow=[earlier.shadow,now.shadow];
+  }
+  if(Object.keys(frames).length)running.push(now.el.animate(frames,timing));
+ }
+ // An opened meeting's details stay inside its slot while the slot opens.
+ if(running.length){morphing=true;const follow=()=>{const live=running.some(a=>a.playState==='running');morphing=live;if(drawerType==='event')placeEventCard();if(live)requestAnimationFrame(follow);};requestAnimationFrame(follow);}
+ return true;
+}
+function drawCalendar(carried){
+ const still=matchMedia('(prefers-reduced-motion: reduce)').matches,before=carried||(still?null:calendarFrame()),oldShown=shownKey;
  const view=ensureView(state);calendarScale=null;
  $('#calendar').innerHTML=view.mode==='month'?monthMarkup({snapshot,state,events:currentEvents(),esc,dateLabel,eventClasses,eventStatus,timeline:timelineMarkup,phone:phoneLayout.matches,windows:[...(state.gapMinutes?timeWindows(snapshot.events,visibleProposal(snapshot,state),snapshot,state.gapMinutes):[]),...(state.draftWindows||[])],focusDates:state.draftFocus||[],loading:[...rangeLoads.values()].some(x=>x.status==='loading')}):timelineMarkup(displayedDays());
  // Set the final palette before layout reads can start a transition from default colors.
  appearance.paint();
  const head=view.mode==='month'?0:$('#calendar .calendar-head')?.offsetHeight||0;
- if(head&&Math.abs(head-headGuess)>6&&!headRedraw){headRedraw=true;try{drawCalendar();}finally{headRedraw=false;}return;}
+ if(head&&Math.abs(head-headGuess)>6&&!headRedraw){headRedraw=true;try{drawCalendar(before);}finally{headRedraw=false;}return;}
+ // An opened meeting is as tall as its details: measure them at the slot's final width, and draw again if the guess was off.
+ if(!lensRedraw&&fitLens()){lensRedraw=true;try{drawCalendar(before);}finally{lensRedraw=false;}return;}
  updateClock();
  const overflows=$('#calendar-scroll').scrollWidth>$('#calendar-scroll').clientWidth+1;$('.calendar-main').classList.toggle('wide-range',overflows);$('#range-hint').hidden=!overflows;
- if(!matchMedia('(prefers-reduced-motion: reduce)').matches)for(const el of document.querySelectorAll('.event[data-ref]')){const before=oldRects.get(el.dataset.ref),after=el.getBoundingClientRect();if(el.dataset.ref!==state.inspected&&before&&Math.abs(before.x-after.x)+Math.abs(before.y-after.y)>2){const dx=before.x-after.x,dy=before.y-after.y,far=Math.abs(dx)>40,lift=far?-Math.min(70,Math.abs(dx)*.12+20):0;el.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:`translate(${dx*.45}px,${dy*.45+lift}px)`,offset:.5},{transform:'translate(0,0)'}],{duration:far?560:320,easing:'cubic-bezier(.3,.7,.2,1)'});}}
+ shownKey=view.mode==='month'?'month '+state.view.anchor:displayedDays().join(',');
+ // The same dates and hours: the grid moves into its new shape. Other dates: the calendar fades in.
+ const surface=$('#calendar').firstElementChild;
+ if(!still&&!morphCalendar(before)&&surface&&oldShown&&oldShown!==shownKey)surface.animate([{opacity:.25},{opacity:1}],{duration:200,easing:'cubic-bezier(.2,.9,.25,1)'});
  ensureVisibleCoverage();
  if(drawerType==='event')requestAnimationFrame(positionEventCard);
 }
@@ -281,24 +331,34 @@ function timelineMarkup(days){
  const from=Math.min(9*60,...segments.map(e=>Math.floor(e.startMinute/60)*60),...(days.includes(today)?[Math.floor(nowMinute/60)*60]:[]));
  const to=Math.max(18*60,...segments.map(e=>Math.ceil(e.endMinute/60)*60),...(days.includes(today)?[Math.min(1440,Math.ceil((nowMinute+1)/60)*60)]:[]));
  const focusState=isOpen(current())||inOverview()||state.draftRanges?state:{...state,selected:[],highlighted:[],attentionDays:[],edits:{}};
- const geometry=focusGeometry([...snapshot.events,...events],state.inspected?{...focusState,selected:[state.inspected]}:focusState,days);
- // When something is in focus, the whole working day should fit on screen with the focus
- // expanded, so the hours shrink before anything important scrolls out of view.
+ const geometry=focusGeometry([...snapshot.events,...events],state.inspected?{...focusState,selected:[...new Set([...focusState.selected,state.inspected])]}:focusState,days);
+ // The working day fits the height the calendar has at rest. That base hour does not depend on what is
+ // in focus or on the answer line above; the fisheye then gives the hours in focus a little more of it.
  headGuess=$('#calendar .calendar-head')?.offsetHeight||116;
- const available=$('#calendar-scroll').clientHeight-headGuess;
- let hour=phoneLayout.matches?76:Math.max(64,Math.min(88,Math.floor(available/((to-from)/60))));
- if(!phoneLayout.matches&&geometry.times.length)hour=Math.max(40,Math.min(hour,Math.floor(available/timeScale(from,to,geometry.times,1).height)));
- // Fisheye: an opened event grows in place, in its own column and time span, to hold its whole card.
- const lensEvent=lensTarget(timed,days),lens=lensEvent?{start:minutes(lensEvent.start),end:dayKey(lensEvent)!==dayKey({start:lensEvent.end})?1440:minutes(lensEvent.end),pixels:Math.max(lensHeight,200)}:null;
- calendarScale=timeScale(from,to,geometry.times,hour,lens);const height=calendarScale.height,y=iso=>calendarScale.at(minutes(iso));
- const slots=calendarSlots(days),lensDay=lensEvent?dayKey(lensEvent):null;
- const columns=slots.map(slot=>slot.kind==='gap'?'42px':lensDay?(slot.date===lensDay?`minmax(${LENS_WIDTH}px,3.2fr)`:'minmax(56px,.7fr)'):`minmax(${phoneLayout.matches&&days.length>1?115:70}px,${geometry.weights[days.indexOf(slot.date)]}fr)`).join(' ');
+ const main=$('.calendar-main'),fixed=SURFACE==='canvas'?0:['.context-bar','.legend'].reduce((n,q)=>n+($(q)?.offsetHeight||0),0);
+ const available=main.clientHeight-fixed-headGuess;
+ const hour=phoneLayout.matches?76:Math.max(64,Math.min(88,Math.floor(available/((to-from)/60))));
+ const lensEvent=lensTarget(timed,days),lensDay=lensEvent?dayKey(lensEvent):null;
+ // Selected meetings open a little, in place: who is in it and where. Past a handful they only come forward.
+ const peeks=new Set(state.selected.length>=1&&state.selected.length<=FISHEYE.peeks?state.selected:[]);if(lensEvent)peeks.delete(lensEvent.ref);
+ const span=e=>({start:minutes(e.start),end:dayKey(e)!==dayKey({start:e.end})?1440:minutes(e.end)});
+ const noteOf=e=>state.eventNotes?.[e.ref]&&activeIds().includes(e.ref)?state.eventNotes[e.ref]:'';
+ const unit=($('#calendar-scroll').clientWidth-54)/Math.max(1,geometry.weights.reduce((n,w)=>n+w,0));
+ // What a meeting needs to show its lines: title and time, then a tag, a reason, a place and who is in it.
+ const roomFor=e=>{const note=noteOf(e),status=eventStatus(e)&&(e.previewKind||e.created||e.previewDeclined||e.pending),peek=peeks.has(e.ref);if(!note&&!status&&!peek)return 0;
+  const width=Math.max(90,unit*geometry.weights[Math.max(0,days.indexOf(dayKey(e)))]-26),lines=note?Math.min(4,Math.ceil(note.length*6.6/width)):0;
+  return 49+(status?20:0)+(lines?lines*17+3:0)+(peek?(eventPlace(e)?17:0)+18:0);};
+ const lenses=[...(lensEvent?[{...span(lensEvent),pixels:lensHeight+2}]:[]),...timed.filter(e=>e!==lensEvent&&days.includes(dayKey(e))).map(e=>({...span(e),pixels:roomFor(e)})).filter(l=>l.pixels)];
+ calendarScale=timeScale(from,to,geometry.times,hour,lenses);const height=calendarScale.height,y=iso=>calendarScale.at(minutes(iso));
+ const slots=calendarSlots(days),focusDay=d=>geometry.focusDays.has(d);
+ const columns=slots.map(slot=>slot.kind==='gap'?'42px':`minmax(${slot.date===lensDay?FISHEYE.card:phoneLayout.matches&&days.length>1?Math.round(115*geometry.weights[days.indexOf(slot.date)]):96}px,${geometry.weights[days.indexOf(slot.date)]}fr)`).join(' ');
+ const noneKnown=days.every(d=>!dayCovered(snapshot,d)),loadingDates=[...rangeLoads.values()].some(x=>x.status==='loading');
  const gapLabel=slot=>slot.count===1?dateLabel(slot.start):`${slot.count} days · ${dateLabel(slot.start)} – ${dateLabel(slot.end)}`;
- const gapHeading=slot=>{const label=gapLabel(slot),action=state.days.length+slot.count<=14?'Show':'Explore';return `<div class="date-gap-heading"><button data-expand-dates="${slot.start}" aria-label="${action} ${esc(label)}; currently compressed" title="${action} ${esc(label)}"><span>${slot.count===1?dateLabel(slot.start,{weekday:'short'}):slot.count}</span><strong>${slot.count===1?dateLabel(slot.start,{day:'numeric'}):'days'}</strong><i aria-hidden="true">‹ ›</i></button></div>`;};
+ const gapHeading=slot=>{const label=gapLabel(slot),action=state.days.length+slot.count<=14?'Show':'Explore';return `<div class="date-gap-heading"><button data-expand-dates="${slot.start}" aria-label="${action} ${esc(label)}; currently compressed" title="${action} ${esc(label)}"><span>${slot.count===1?dateLabel(slot.start,{weekday:'short'}):slot.count}</span><strong>${slot.count===1?dateLabel(slot.start,{day:'numeric'}):'days'}</strong><i aria-hidden="true"><span class="ico ico-expand"></span></i></button></div>`;};
  const rules=Array.from({length:Math.ceil((to-from)/60)},(_,i)=>`<i class="hour-rule" style="top:${calendarScale.at(from+i*60)}px"></i>`).join('');
  const gaps=!state.source&&state.gapMinutes?timeWindows(snapshot.events,visibleProposal(snapshot,state),snapshot,state.gapMinutes):[];
- let html=`<div class="calendar-grid ${days.length===1?'single':''}" style="--count:${days.length};--hour:${hour}px;--day-columns:${columns}" data-from="${from}" data-hour="${hour}"><div class="calendar-head"><div class="zone-head">${esc(timezoneLabel(days[0]+'T12:00Z'))}</div>`;
- html+=slots.map(slot=>{if(slot.kind==='gap')return gapHeading(slot);const d=slot.date;return `<div class="day-heading ${geometry.weights[days.indexOf(d)]>1?'focus-day':''} ${today===d?'today':''}"><button data-day="${d}" title="Focus ${dateLabel(d)}"><span>${dateLabel(d,{weekday:'short'})}</span><strong>${dateLabel(d,{day:'numeric'})}</strong></button></div>`;}).join('');
+ let html=`<div class="calendar-grid ${days.length===1?'single':''}" style="--count:${days.length};--hour:${hour}px;--day-columns:${columns}" data-from="${from}" data-hour="${hour}" data-grid="${esc([days.join(','),from,to].join('|'))}"><div class="calendar-head"><div class="zone-head">${esc(timezoneLabel(days[0]+'T12:00Z'))}</div>`;
+ html+=slots.map(slot=>{if(slot.kind==='gap')return gapHeading(slot);const d=slot.date;return `<div class="day-heading ${focusDay(d)?'focus-day':''} ${today===d?'today':''}"><button data-day="${d}" title="Focus ${dateLabel(d)}"><span>${dateLabel(d,{weekday:'short'})}</span><strong>${dateLabel(d,{day:'numeric'})}</strong></button></div>`;}).join('');
  // An all-day event is one bar across the consecutive days it covers; a compressed strip ends a bar.
  const runs=[];
  for(const e of events.filter(e=>e.allDay)){let from=null;slots.forEach((slot,i)=>{const on=slot.kind==='day'&&onDay(e,slot.date);if(on&&from===null)from=i;if(from!==null&&(!on||i===slots.length-1)){runs.push({e,from,to:on?i:i-1});from=null;}});}
@@ -314,25 +374,27 @@ function timelineMarkup(days){
   if(slot.kind==='gap'){html+=`<div class="date-gap-track" data-gap-start="${slot.start}" style="height:${height}px"><span>${esc(gapLabel(slot))} · compressed</span></div>`;continue;}
   const date=slot.date;
   const known=dayCovered(snapshot,date);
-  html+=`<div class="day-track ${geometry.weights[days.indexOf(date)]>1?'focus-day':''} ${new Date(date+'T12:00Z').getUTCDay()%6===0?'weekend':''} ${!known?'unknown':''}" data-date="${date}" style="height:${height}px">${rules}`;
-  if(!known)html+='<span class="unknown-label">Not loaded<br>Availability unknown</span>';
+  html+=`<div class="day-track ${focusDay(date)?'focus-day':''} ${new Date(date+'T12:00Z').getUTCDay()%6===0?'weekend':''} ${!known?'unknown':''}" data-date="${date}" style="height:${height}px">${rules}`;
+  if(!known&&!noneKnown)html+='<span class="unknown-label">Not loaded<br>Availability unknown</span>';
   html+=gaps.filter(g=>g.date===date).map(g=>`<button class="gap" ${g.kind==='solo'?`data-event="${g.ref}"`:`data-gap="${g.start}"`} style="top:${y(g.start)}px;height:${calendarScale.at(minutes(g.start)+g.minutes)-y(g.start)}px" title="${g.kind==='solo'?'Inspect booked solo time':'Preview a hold'} at ${timeLabel(g.start)}">${g.minutes}m ${g.kind==='solo'?'alone · includes holds':'unbooked'}</button>`).join('');
-  if(isOpen(current())&&!state.source&&current().status!=='needs_review')for(const e of daySegments(snapshot.events,date).filter(e=>['move','resize'].includes(visibleProposal(snapshot,state).edits[e.ref]?.kind))){html+=`<div class="event ghost" data-source-ref="${e.ref}" style="top:${calendarScale.at(e.startMinute)}px;height:${Math.max(19,calendarScale.at(e.endMinute)-calendarScale.at(e.startMinute))}px;left:1%;width:97%"><span class="event-title">${SURFACE==='canvas'?'':'Current · '}${esc(e.title)}</span><span class="event-status">${canEdit(e)?'Current time':'Current time · still booked'}</span></div>`;}
+  if(isOpen(current())&&!state.source&&current().status!=='needs_review')for(const e of daySegments(snapshot.events,date).filter(e=>['move','resize'].includes(visibleProposal(snapshot,state).edits[e.ref]?.kind))){html+=`<div class="event ghost" data-source-ref="${e.ref}" style="top:${calendarScale.at(e.startMinute)}px;height:${Math.max(20,calendarScale.at(e.endMinute)-calendarScale.at(e.startMinute))}px;left:1%;width:97%"><span class="event-title">${SURFACE==='canvas'?'':'Current · '}${esc(e.title)}</span><span class="event-status">${canEdit(e)?'Current time':'Current time · still booked'}</span></div>`;}
   for(let e of layoutEvents(daySegments(timed,date))){
-   const h=calendarScale.at(e.endMinute)-calendarScale.at(e.startMinute),classes=eventClasses(e);if(h<43)classes.push('compact');
+   const h=calendarScale.at(e.endMinute)-calendarScale.at(e.startMinute),classes=eventClasses(e),note=noteOf(e),peek=peeks.has(e.ref),grows=!!note||peek||(h<62&&!!eventStatus(e)&&(e.previewKind||e.created||e.previewDeclined||e.pending));if(peek)classes.push('peek');if(e.lanes>=3||(phoneLayout.matches&&e.lanes>=2))classes.push('tight');if(h<46.5&&!grows)classes.push('compact');if(h<30&&!grows)classes.push('brief');if(grows)classes.push('noted');
+   // The opened meeting takes its whole day's width and holds its own details.
    if(lensEvent&&e.ref===lensEvent.ref){classes.push('lens-host');e={...e,lane:0,lanes:1};}
    const title=`${e.title} · ${timeLabel(e.start)}–${timeLabel(e.end)}${eventStatus(e)?' · '+eventStatus(e):''} · Organizer: ${organizerLabel(e)} · ${permissionLabel(e)} · ${locationLabel(e)} · ${participationLabel(e)}`;
-   html+=`<button class="${classes.join(' ')}" data-ref="${e.ref}" data-event="${e.ref}" data-end="${esc(e.end)}" aria-label="${esc(title)}" aria-pressed="${state.selected.includes(e.ref)||state.inspected===e.ref}" title="${esc(title)}" style="top:${calendarScale.at(e.startMinute)}px;height:${Math.max(19,h-2)}px;left:calc(${e.lane/e.lanes*100}% + 3px);width:calc(${100/e.lanes}% - 6px)"><span class="event-title">${SURFACE!=='canvas'&&(e.previewKind||e.created)?'Proposed · ':''}${esc(e.title)}</span><span class="event-time">${esc(timeLabel(e.start))}${e.lanes<3?' – '+esc(timeLabel(e.end)):''}</span><span class="event-status">${esc(eventStatus(e))}</span>${state.eventNotes?.[e.ref]&&activeIds().includes(e.ref)?`<span class="event-note">${esc(state.eventNotes[e.ref])}</span>`:''}${eventPlace(e)?`<span class="event-location">${esc(eventPlace(e))}</span>`:''}</button>`;
-   if(SURFACE==='canvas'&&!state.source){const key=draftKeys().get(e.ref);if(key){const aside=state.excluded?.includes(key);html+=`<button class="draft-toggle ${aside?'aside':''}" data-draft-toggle="${esc(key)}" aria-label="${aside?'Bring back this change':'Set this change aside'}" title="${aside?'Bring back this change':'Set this change aside'}" style="top:${calendarScale.at(e.startMinute)+3}px;left:calc(${(e.lane+1)/e.lanes*100}% - 27px)">${aside?'↺':'×'}</button>`;}}
+   html+=`<button class="${classes.join(' ')}" data-ref="${e.ref}" data-event="${e.ref}" data-end="${esc(e.end)}" aria-label="${esc(title)}" aria-pressed="${state.selected.includes(e.ref)||state.inspected===e.ref}" style="top:${calendarScale.at(e.startMinute)}px;${grows?'min-height':'height'}:${Math.max(20,h-2)}px;left:calc(${e.lane/e.lanes*100}% + 3px);width:calc(${100/e.lanes}% - 6px)"><span class="event-title">${SURFACE!=='canvas'&&(e.previewKind||e.created)?'Proposed · ':''}${esc(e.title)}</span><span class="event-time">${esc(timeLabel(e.start))}<span class="event-end"> – ${esc(timeLabel(e.end))}</span></span><span class="event-status">${esc(eventStatus(e))}</span>${note?`<span class="event-note">${esc(note)}</span>`:''}${eventPlace(e)?`<span class="event-location">${esc(eventPlace(e))}</span>`:''}${peek?`<span class="event-who">${esc(whoLine(e))}</span>`:''}</button>`;
+   if(SURFACE==='canvas'&&!state.source){const key=draftKeys().get(e.ref);if(key){const aside=state.excluded?.includes(key);html+=`<button class="draft-toggle ${aside?'aside':''}" data-draft-toggle="${esc(key)}" aria-label="${aside?'Bring back this change':'Set this change aside'}" title="${aside?'Bring back this change':'Set this change aside'}" style="top:${calendarScale.at(e.startMinute)+3}px;left:calc(${(e.lane+1)/e.lanes*100}% - 27px)">${aside?'<span class="ico ico-restore" aria-hidden="true"></span>':'<span class="ico ico-close" aria-hidden="true"></span>'}</button>`;}}
   }html+='</div>';
  }
+ if(noneKnown)html+=`<div class="calendar-empty"><strong>${loadingDates?'Loading these dates':'These dates are not loaded'}</strong><span>${loadingDates?'One moment.':'Availability is unknown until they are.'}</span>${loadingDates?'':`<button type="button" class="primary" data-action="load-dates">${status.google?.calendar?'Load them':'Connect Google'}</button>`}</div>`;
  return html+'</div>';
 }
-function stepMeta(a){const e=a.kind==='create'?null:eventByRef(a.ref);if(a.start)return `${e?dateLabel(dayKey(e))+' '+timeLabel(e.start)+' → ':''}${dateLabel(dayKey({start:a.start}))} ${timeLabel(a.start)}–${timeLabel(a.end)}`;return e?`${dateLabel(dayKey(e),{weekday:'short'})} · ${timeLabel(e.start)}`:a.to||'Choose recipient';}
+function stepMeta(a){const e=a.kind==='create'?null:eventByRef(a.ref);if(a.start?.length===10){const days=n=>dateLabel(n);return (e?days(dayKey(e))+' → ':'')+days(a.start)+' · all day';}if(a.start)return `${e?dateLabel(dayKey(e))+' '+timeLabel(e.start)+' → ':''}${dateLabel(dayKey({start:a.start}))} ${timeLabel(a.start)}–${timeLabel(a.end)}`;return e?`${dateLabel(dayKey(e),{weekday:'short'})} · ${timeLabel(e.start)}`:a.to||'Choose recipient';}
 function executionLabel(actions){if(!actions.length)return 'Choose steps';const count=n=>n===1?'meeting':n+' meetings';if(actions.every(a=>a.kind==='decline'))return `Decline ${count(actions.length)}`;if(actions.every(a=>a.kind==='accept'))return `Accept ${count(actions.length)}`;if(actions.every(a=>a.kind==='cancel'))return `Cancel ${count(actions.length)} for everyone`;if(actions.length>1&&actions.every(a=>a.kind==='remove'))return `Remove ${actions.length} from my calendar`;if(actions.length===1)return actions[0].kind==='request'?'Send request':actions[0].kind==='move'?'Move meeting':actionName(actions[0]);return `Do these ${actions.length} steps`;}
 function chatMarkup(scope,limit=12,omitLatest=false){
  let turns=scope.state.transcript||[];if(omitLatest&&turns.at(-1)?.role==='assistant')turns=turns.slice(0,-1);
- return (turns.length>limit?'<button class="earlier-chat" data-action="history">Earlier conversation ↗</button>':'')+turns.slice(-limit).map(m=>`<div class="chat-turn ${m.role==='you'?'you':'assistant'}"><small>${m.role==='you'?'You':'Assistant'}</small><p>${esc(m.text.slice(0,320))}</p>${m.text.length>320||m.detail?`<details><summary>Details</summary><p>${esc(m.detail||m.text.slice(320))}</p></details>`:''}${m.decisionId&&scopes[m.decisionId]?`<button class="thread-link" data-decision="${esc(m.decisionId)}">${esc(scopes[m.decisionId].title)} <span>Open decision ↗</span></button>`:''}</div>`).join('');
+ return (turns.length>limit?'<button class="earlier-chat" data-action="history">Earlier conversation <span class="ico ico-out" aria-hidden="true"></span></button>':'')+turns.slice(-limit).map(m=>`<div class="chat-turn ${m.role==='you'?'you':'assistant'}"><small>${m.role==='you'?'You':'Assistant'}</small><p>${esc(m.text.slice(0,320))}</p>${m.text.length>320||m.detail?`<details><summary>Details</summary><p>${esc(m.detail||m.text.slice(320))}</p></details>`:''}${m.decisionId&&scopes[m.decisionId]?`<button class="thread-link" data-decision="${esc(m.decisionId)}">${esc(scopes[m.decisionId].title)} <span>Open decision <span class="ico ico-out" aria-hidden="true"></span></span></button>`:''}</div>`).join('');
 }
 // The headline is the assistant's one voice in the canvas surface: status while it works, the
 // answer when it is done, a proposal's summary with its controls, and a step-through review.
@@ -351,10 +413,10 @@ function headlineView(){
  if(state.pending)return {kind:'working',text:w.label+(w.elapsed>=3?` · ${w.elapsed}s`:''),meta:w.detail?esc(w.detail):'',buttons:'<button data-action="stop">Stop</button>'};
  // Receipts and errors stay in history, but a closed conversation has no headline.
  if(entryFresh)return null;
- if(w.kind==='error')return {kind:'error',text:w.detail||'Could not finish.',buttons:'<button data-action="retry">Retry</button><button data-action="close-thread" aria-label="Dismiss">×</button>'};
+ if(w.kind==='error')return {kind:'error',text:w.detail||'Could not finish.',buttons:'<button data-action="retry">Retry</button><button data-action="close-thread" aria-label="Dismiss"><span class="ico ico-close" aria-hidden="true"></span></button>'};
  if(!inOverview()&&scope.status==='needs_review'){
   const changed=(state.sourceChanges||[]).slice(0,3).map(c=>esc(c.title)+(c.change==='removed'?' was removed':' changed')).join(' · ');
-  return {kind:'error',text:'The calendar changed since this was prepared.',meta:changed||'Review it against the current calendar before applying.',buttons:'<button class="primary" data-action="recheck">Review changes</button><button data-action="close-thread" aria-label="Dismiss">×</button>'};
+  return {kind:'error',text:'The calendar changed since this was prepared.',meta:changed||'Review it against the current calendar before applying.',buttons:'<button class="primary" data-action="recheck">Review changes</button><button data-action="close-thread" aria-label="Dismiss"><span class="ico ico-close" aria-hidden="true"></span></button>'};
  }
  if(proposal&&state.responseNote){
   const note=state.responseNote;
@@ -364,7 +426,7 @@ function headlineView(){
  if(proposal&&reviewIndex!==null){
   const i=Math.min(reviewIndex,all.length-1),a=all[i],e=eventByRef(a.ref),aside=state.excluded?.includes(a.key);
   return {kind:'review',text:`${actionName(a)} ${a.title||a.subject||''}`,meta:`Change ${i+1} of ${all.length} · ${esc(stepMeta(a))} · ${esc(actionConsequence(a,e))}${aside?' · set aside':''}`,
-   buttons:`<button data-action="review-prev" aria-label="Previous change" ${i?'':'disabled'}>‹</button><button data-action="review-next" aria-label="Next change" ${i<all.length-1?'':'disabled'}>›</button><button data-draft-toggle="${esc(a.key)}">${aside?'Bring back':'Set aside'}</button><button data-action="review-done" class="primary">Done</button>`};
+   buttons:`<button data-action="review-prev" aria-label="Previous change" ${i?'':'disabled'}><span class="ico ico-left" aria-hidden="true"></span></button><button data-action="review-next" aria-label="Next change" ${i<all.length-1?'':'disabled'}><span class="ico ico-right" aria-hidden="true"></span></button><button data-draft-toggle="${esc(a.key)}">${aside?'Bring back':'Set aside'}</button><button data-action="review-done" class="primary">Done</button>`};
  }
  if(proposal){
   const primary=$('#review-actions .primary')?.outerHTML||'',notice=$('#review-actions .execution-notice')?.outerHTML||'';
@@ -382,12 +444,12 @@ function headlineView(){
  if(state.result&&['done','waiting','needs_review'].includes(scope.status)){
   const ok=state.result.steps.filter(x=>['success','awaiting_reply'].includes(x.status)).length;
   return {kind:'done',text:ok===state.result.steps.length?`Done. ${state.result.steps.map(x=>x.message).filter(Boolean)[0]||'Applied.'}${ok>1?` ${ok} changes applied.`:''}`:`${ok} of ${state.result.steps.length} applied. Some steps need attention.`,
-   buttons:`<button data-action="toggle-why">${whyOpen?'Hide':'Details'}</button><button data-action="close-thread" aria-label="Dismiss">×</button>`,
-   why:`<ul class="headline-changes">${state.result.steps.map(x=>`<li><strong>${['success','awaiting_reply'].includes(x.status)?'✓':'!'} ${esc(x.title)}</strong> <span>${esc(x.message||x.status)}</span></li>`).join('')}</ul>`};
+   buttons:`<button data-action="toggle-why">${whyOpen?'Hide':'Details'}</button><button data-action="close-thread" aria-label="Dismiss"><span class="ico ico-close" aria-hidden="true"></span></button>`,
+   why:`<ul class="headline-changes">${state.result.steps.map(x=>`<li><strong>${['success','awaiting_reply'].includes(x.status)?'<span class="ico ico-check" aria-hidden="true"></span>':'!'} ${esc(x.title)}</strong> <span>${esc(x.message||x.status)}</span></li>`).join('')}</ul>`};
  }
  if(last&&!entryFresh){
   const m=state.lastMetrics;
-  return {kind:'answer',text:human(last.text),meta:m?.totalMs&&m.model===testLabel()?`${esc(testLabel())} · ${(m.totalMs/1000).toFixed(1)}s`:'',buttons:`${last.detail?`<button data-action="toggle-why">${whyOpen?'Hide':'Why'}</button>`:''}${suggestionMarkup(current(),last)}<button data-action="close-thread" aria-label="Dismiss">×</button>`,why:last.detail?`<p>${esc(human(last.detail))}</p>`:''};
+  return {kind:'answer',text:human(last.text),meta:m?.totalMs&&m.model===testLabel()?`${esc(testLabel())} · ${(m.totalMs/1000).toFixed(1)}s`:'',buttons:`${last.detail?`<button data-action="toggle-why">${whyOpen?'Hide':'Why'}</button>`:''}${suggestionMarkup(current(),last)}<button data-action="close-thread" aria-label="Dismiss"><span class="ico ico-close" aria-hidden="true"></span></button>`,why:last.detail?`<p>${esc(human(last.detail))}</p>`:''};
  }
  return null;
 }
@@ -406,7 +468,7 @@ function renderWork(){
  if(!current())return;queueMicrotask(renderHeadline);const w=workStatus(current()),el=$('#work-status');
  const draftReply=state.pending&&state.work?.replyDraft?`<p class="answer-text reply-draft">${esc(human(state.work.replyDraft))}</p>`:'';if(SURFACE!=='canvas'&&$('#pending-response').innerHTML!==draftReply&&(draftReply||$('#pending-response .reply-draft')))$('#pending-response').innerHTML=draftReply;
  const progress=state.checkProgress,box=$('#check-progress');box.hidden=entryFresh||!progress;
- if(progress?.executing){const icon={pending:'·',unknown:'…',success:'✓',awaiting_reply:'✓',failed:'!',skipped:'–'},done=progress.steps.filter(x=>!['pending','unknown'].includes(x.status)).length;
+ if(progress?.executing){const icon={pending:'·',unknown:'…',success:'<span class="ico ico-check" aria-hidden="true"></span>',awaiting_reply:'<span class="ico ico-check" aria-hidden="true"></span>',failed:'!',skipped:'–'},done=progress.steps.filter(x=>!['pending','unknown'].includes(x.status)).length;
   box.innerHTML=`<strong>${done<progress.steps.length?`Applying ${done} of ${progress.steps.length}`:`Applied ${progress.steps.length}`}</strong><ul class="step-progress">${progress.steps.map(x=>`<li class="${esc(x.status)}"><i>${icon[x.status]||'·'}</i><span>${esc(x.title)}${x.message&&!['pending','unknown'].includes(x.status)?` <small>${esc(x.message)}</small>`:''}</span></li>`).join('')}</ul>`;}
  else box.textContent=progress?.message||'';
  $('#conversation-return span').textContent=state.pending?'Working…':state.executionRunning?'Applying…':'';$('.shell').classList.toggle('thinking',!!state.pending);
@@ -421,7 +483,7 @@ function renderWork(){
 }
 function showThreads(){
  const rows=Object.values(scopes).filter(d=>d.id===HOME||d.state.transcript.length||isOpen(d)).sort((a,b)=>Number(!!b.state.pending)-Number(!!a.state.pending)||Number(!!b.state.unread)-Number(!!a.state.unread));
- const markup=rows.map(d=>{const w=workStatus(d);return `<button class="thread-row" data-decision="${esc(d.id)}"><span class="work-dot ${w.kind}"></span><span><strong>${esc(d.title)}</strong><small>${esc(w.label)}${w.elapsed!==undefined?` · ${w.elapsed}s`:''}</small><p>${esc((d.state.lastInput||d.state.reply||'').slice(0,110))}</p></span><span>↗</span></button>`;}).join('');if(drawerType==='threads'&&$('#thread-list'))$('#thread-list').innerHTML=markup;else openDrawer('Conversation history',`<div id="thread-list">${markup}</div>`,'threads');
+ const markup=rows.map(d=>{const w=workStatus(d);return `<button class="thread-row" data-decision="${esc(d.id)}"><span class="work-dot ${w.kind}"></span><span><strong>${esc(d.title)}</strong><small>${esc(w.label)}${w.elapsed!==undefined?` · ${w.elapsed}s`:''}</small><p>${esc((d.state.lastInput||d.state.reply||'').slice(0,110))}</p></span><span> <span class="ico ico-out" aria-hidden="true"></span></span></button>`;}).join('');if(drawerType==='threads'&&$('#thread-list'))$('#thread-list').innerHTML=markup;else openDrawer('Conversation history',`<div id="thread-list">${markup}</div>`,'threads');
 }
 async function stopThinking(){
  const scope=current(),pending=scope.state.pendingJob;
@@ -435,8 +497,8 @@ function showProposalHistory(){
 }
 function suggestionMarkup(scope,last){
  const idea=scope.state.suggestion,linked=scopes[last?.decisionId];
- if(idea)return `<div class="possible-change"><div><small>Possible change</small><span>${esc(idea.title)}</span></div><button data-action="review-suggestion" ${scope.state.pending?'disabled':''}>Review changes</button><button data-action="hide-suggestion" aria-label="Hide suggestion">×</button></div>`;
- if(!scope.state.hiddenSuggestion&&linked&&isOpen(linked))return `<button class="resume-decision" data-decision="${esc(linked.id)}">${esc(linked.title)} <span>Resume decision ↗</span></button>`;
+ if(idea)return `<div class="possible-change"><div><small>Possible change</small><span>${esc(idea.title)}</span></div><button data-action="review-suggestion" ${scope.state.pending?'disabled':''}>Review changes</button><button data-action="hide-suggestion" aria-label="Hide suggestion"><span class="ico ico-close" aria-hidden="true"></span></button></div>`;
+ if(!scope.state.hiddenSuggestion&&linked&&isOpen(linked))return `<button class="resume-decision" data-decision="${esc(linked.id)}">${esc(linked.title)} <span>Resume decision <span class="ico ico-out" aria-hidden="true"></span></span></button>`;
  return '';
 }
 function briefMarkup(scope){
@@ -456,12 +518,15 @@ function actionConsequence(action,event){
  if(['accept','tentative'].includes(action.kind))return 'Sends your RSVP to the organizer'+(action.note?` with your note: “${action.note}”`:'')+every;
  if(action.kind==='cancel')return 'Cancels it for every guest and emails them a cancellation'+every;
  if(action.kind==='remove')return (event&&!event.organizerSelf?'Takes it off your calendar · Google tells the organizer you declined':'Deletes your hold')+every;
+ if(action.kind==='update'){const s=action.set||{},parts=[];if(s.title)parts.push('renames it');if(s.location!==undefined)parts.push('changes the location');if(s.description!==undefined)parts.push('changes the description');if(s.addAttendees?.length)parts.push('invites '+s.addAttendees.join(', '));if(s.removeAttendees?.length)parts.push('removes '+s.removeAttendees.join(', '));if(s.meet)parts.push('adds a Google Meet link');if(s.showAs)parts.push('shows as '+s.showAs);if(s.visibility)parts.push('visibility '+s.visibility);if(s.colorId)parts.push('changes its Google color');const text=parts.join(' · ')||'Changes details';return text[0].toUpperCase()+text.slice(1)+(event?.attendees?.some(p=>!p.self&&!p.resource)||s.addAttendees?.length?' · notifies guests':'')+every;}
+ if(action.kind==='create'&&action.eventType==='workingLocation')return 'Shows where you work · stays free on your calendar';
+ if(action.kind==='create'&&action.repeat)return 'Creates a recurring '+(action.attendees?.length?'meeting · invites '+action.attendees.length+(action.attendees.length===1?' person':' people'):'hold')+` · repeats ${action.repeat.frequency}`;
  if(action.kind==='create'&&action.eventType==='focusTime')return 'Blocks focus time · declines new conflicting invitations';
  if(action.kind==='create'&&action.eventType==='outOfOffice')return 'Marks you out of office · declines conflicting meetings';
  if(action.kind==='create'&&action.attendees?.length)return `Invites ${action.attendees.length===1?action.attendees[0]:action.attendees.length+' people'}${action.meet?' · with a Google Meet link':''}`;
  if(action.kind==='request')return 'Ask the organizer · current booking stays until they change it';
  if(action.kind==='email')return `To ${action.to||'recipient not set'}`;
- if(['move','resize'].includes(action.kind))return event?.attendees?.some(p=>!p.self)?'Notifies attendees':'Only your calendar changes';
+ if(['move','resize'].includes(action.kind))return (event?.attendees?.some(p=>!p.self)?'Notifies attendees':'Only your calendar changes')+every;
  return 'Adds a hold to your calendar';
 }
 function renderAssistant(){
@@ -474,23 +539,23 @@ function renderAssistant(){
  if(entryFresh||inOverview()){$('#conversation-panel').innerHTML=entryFresh?'':briefMarkup(current());$('#review-actions').innerHTML='';$('#pending-response').innerHTML='';return;}
  const scope=current(),all=actionBundle(snapshot,state),included=includedActions(snapshot,state),check=state.check;
  const note=state.responseNote;
- $('#decision-conversation').innerHTML=note?`<div class="followup-answer"><p>${esc(note.text)}</p>${note.detail?`<details><summary>Details</summary><p>${esc(note.detail)}</p></details>`:''}<button data-action="return-proposal">Review proposed change ↗</button></div>`:'';
+ $('#decision-conversation').innerHTML=note?`<div class="followup-answer"><p>${esc(note.text)}</p>${note.detail?`<details><summary>Details</summary><p>${esc(note.detail)}</p></details>`:''}<button data-action="return-proposal">Review proposed change <span class="ico ico-out" aria-hidden="true"></span></button></div>`:'';
  const versions=state.proposalHistory||[];$('#proposal-heading').innerHTML=all.length?`<span>${included.length} ${included.length===1?'action':'actions'}</span>${versions.length>1?'<button data-action="proposal-history">Earlier versions</button>':''}`:'';
  $('#assistant-label').textContent=scope.status==='done'?'COMPLETED':scope.status==='waiting'?'AWAITING REPLY':'';
  $('#assistant-title').textContent=all.length||note?'':scope.title;$('#decision-origin').innerHTML='';
  const noTimeChange=!all.length&&Object.values(state.edits).some(c=>['move','resize'].includes(c.kind));
  $('#assistant-detail').innerHTML=all.length||note?'':esc(human(noTimeChange?'Already at that time. No changes to apply.':state.reply||''));
- $('#proposal-rationale').innerHTML=`${state.reply?`<p>${esc(human(state.reply))}</p>`:''}${state.detail?`<p>${esc(human(state.detail))}</p>`:''}${state.receivedContext?`<button data-context-action="open" data-context-id="${esc(state.receivedContext.id)}">Source ↗</button>`:''}`;
+ $('#proposal-rationale').innerHTML=`${state.reply?`<p>${esc(human(state.reply))}</p>`:''}${state.detail?`<p>${esc(human(state.detail))}</p>`:''}${state.receivedContext?`<button data-context-action="open" data-context-id="${esc(state.receivedContext.id)}">Source <span class="ico ico-out" aria-hidden="true"></span></button>`:''}`;
  const overlaps=relatedOverlaps(snapshot,scope,decisions());
- const shared=sharedConflicts(scope,scopes);$('#shared-notice').innerHTML=scope.status==='needs_review'?`<div class="subtle-note">${(state.sourceChanges||[]).slice(0,3).map(c=>esc(c.title)+(c.change==='removed'?' was removed.':' changed.')).join('<br>')||'The calendar changed.'}<button data-action="recheck">Review changes →</button></div>`:shared.length?`<button class="shared-note" data-action="queue">Also involved in ${shared.length} other ${shared.length===1?'decision':'decisions'} ↗</button>`:'';
- $('#shared-notice').innerHTML+=overlaps.length?`<button class="shared-note" data-action="queue">Proposed times overlap ${overlaps.length} other decision(s). You can keep both. ↗</button>`:'';
+ const shared=sharedConflicts(scope,scopes);$('#shared-notice').innerHTML=scope.status==='needs_review'?`<div class="subtle-note">${(state.sourceChanges||[]).slice(0,3).map(c=>esc(c.title)+(c.change==='removed'?' was removed.':' changed.')).join('<br>')||'The calendar changed.'}<button data-action="recheck">Review changes →</button></div>`:shared.length?`<button class="shared-note" data-action="queue">Also involved in ${shared.length} other ${shared.length===1?'decision':'decisions'} <span class="ico ico-out" aria-hidden="true"></span></button>`:'';
+ $('#shared-notice').innerHTML+=overlaps.length?`<button class="shared-note" data-action="queue">Proposed times overlap ${overlaps.length} other decision(s). You can keep both. <span class="ico ico-out" aria-hidden="true"></span></button>`:'';
  const alternatives=distinctAlternatives(snapshot,scope);
  $('#decision-options').innerHTML=alternatives.length?`<details><summary>Other options (${alternatives.length})</summary>${alternatives.map(a=>`<div class="option-row"><strong>${esc(a.title)}</strong><p>${esc(a.reason)}</p><button data-option="${esc(a.id)}" ${state.pending||state.executionRunning?'disabled':''}>Preview this option</button></div>`).join('')}</details>`:'';
  $('#decision-options').innerHTML+=(state.evidenceNotes||[]).map(n=>`<details><summary>New context</summary><p>${esc(n.text)}</p><p>${esc(n.detail||'')}</p></details>`).join('');
  $('#steps').innerHTML=all.map(a=>{
   const enabled=included.some(x=>x.key===a.key),row=check?.steps.find(r=>r.key===a.key),avail=row?.availability;
   const recipient=a.kind==='request'||a.kind==='email',event=eventByRef(a.ref);const facts=event?`<button class="step-facts" data-event="${esc(event.ref)}"><span>${esc(event.audience==='solo'?'Your hold':organizerLabel(event))} · ${esc(['decline','accept','tentative'].includes(a.kind)?'Respond to invitation':permissionLabel(event))}</span>${event.audience==='solo'&&!event.location?'':`<span>${esc(locationLabel(event))}${event.audience==='solo'?'':' · '+esc(participationLabel(event))}</span>`}</button>`:'';
-  return `<section class="step ${enabled?'':'excluded'}"><label class="step-line"><input type="checkbox" data-step="${a.key}" ${enabled?'checked':''} ${state.executionRunning?'disabled':''}><span><strong>${esc(actionName(a))}</strong><span class="step-title">${esc(a.title||a.subject)}</span><small>${esc(stepMeta(a))}</small></span><button type="button" data-step-details="${a.key}" aria-label="Edit ${esc(a.title||'message')}">↗</button></label>${facts}${recipient?`<button class="message-preview" data-step-details="${a.key}">From: ${esc(state.check?.connection?.account||status.google?.account||'Not connected')}<br>To: ${esc(a.to)}<br>Subject: ${esc(a.subject)}<br>${esc(a.body)}</button>`:''}${row?.status==='blocked'&&!row.message?.startsWith('Connect Google')?`<div class="step-warning">${esc(row.message)}${row.latest?` <button data-refresh-event="${esc(a.ref)}">Refresh event</button>`:''}</div>`:''}${schedulingNotes(row)}${row?.afterRemovals?.length?`<p class="step-prerequisite">After removing ${row.afterRemovals.map(esc).join(', ')}.</p>`:''}${avail?`<details class="availability"><summary>${avail.status==='free'?(row?.afterRemovals?.length?'✓ Available after the earlier removal':'✓ Everyone checked is free'):avail.status==='busy'?'A calendar is busy':'Availability not confirmed'}</summary>${avail.people.map(p=>`<div><span>${esc(p.name)}${p.resource?' · room':''}${p.optional?' · optional':''}</span><b class="${p.status}">${p.status}</b></div>`).join('')}</details>`:''}</section>`;
+  return `<section class="step ${enabled?'':'excluded'}"><label class="step-line"><input type="checkbox" data-step="${a.key}" ${enabled?'checked':''} ${state.executionRunning?'disabled':''}><span><strong>${esc(actionName(a))}</strong><span class="step-title">${esc(a.title||a.subject)}</span><small>${esc(stepMeta(a))}</small></span><button type="button" data-step-details="${a.key}" aria-label="Edit ${esc(a.title||'message')}"> <span class="ico ico-out" aria-hidden="true"></span></button></label>${facts}${recipient?`<button class="message-preview" data-step-details="${a.key}">From: ${esc(state.check?.connection?.account||status.google?.account||'Not connected')}<br>To: ${esc(a.to)}<br>Subject: ${esc(a.subject)}<br>${esc(a.body)}</button>`:''}${row?.status==='blocked'&&!row.message?.startsWith('Connect Google')?`<div class="step-warning">${esc(row.message)}${row.latest?` <button data-refresh-event="${esc(a.ref)}">Refresh event</button>`:''}</div>`:''}${schedulingNotes(row)}${row?.afterRemovals?.length?`<p class="step-prerequisite">After removing ${row.afterRemovals.map(esc).join(', ')}.</p>`:''}${avail?`<details class="availability"><summary>${avail.status==='free'?(row?.afterRemovals?.length?'<span class="ico ico-check" aria-hidden="true"></span> Available after the earlier removal':'<span class="ico ico-check" aria-hidden="true"></span> Everyone checked is free'):avail.status==='busy'?'A calendar is busy':'Availability not confirmed'}</summary>${avail.people.map(p=>`<div><span>${esc(p.name)}${p.resource?' · room':''}${p.optional?' · optional':''}</span><b class="${p.status}">${p.status}</b></div>`).join('')}</details>`:''}</section>`;
  }).join('');
  $('#proposal-details').hidden=!all.length;
  const consequences=[...new Set(included.map(a=>actionConsequence(a,eventByRef(a.ref))))],sharedConsequence=included.length>1&&consequences.length===1;
@@ -504,13 +569,13 @@ function renderAssistant(){
  const needsConnection=blockers.some(r=>r.message?.startsWith('Connect Google')||r.message?.startsWith('Connect Gmail'));
  const blockedNote=blockers.length&&!needsConnection?`<p class="execution-notice" role="status">${[...new Set(blockers.map(r=>r.message||'Review this step.'))].map(esc).join(' ')} <button data-action="show-blocked-steps">Details</button></p>`:'';
  const receipt=state.result;
- $('#execution-result').innerHTML=receipt?`<div class="receipt">${receipt.steps.map(s=>`<div><span class="receipt-icon">${['success','awaiting_reply'].includes(s.status)?'✓':'!'}</span><span><strong>${esc(s.title)}</strong><small>${esc(s.message||s.status)}</small></span></div>`).join('')}</div>`:'';
+ $('#execution-result').innerHTML=receipt?`<div class="receipt">${receipt.steps.map(s=>`<div><span class="receipt-icon">${['success','awaiting_reply'].includes(s.status)?'<span class="ico ico-check" aria-hidden="true"></span>':'!'}</span><span><strong>${esc(s.title)}</strong><small>${esc(s.message||s.status)}</small></span></div>`).join('')}</div>`:'';
  $('#review-actions').innerHTML=all.length?`${blockedNote}<button data-action="${needsConnection?'about':'execute'}" class="primary" ${state.executionRunning||state.pending||state.source||scope.status==='needs_review'||!included.length||(!needsConnection&&blockers.length)?'disabled':''}>${state.executionRunning?'Applying…':needsConnection?'Connect Google to apply':esc(executionLabel(included))}</button>`:'';
  // An answer to a follow-up isn't assent to the previous, potentially unrelated proposal.
  if(note){$('#impact-summary').innerHTML='';$('#decision-options').innerHTML='';$('#proposal-details').hidden=true;$('#review-actions').innerHTML='';$('#shared-notice').innerHTML='';}
  if(['dismissed','obsolete','later','done','waiting'].includes(scope.status)){$('#impact-summary').innerHTML='';$('#proposal-details').hidden=true;$('#review-actions').innerHTML=`<span class="closed-label">${{dismissed:'Left as is',obsolete:'No longer needed',later:'For later',done:'Completed',waiting:'Awaiting reply'}[scope.status]}</span>${['dismissed','later'].includes(scope.status)?'<button data-action="reopen">Reopen</button>':''}`;$('#steps').innerHTML='';$('#assistant-detail').innerHTML='';$('#proposal-heading').innerHTML='';$('#shared-notice').innerHTML='';$('#decision-conversation').innerHTML='';}
  if(scope.status==='needs_review')$('#steps').innerHTML='';
- $('#pending-response').innerHTML=state.pendingResponse?'<button data-action="use-response">Review the assistant’s alternative ↗</button>':'';
+ $('#pending-response').innerHTML=state.pendingResponse?'<button data-action="use-response">Review the assistant’s alternative <span class="ico ico-out" aria-hidden="true"></span></button>':'';
  if(state.pending)setStatus('');
 }
 function selectionGroups(ids){const events=ids.map(ref=>snapshot.events.find(e=>e.ref===ref)).filter(Boolean),guests=e=>e.attendees?.some(p=>!p.self&&!p.resource);
@@ -519,10 +584,16 @@ function toggleEventSelection(ref){
  const removing=state.selected.includes(ref),ids=removing?[ref]:[...new Set([...(state.inspected?[state.inspected]:[]),ref])];
  // An inspected meeting already looks selected. Carry it into the explicit set,
  // then close its card so it cannot hide or dim the rest of that set.
+ if(!selectionMode)selectionSticky=false;
  closeDrawer();selectionMode=true;
  apply([{op:'select',ids,mode:removing?'remove':'add'}]);
+ if(selectionSticky)return;
+ // Back to one meeting: it opens, the way a single click would have. Back to none: selecting is over.
+ if(removing&&state.selected.length===1){const last=state.selected[0];selectionMode=false;apply([{op:'select',ids:[last],mode:'remove'}]);inspect(last);}
+ else if(!state.selected.length){selectionMode=false;renderHeader();}
 }
-let selectionNote=null;
+// True when selecting was turned on with the select control, which keeps the bulk actions even for one meeting.
+let selectionNote=null,selectionSticky=false;
 function renderSelection(){queueMicrotask(renderHeadline);const ids=activeIds(),el=$('#selection-bar');el.hidden=!state.selected.length||(!selectionMode&&state.selected.length===1);if(el.hidden){selectionNote=null;el.innerHTML='';return;}
  const g=selectionGroups(ids),n=k=>k.length===ids.length?'':` (${k.length} of ${ids.length})`;
  const buttons=[];
@@ -531,7 +602,7 @@ function renderSelection(){queueMicrotask(renderHeadline);const ids=activeIds(),
  if(g.hosted.length)buttons.push(`<button data-action="bulk-cancel" class="danger">Cancel for everyone${n(g.hosted)}</button>`);
  buttons.push('<button data-action="move-set">Move…</button>','<button data-action="ask-selection">Ask about these</button>');
  const note=selectionNote!==null?`<form class="note-row" id="selection-note-form"><input id="selection-note" maxlength="500" placeholder="Note to the organizer" value="${esc(selectionNote)}" aria-label="Note to the organizer"><button type="submit">Decline${n(g.invites)}</button></form>`:'';
- el.innerHTML=`<span class="selection-count">${ids.length} selected</span>${buttons.join('')}<button data-action="clear-selection" aria-label="Clear selected events">Clear ×</button>${note}`;
+ el.innerHTML=`<span class="selection-count">${ids.length} selected</span>${buttons.join('')}<button data-action="clear-selection" aria-label="Clear selected events">Clear</button>${note}`;
  if(selectionNote!==null)requestAnimationFrame(()=>$('#selection-note')?.focus());}
 function apply(ops,reply='',options={}){
  if((entryFresh||inOverview()||['done','waiting','dismissed','obsolete','later'].includes(current().status))&&ops.some(o=>['edit','create','draft'].includes(o.op))){const event=eventByRef(ops.find(o=>o.ids?.length)?.ids[0]);newDecision();if(event)current().title=event.title;}
@@ -767,14 +838,13 @@ async function execute(anchor=confirmation()){
 }
 function openDrawer(title,body,type='details'){
  const drawer=$('#drawer');if(drawer.hidden)drawerReturnFocus=document.activeElement;
- drawer.innerHTML=`<div class="drawer-head"><h2 id="drawer-title">${esc(title)}</h2><button data-action="close-drawer" aria-label="Close details">×</button></div><div class="drawer-body">${body}</div>`;
- drawer.hidden=false;drawer.dataset.kind=type;drawer.style.left='';drawer.style.top='';drawer.style.width='';drawer.style.maxHeight='';// On desktop every side view docks into the panel column, so the calendar stays usable; phones keep modal sheets.
+ drawer.innerHTML=`<div class="drawer-head"><h2 id="drawer-title">${esc(title)}</h2><button data-action="close-drawer" aria-label="Close details"><span class="ico ico-close" aria-hidden="true"></span></button></div><div class="drawer-body">${body}</div>`;
+ drawer.hidden=false;drawer.dataset.kind=type;for(const key of ['left','top','width','height','maxHeight','clipPath'])drawer.style[key]='';if(type!=='event')drawer.classList.remove('lens');// On desktop every side view docks into the panel column, so the calendar stays usable; phones keep modal sheets.
  const modal=phoneLayout.matches;drawer.setAttribute('aria-modal',String(modal));$('#drawer-shade').hidden=!modal;drawerType=type;$('.shell').inert=modal;
  drawer.querySelector('[data-action="close-drawer"]').focus({preventScroll:true});
 }
 function closeDrawer(){
  const closingKind=drawerType;
- $('.calendar-main').style.marginRight='';
  const inspectedScope=drawerType==='event'?scopes[inspectionOwner]:null,releasedRef=inspectedScope?.state.inspected;if(inspectedScope){inspectedScope.state.inspected=null;inspectionOwner=null;}
  const wasOpen=!$('#drawer').hidden;$('#drawer').hidden=true;$('#drawer-shade').hidden=true;$('.shell').inert=false;drawerType=null;$('#open-count').setAttribute('aria-expanded','false');
  if(inspectedScope&&activeId===inspectedScope.id){renderHeader();renderCalendar();renderSelection();persist();}
@@ -802,30 +872,44 @@ function eventWhen(e){
  const date=dayKey(e),endDate=dayKey({start:e.end});
  return `${dateLabel(date)} · ${timeLabel(e.start)}–${date!==endDate?dateLabel(endDate)+' ':''}${timeLabel(e.end)} ${timezoneLabel(e.start)}`;
 }
-let eventCardFrame=0,lensHeight=420;const LENS_WIDTH=400;
-// The opened event becomes the lens on desktop timed views; phones keep their sheet, all-day events their card.
+let eventCardFrame=0,lensHeight=320,lensWidth=FISHEYE.card;
+// On desktop timed views an opened meeting is the lens: its slot opens up and its details are shown
+// inside it, in place. Phones use a sheet; all-day meetings and Month use a card beside the meeting.
 function lensTarget(timed,days){
  if(drawerType!=='event'||!state.inspected||phoneLayout.matches||ensureView(state).mode==='month')return null;
  const e=timed.find(e=>e.ref===state.inspected);return e&&days.includes(dayKey(e))?e:null;
 }
+const lensHost=()=>drawerType==='event'?$('#calendar').querySelector(`.event.lens-host[data-event="${CSS.escape(state.inspected||'')}"]`):null;
+// Measures the details at the slot's width. True when the slot has to be drawn again at another height.
+function fitLens(){
+ const host=lensHost(),drawer=$('#drawer');if(!host){drawer.classList.remove('lens');return false;}
+ drawer.classList.add('lens');lensWidth=Math.min(host.offsetWidth,520);
+ drawer.style.width=lensWidth+'px';drawer.style.height='auto';drawer.style.maxHeight='none';
+ const natural=Math.ceil(Math.min(drawer.scrollHeight,Math.max(240,$('#calendar-scroll').clientHeight-($('.calendar-head')?.offsetHeight||0)-24)));
+ if(Math.abs(natural-lensHeight)<=2)return false;
+ lensHeight=natural;return true;
+}
+// Puts the details over their slot and shows only what the slot, and the calendar's own window, have room for.
+function placeEventCard(){
+ const host=lensHost(),drawer=$('#drawer');if(!host)return false;
+ const box=host.getBoundingClientRect(),view=$('#calendar-scroll').getBoundingClientRect(),top=view.top+($('.calendar-head')?.offsetHeight||0),style=getComputedStyle(host);
+ drawer.style.left=box.left+'px';drawer.style.top=box.top+'px';drawer.style.width=lensWidth+'px';drawer.style.height=lensHeight+'px';drawer.style.maxHeight=lensHeight+'px';
+ drawer.style.setProperty('--lens-text',style.color);
+ const clip=[Math.max(0,top-box.top),Math.max(0,lensWidth-box.width,box.left+lensWidth-view.right),Math.max(0,lensHeight-box.height,box.top+lensHeight-view.bottom),Math.max(0,view.left+54-box.left)];
+ drawer.style.clipPath=clip.some(v=>v>.5)?`inset(${clip.map(v=>Math.round(v)+'px').join(' ')})`:'';
+ return true;
+}
 function positionEventCard(){
  if(drawerType!=='event')return;
- const drawer=$('#drawer'),mobile=phoneLayout.matches,main=$('.calendar-main');
+ const drawer=$('#drawer'),mobile=phoneLayout.matches;
  drawer.setAttribute('aria-modal',String(mobile));$('.shell').inert=mobile;$('#drawer-shade').hidden=!mobile;
- if(mobile){drawer.classList.remove('lens');drawer.style.left='';drawer.style.top='';drawer.style.width='';drawer.style.maxHeight='';drawer.style.height='';main.style.marginRight='';return;}
- const host=$('#calendar').querySelector(`.event.lens-host[data-event="${CSS.escape(state.inspected||'')}"]`);
- if(host){
-  // Measure the card's natural height at the lens width; if the lens is the wrong size, redraw the calendar around it.
-  drawer.classList.add('lens');const box=host.getBoundingClientRect();
-  drawer.style.width=box.width+'px';drawer.style.height='auto';drawer.style.maxHeight='none';
-  const natural=Math.min(drawer.scrollHeight,Math.max(260,$('#calendar-scroll').clientHeight-40));
-  if(Math.abs(natural-lensHeight)>12){lensHeight=natural;renderCalendar();return;}
-  const view=$('#calendar-scroll').getBoundingClientRect();
-  drawer.style.left=box.left+'px';drawer.style.top=box.top+'px';drawer.style.height=box.height+'px';drawer.style.maxHeight=box.height+'px';
-  drawer.classList.toggle('offscreen',box.bottom<view.top+20||box.top>view.bottom-20);
-  return;
+ if(mobile){drawer.classList.remove('lens');for(const key of ['left','top','width','height','maxHeight','clipPath'])drawer.style[key]='';return;}
+ if(lensHost()){
+  // Details that changed size (people, change time, a long description) resize the slot.
+  if(!morphing&&fitLens()){renderCalendar();return;}
+  placeEventCard();return;
  }
- drawer.classList.remove('lens','offscreen');drawer.style.height='';
+ drawer.classList.remove('lens');drawer.style.height='';drawer.style.clipPath='';
  const targets=[...$('#calendar').querySelectorAll(`[data-event="${CSS.escape(state.inspected||'')}"]`)];
  const bounds=$('#calendar-scroll').getBoundingClientRect();
  const target=targets.find(el=>{const r=el.getBoundingClientRect();return r.bottom>bounds.top&&r.top<bounds.bottom&&r.right>bounds.left&&r.left<bounds.right;})||targets[0];
@@ -834,11 +918,20 @@ function positionEventCard(){
  drawer.style.width='400px';drawer.style.maxHeight='calc(100% - 80px)';
  const rect=target.getBoundingClientRect(),size={width:drawer.offsetWidth,height:drawer.offsetHeight};
  const place=eventCardPlacement(rect,{width:innerWidth,height:innerHeight},size);
- if(place.rail&&!main.style.marginRight){main.style.marginRight=(place.width+28)+'px';renderCalendar();return;}
- if(main.style.marginRight){place.left=innerWidth-place.width-14;place.top=66;place.maxHeight=innerHeight-80;}
  drawer.style.left=place.left+'px';drawer.style.top=place.top+'px';drawer.style.width=place.width+'px';drawer.style.maxHeight=place.maxHeight+'px';
 }
+// Brings the whole opened slot into view, using where it will be once it has finished opening.
+function revealLens(){
+ const host=lensHost(),region=$('#calendar-scroll');if(!host)return;
+ const head=$('.calendar-head')?.offsetHeight||0,top=host.parentElement.getBoundingClientRect().top-region.getBoundingClientRect().top+region.scrollTop+parseFloat(host.style.top),bottom=top+lensHeight+2;
+ const target=top-head-8<region.scrollTop+0?Math.max(0,top-head-8):bottom+12>region.scrollTop+region.clientHeight?Math.min(top-head-8,bottom+12-region.clientHeight):region.scrollTop;
+ if(Math.abs(target-region.scrollTop)>1)region.scrollTo({top:target,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+}
+// A card beside its meeting (all-day, Month) steps aside while Command, Control or Shift is held, so what it covers can join a selection.
+for(const type of ['keydown','keyup','blur'])addEventListener(type,e=>{$('#drawer').classList.toggle('see-through',drawerType==='event'&&!phoneLayout.matches&&!$('#drawer').classList.contains('lens')&&type!=='blur'&&(e.metaKey||e.ctrlKey||e.shiftKey));});
 $('#calendar-scroll').addEventListener('scroll',()=>{cancelAnimationFrame(eventCardFrame);eventCardFrame=requestAnimationFrame(positionEventCard);},{passive:true});
+const firstName=p=>guestName(p).split('@')[0].split(/\s+/)[0];
+function whoLine(e){const others=(e.attendees||[]).filter(p=>!p.self&&!p.resource);if(!others.length)return e.organizerSelf||!e.organizer?'Only you':'From '+(e.organizerName||e.organizer);return `With ${others.slice(0,2).map(firstName).join(', ')}${others.length>2?` +${others.length-2}`:''}`;}
 function inspectedEvent(){return currentEvents().find(e=>e.ref===state.inspected)||eventByRef(state.inspected);}
 const guestName=p=>p.displayName||p.name||p.email||'Guest';
 const responseLabels={needsAction:'Not answered',accepted:'Going',declined:'Declined',tentative:'Maybe'};
@@ -849,23 +942,17 @@ function inspect(ref){
  const join=meetingLink(e),place=eventPlace(e),provider=conferenceLabel(e),description=safeDescription(e.description);
  const changedTime=['move','resize'].includes(e.previewKind),proposal=eventStatus(e);
  let body=`<div class="event-when">${esc(eventWhen(e))}</div>${changedTime&&original?`<p class="event-preview-note">Proposed time · currently ${esc(eventWhen(original))}</p>`:proposal?`<p class="event-preview-note">${esc(proposal)}</p>`:''}`;
- const type={focusTime:'Focus time',outOfOffice:'Out of office',workingLocation:'Working location',fromGmail:'From Gmail',birthday:'Birthday'}[e.type];
- if(type||e.transparent)body+=`<p class="event-kind">${esc([type,e.transparent?'Shown as free':''].filter(Boolean).join(' · '))}</p>`;
+ // What you need at a glance: when, where, the way in, who, and your answer. The rest is under Details.
  if(place)body+=`<div class="event-place">${esc(place)}</div>`;
  const roomIssues=rooms.filter(p=>(p.responseStatus||p.response)&&!['accepted'].includes(p.responseStatus||p.response));
  if(roomIssues.length)body+=`<p class="event-room-note">${roomIssues.map(p=>esc(guestName(p))+' · '+esc((p.responseStatus||p.response)==='declined'?'room declined':(p.responseStatus||p.response)==='tentative'?'room tentative':'room not confirmed')).join('<br>')}</p>`;
- if(join)body+=`<a class="event-join" href="${esc(join)}" target="_blank" rel="noopener noreferrer">${esc(provider==='Video meeting'?'Join meeting':'Join '+provider)} ↗</a>`;
- body+=`<div class="event-host">${e.organizerSelf?"You're organizing":e.organizerName||e.organizer?'Organized by '+esc(e.organizerName||e.organizer):'Organizer not supplied'}${e.optional?' · Your attendance is optional':''}</div>`;
- body+=appearance.eventMarkup(e);
- if(description.text)body+=`<section class="event-agenda">${description.text.length>260?`<p>${esc(description.text.slice(0,260))}…</p><button class="event-text-link" data-action="event-description">Read full description</button>`:`<div class="event-description">${description.html}</div>`}</section>`;
- const attachments=(e.attachments||[]).filter(a=>safeWebUrl(a.fileUrl));
- if(attachments.length)body+=`<div class="event-attachments">${attachments.map(a=>`<a href="${esc(safeWebUrl(a.fileUrl))}" target="_blank" rel="noopener noreferrer">${esc(a.title||'Attachment')} ↗</a>`).join('')}</div>`;
- if(others.length||rooms.length)body+=`<button class="event-people" data-action="event-guests" aria-label="View guests and responses"><span class="event-avatars" aria-hidden="true">${others.slice(0,3).map(p=>`<i>${esc(guestName(p).split(/[\s@.]+/).slice(0,2).map(w=>w[0]).join('').toUpperCase())}</i>`).join('')}</span><span>${e.attendeesOmitted||e.guestsCanSeeOtherGuests===false?'Guests shown':others.slice(0,2).map(p=>esc(guestName(p).split('@')[0])).join(', ')}${others.length>2?` +${others.length-2}`:''}${rooms.length?`${others.length?' · ':''}${rooms.length} ${rooms.length===1?'room':'rooms'}`:''}</span><span aria-hidden="true">↗</span></button>`;
- if(!e.organizerSelf&&canRespond(e))body+=`<div class="event-rsvp" role="group" aria-label="Your response"><span>Your response</span><div>${[['accept','Going'],['tentative','Maybe'],['decline','Decline']].map(([action,label])=>{const selected={accept:'accepted',decline:'declined',tentative:'tentative'}[action]===e.response;return `<button data-event-action="${action}" data-id="${esc(ref)}" aria-pressed="${selected}" ${selected?'disabled':''}>${selected?'✓ ':''}${label}</button>`;}).join('')}</div></div>`;
- body+=`<div class="event-footer"><button class="event-discuss" data-action="discuss-event">Discuss</button>${!e.allDay?`<button data-action="event-move">${canEdit(e)?'Change time':'Suggest time'}</button>`:''}<button class="event-overflow" data-action="event-options" aria-label="More event options" title="More event options">⋯</button></div>`;
- const source=googleEventUrl(e);if(source)body+=`<a class="source-link" href="${esc(source)}" target="_blank" rel="noopener noreferrer">Open in Google Calendar ↗</a>`;
+ if(join)body+=`<a class="event-join" href="${esc(join)}" target="_blank" rel="noopener noreferrer">${esc(provider==='Video meeting'?'Join meeting':'Join '+provider)} <span class="ico ico-out" aria-hidden="true"></span></a>`;
+ if(others.length||rooms.length)body+=`<button class="event-people" data-action="event-guests" aria-label="View guests and responses"><span class="event-avatars" aria-hidden="true">${others.slice(0,3).map(p=>`<i>${esc(guestName(p).split(/[\s@.]+/).slice(0,2).map(w=>w[0]).join('').toUpperCase())}</i>`).join('')}</span><span>${e.attendeesOmitted||e.guestsCanSeeOtherGuests===false?'Guests shown':others.slice(0,2).map(p=>esc(guestName(p).split('@')[0])).join(', ')}${others.length>2?` +${others.length-2}`:''}${rooms.length?`${others.length?' · ':''}${rooms.length} ${rooms.length===1?'room':'rooms'}`:''}</span><span aria-hidden="true"> <span class="ico ico-out" aria-hidden="true"></span></span></button>`;
+ else body+=`<div class="event-host">${e.organizerSelf?"Only you":e.organizerName||e.organizer?'From '+esc(e.organizerName||e.organizer):''}</div>`;
+ if(!e.organizerSelf&&canRespond(e))body+=`<div class="event-rsvp" role="group" aria-label="Your response"><span>Your response</span><div>${[['accept','Going'],['tentative','Maybe'],['decline','Decline']].map(([action,label])=>{const selected={accept:'accepted',decline:'declined',tentative:'tentative'}[action]===e.response;return `<button data-event-action="${action}" data-id="${esc(ref)}" aria-pressed="${selected}" ${selected?'disabled':''}>${selected?'<span class="ico ico-check" aria-hidden="true"></span> ':''}${label}</button>`;}).join('')}</div></div>`;
+ body+=`<div class="event-footer"><button class="event-discuss" data-action="discuss-event">Discuss</button>${!e.allDay?`<button data-action="event-move">${canEdit(e)?'Change time':'Suggest time'}</button>`:''}<button class="event-more" data-action="event-details">Details <span class="ico ico-right" aria-hidden="true"></span></button></div>`;
  openDrawer(e.title,body,'event');renderHeader();renderCalendar();
- if(!phoneLayout.matches){const host=$('#calendar').querySelector(`.event.lens-host[data-event="${CSS.escape(ref)}"]`);host?.scrollIntoView({block:'nearest',behavior:'instant'});}
+ if(!phoneLayout.matches){if(lensHost())revealLens();else $('#calendar').querySelector(`.event[data-event="${CSS.escape(ref)}"]`)?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});}
  positionEventCard();
 }
 function eventPanel(kind){
@@ -877,6 +964,17 @@ function eventPanel(kind){
  }else if(kind==='move'){
   title=canEdit(e)?'Change time':'Suggest a new time';
   body=`<p class="event-panel-context">${esc(e.title)} · ${esc(eventWhen(e))}</p><form id="move-form" data-ids="${esc(ref)}"><div class="row"><div><label for="move-date">Date</label><input id="move-date" type="date" value="${dayKey(e)}" required></div><div><label for="move-time">Start</label><input id="move-time" type="time" value="${timeString(e.start)}" required></div></div><label for="move-duration">Minutes</label><input id="move-duration" type="number" min="5" max="1440" value="${(Date.parse(e.end)-Date.parse(e.start))/60000}"><div class="actions"><button type="submit" class="primary">${canEdit(e)?'Preview move':'Preview request'}</button></div></form>`;
+ }else if(kind==='details'){
+  title=e.title;
+  const type={focusTime:'Focus time',outOfOffice:'Out of office',workingLocation:'Working location',fromGmail:'From Gmail',birthday:'Birthday'}[e.type],description=safeDescription(e.description);
+  body=`<div class="event-when">${esc(eventWhen(e))}</div><div class="event-host">${e.organizerSelf?"You're organizing":e.organizerName||e.organizer?'Organized by '+esc(e.organizerName||e.organizer):'Organizer not supplied'}${e.optional?' · Your attendance is optional':''}</div>`;
+  if(type||e.transparent)body+=`<p class="event-kind">${esc([type,e.transparent?'Shown as free':''].filter(Boolean).join(' · '))}</p>`;
+  body+=appearance.eventMarkup(e);
+  if(description.text)body+=`<section class="event-agenda">${description.text.length>600?`<p>${esc(description.text.slice(0,600))}…</p><button class="event-text-link" data-action="event-description">Read full description</button>`:`<div class="event-description">${description.html}</div>`}</section>`;
+  const attachments=(e.attachments||[]).filter(a=>safeWebUrl(a.fileUrl));
+  if(attachments.length)body+=`<div class="event-attachments">${attachments.map(a=>`<a href="${esc(safeWebUrl(a.fileUrl))}" target="_blank" rel="noopener noreferrer">${esc(a.title||'Attachment')} <span class="ico ico-out" aria-hidden="true"></span></a>`).join('')}</div>`;
+  body+=`<div class="event-footer"><button data-action="event-options">Dial-in and options</button></div>`;
+  const source=googleEventUrl(e);if(source)body+=`<a class="source-link" href="${esc(source)}" target="_blank" rel="noopener noreferrer">Open in Google Calendar <span class="ico ico-out" aria-hidden="true"></span></a>`;
  }else if(kind==='description'){
   title='About this meeting';body=`<div class="event-description">${safeDescription(e.description).html}</div>`;
  }else{
@@ -891,11 +989,11 @@ function eventPanel(kind){
   if(pointMarkup||notes.text)body+=`<section class="event-option-section"><h3>Dial-in</h3>${pointMarkup}${notes.html}</section>`;
   body+=`<p>${esc(permissionLabel(e))}${e.seriesId?' · This occurrence of a recurring event':''}${e.visibility&&e.visibility!=='default'?' · '+esc(e.visibility):''}</p><label for="participation">Your participation</label><select id="participation" data-ref="${esc(ref)}"><option value="unknown" ${!e.participation||e.participation==='unknown'?'selected':''}>Automatic estimate</option><option value="active" ${e.participation==='active'?'selected':''}>Actively participating</option><option value="listening" ${e.participation==='listening'?'selected':''}>Listening</option></select>${e.participationBasis==='Set by you'&&e.participation!=='unknown'?'<small class="field-note">Set by you · this occurrence</small>':''}${(e.participationEstimate?.reasons||[]).length?`<p>${esc(participationLabel(e))}: ${esc(e.participationEstimate.reasons.join('. '))}</p>`:''}${(e.importanceEstimate?.reasons||[]).length?`<p>${esc(importanceLabel(e))}: ${esc(e.importanceEstimate.reasons.join('. '))}</p>`:''}`;
   const related=decisions().filter(d=>isOpen(d)&&decisionRefs(d).includes(ref));
-  if(related.length)body+=`<section class="event-option-section"><h3>Proposed changes</h3>${related.map(d=>`<button data-decision="${esc(d.id)}">${esc(d.title)} ↗</button>`).join('')}</section>`;
+  if(related.length)body+=`<section class="event-option-section"><h3>Proposed changes</h3>${related.map(d=>`<button data-decision="${esc(d.id)}">${esc(d.title)} <span class="ico ico-out" aria-hidden="true"></span></button>`).join('')}</section>`;
   if(state.edits[ref])body+=`<button class="event-text-link" data-event-action="restore" data-id="${esc(ref)}">Undo proposal</button>`;
   if(!e.allDay&&e.organizerSelf&&!e.attendees?.some(p=>!p.self))body+=`<button class="event-text-link" data-event-action="remove" data-id="${esc(ref)}">Remove hold…</button>`;
  }
- openDrawer(title,body,'event');$('#drawer-title').insertAdjacentHTML('beforebegin','<button class="event-back" data-action="event-back" aria-label="Back to meeting">‹</button>');positionEventCard();
+ openDrawer(title,body,'event');$('#drawer-title').insertAdjacentHTML('beforebegin','<button class="event-back" data-action="event-back" aria-label="Back to meeting"><span class="ico ico-left" aria-hidden="true"></span></button>');positionEventCard();
 }
 function showStep(key){const a=actionBundle(snapshot,state).find(a=>a.key===key);if(!a)return;if(!['email','request'].includes(a.kind))return inspect(a.ref);
  openDrawer(a.kind==='request'?'Request a new time':'Message',`<form id="message-form" data-ref="${esc(a.ref||'')}" data-draft="${esc(a.draftId||'')}"><label for="message-channel">Send via</label><select id="message-channel"><option value="email" ${a.channel==='email'?'selected':''}>Email</option><option value="slack" ${a.channel==='slack'?'selected':''}>Slack · not connected</option><option value="unspecified" ${a.channel==='unspecified'?'selected':''}>Choose channel</option></select><p>From: ${esc(state.check?.connection?.account||status.google?.account||'Not connected')}</p><label for="message-to">To</label><input id="message-to" value="${esc(a.to)}" required><label for="message-subject">Subject</label><input id="message-subject" value="${esc(a.subject)}" required><label for="message-body">Message</label><textarea id="message-body" rows="8" required>${esc(a.body)}</textarea>${a.kind==='request'?'<p>The original time stays booked until the organizer changes it.</p>':''}<div class="actions"><button type="submit" class="primary">Update step</button></div></form>`,'message');
@@ -907,14 +1005,20 @@ function renderQueue(){
   const label=d?.state.pending?workStatus(d).label:d?.state.unread?'Reply ready':item.status==='needs_review'?'Needs review':({dismissed:'Left as is',obsolete:'No longer needed',done:'Completed',waiting:'Awaiting reply',later:'For later'}[item.status]||dates.map(date=>dateLabel(date,{weekday:'short'})).join(' · '));
   const target=d?`data-decision="${esc(d.id)}"`:`data-context-action="work" data-context-id="${esc(item.id)}"`;
   const dismiss=d?`data-dismiss="${esc(d.id)}"`:`data-context-action="dismiss-decision" data-context-id="${esc(item.id)}"`;
-  return `<section class="decision-card"><button class="decision-card-main" ${target}><strong>${esc(item.title)}</strong><small>${[label,item.source].filter(Boolean).map(esc).join(' · ')}</small></button>${item.bucket==='open'?`<button class="dismiss-card" ${dismiss} aria-label="Leave ${esc(item.title)} as is" title="Leave as is">×</button>`:''}</section>`;
+  return `<section class="decision-card"><button class="decision-card-main" ${target}><strong>${esc(item.title)}</strong><small>${[label,item.source].filter(Boolean).map(esc).join(' · ')}</small></button>${item.bucket==='open'?`<button class="dismiss-card" ${dismiss} aria-label="Leave ${esc(item.title)} as is" title="Leave as is"><span class="ico ico-close" aria-hidden="true"></span></button>`:''}</section>`;
  }).join('');
  ($('#decision-list')||$('#queue-panel')).innerHTML=`<div class="queue-tabs">${['open','incoming','later','closed'].map(t=>`<button data-bucket="${t}" class="${queueTab===t?'active':''}">${{open:'Exploring',incoming:'Incoming',later:'For later',closed:'Past'}[t]}${t==='open'?` <span>${count}</span>`:t==='incoming'?` <span>${entries.filter(e=>e.bucket==='incoming').length}</span>`:''}</button>`).join('')}</div><div class="queue-cards">${cards||`<div class="queue-empty"><p>${queueTab==='open'?'Room for a new thought':queueTab==='later'?'Nothing saved for later':queueTab==='incoming'?'Nothing new has arrived':'Your past conversations will be here'}</p></div>`}</div>`;
 }
 async function showQueue(){openDrawer('Saved','<div id="decision-list"></div>','decisions');renderQueue();renderHeader();if(received)try{await received.poll();}catch(error){toast(error.message);}}
 function moveSet(){if(!activeIds().length)return;openDrawer('Move selected events',`<form id="shift-form" data-ids="${activeIds().join(',')}"><label for="shift-days">Days later</label><input id="shift-days" type="number" min="-31" max="31" value="0"><label for="shift-minutes">Minutes later</label><input id="shift-minutes" type="number" min="-1440" max="1440" step="15" value="30"><div class="actions"><button class="primary" type="submit">Preview move</button></div></form>`);}
-function showAbout(){const g=status.google||{};if(status.hosted){openDrawer('Google connection',`<p>${esc(g.account||status.user.email)}</p><p>Calendar · ${g.calendar?'connected':'permission needed'}<br>Gmail · ${g.mailRead?'read, draft, and send':'permission needed'}</p><div class="actions"><a class="source-link" href="/auth/google">Reconnect Google</a><button data-action="sign-out">Sign out</button></div>`,'about');return;}openDrawer('Google connection',`<p>${g.calendar?`Connected as ${esc(g.account)}.`:'This local app needs its own Google connection to carry out your decisions.'}</p><form id="connect-form">${g.configured?'':`<details open><summary>One-time setup</summary><p>Create a Desktop OAuth client with Calendar API enabled. Enable Gmail API too if you want to send email. <a href="https://developers.google.com/identity/protocols/oauth2/native-app" target="_blank" rel="noreferrer">Google setup guide ↗</a></p><label for="client-id">Client ID</label><input id="client-id" autocomplete="off" required><label for="client-secret">Client secret</label><input id="client-secret" type="password" autocomplete="off" required></details>`}<label class="check-label"><input type="checkbox" id="gmail-permission" ${g.email?'checked':''}> Also allow sending email</label><div class="actions"><button type="submit" class="primary">${g.calendar?'Update connection':'Connect Google'}</button></div><div id="oauth-link" role="status"></div></form><hr class="divider"><p>${g.calendar?'Calendar changes are checked every 30 seconds.':'Live updates start after connecting Google.'}</p><p>Slack sending and other calendars are not connected.</p>`,'about');}
-async function showActivity(){const memory=await api('/api/memory');openDrawer('Activity & memory',`<h3>Preferences</h3>${memory.preferences.map(p=>`<div class="preference"><span>${esc(p.body)}</span><button data-forget="${p.id}" aria-label="Remove preference">×</button></div>`).join('')||'<p>No standing preferences yet.</p>'}<form id="preference-form"><label for="preference">Remember for future decisions</label><input id="preference" maxlength="500" placeholder="e.g. Keep Friday mornings free" required><div class="actions"><button type="submit">Remember</button></div></form><h3>Recent actions</h3>${memory.outcomes.map(r=>`<div class="activity-item"><strong>${esc(scopes[r.decisionId]?.title||'Decision')}</strong>${r.steps.map(s=>`<p>${esc(s.title)} · ${esc(s.message||s.status)}</p>`).join('')}</div>`).join('')||'<p>No actions executed yet.</p>'}<details><summary>How memory works</summary><p>Each decision keeps its own conversation locally. Requests receive recent turns, relevant decision summaries, recent confirmed outcomes, and the preferences you save here. A one-off choice is not automatically made permanent.</p></details>`,'activity');}
+// Optional read-only Google access, each asked for on its own so the base connection stays narrow.
+const EXTRA_ACCESS={people:['Company directory','Find colleagues by name for invitations and availability.'],rooms:['Meeting rooms','Find bookable rooms. Your Workspace admin may need to allow it.'],
+ tasks:['Google Tasks','Plan time around open tasks.'],documents:['Attached documents','Read Docs, Sheets and Slides attached to events. Read only.'],
+ transcripts:['Meet transcripts','Read transcripts of past Meet calls for follow-ups.'],settings:['Calendar settings','Week start and default meeting length.']};
+function extrasMarkup(g){if(!g.calendar)return '';return `<h3>Optional access</h3>${Object.entries(EXTRA_ACCESS).map(([key,[label,help]])=>`<div class="preference"><span><strong>${esc(label)}</strong> · ${g.extras?.[key]?'allowed':'not allowed'}<br><small>${esc(help)}</small></span>${g.extras?.[key]?'':status.hosted?`<a class="source-link" href="/auth/google?add=${key}">Allow</a>`:`<button data-connect-extra="${key}">Allow</button>`}</div>`).join('')}<div id="extra-link" role="status"></div>`;}
+document.addEventListener('click',async e=>{const key=e.target.closest?.('[data-connect-extra]')?.dataset.connectExtra;if(!key)return;try{const {url}=await api('/api/google/connect',{add:key});$('#extra-link').innerHTML=`<a href="${esc(url)}" target="_blank" rel="noreferrer" class="oauth-button">Continue to Google <span class="ico ico-out" aria-hidden="true"></span></a>`;}catch(error){toast(error.message);}});
+function showAbout(){const g=status.google||{};if(status.hosted){openDrawer('Google connection',`<p>${esc(g.account||status.user.email)}</p><p>Calendar · ${g.calendar?'connected':'permission needed'}<br>Other calendars · ${g.calendars?'read':'permission needed'}<br>Gmail · ${g.mailRead?'read, draft, and send':'permission needed'}</p><div class="actions"><a class="source-link" href="/auth/google">Reconnect Google</a><button data-action="sign-out">Sign out</button></div>${extrasMarkup(g)}`,'about');return;}openDrawer('Google connection',`<p>${g.calendar?`Connected as ${esc(g.account)}.`:'This local app needs its own Google connection to carry out your decisions.'}</p><form id="connect-form">${g.configured?'':`<details open><summary>One-time setup</summary><p>Create a Desktop OAuth client with Calendar API enabled. Enable Gmail API too if you want to send email. <a href="https://developers.google.com/identity/protocols/oauth2/native-app" target="_blank" rel="noreferrer">Google setup guide <span class="ico ico-out" aria-hidden="true"></span></a></p><label for="client-id">Client ID</label><input id="client-id" autocomplete="off" required><label for="client-secret">Client secret</label><input id="client-secret" type="password" autocomplete="off" required></details>`}<label class="check-label"><input type="checkbox" id="gmail-permission" ${g.email?'checked':''}> Also allow sending email</label><div class="actions"><button type="submit" class="primary">${g.calendar?'Update connection':'Connect Google'}</button></div><div id="oauth-link" role="status"></div></form><hr class="divider"><p>${g.calendar?'Calendar changes are checked every 30 seconds.':'Live updates start after connecting Google.'}</p><p>Slack sending is not connected. Other calendars are read only.</p>${extrasMarkup(g)}`,'about');}
+async function showActivity(){const memory=await api('/api/memory');openDrawer('Activity & memory',`<h3>Preferences</h3>${memory.preferences.map(p=>`<div class="preference"><span>${esc(p.body)}</span><button data-forget="${p.id}" aria-label="Remove preference"><span class="ico ico-close" aria-hidden="true"></span></button></div>`).join('')||'<p>No standing preferences yet.</p>'}<form id="preference-form"><label for="preference">Remember for future decisions</label><input id="preference" maxlength="500" placeholder="e.g. Keep Friday mornings free" required><div class="actions"><button type="submit">Remember</button></div></form><h3>Recent actions</h3>${memory.outcomes.map(r=>`<div class="activity-item"><strong>${esc(scopes[r.decisionId]?.title||'Decision')}</strong>${r.steps.map(s=>`<p>${esc(s.title)} · ${esc(s.message||s.status)}</p>`).join('')}</div>`).join('')||'<p>No actions executed yet.</p>'}<details><summary>How memory works</summary><p>Each decision keeps its own conversation locally. Requests receive recent turns, relevant decision summaries, recent confirmed outcomes, and the preferences you save here. A one-off choice is not automatically made permanent.</p></details>`,'activity');}
 async function refreshReview(){
  setStatus('Preparing suggestions…');closeDrawer();
  try{const job=await api('/api/review',{});review=await waitJob(job.jobId);
@@ -955,9 +1059,10 @@ async function setModel(choice){
   toast(usingTest()?`Using ${testLabel()}`:'Using the default model');}
  catch(error){toast(error.message);}
 }
+const usageCost=v=>v<0.01?'under 1¢':v<1?`${(v*100).toFixed(1)}¢`:'$'+v.toFixed(2);
 function assistantSettingsMarkup(){
- const u=status.inference||{},m=state.lastMetrics,t=status.testModel,cost=v=>v<0.01?'under 1¢':v<1?`${(v*100).toFixed(1)}¢`:'$'+v.toFixed(2);
- return `<section class="set-group"><h3>Assistant</h3>${t?`<div class="set-row"><span><b>Model</b>${t.available?'':`<small>${esc(testLabel())} needs ${esc((t.missing||[]).join(' and '))} on the server</small>`}</span><span class="model-choice-slot">${modelChoiceMarkup()}</span></div>`:''}${switchRow('Fast replies','About twice as fast, at twice the price per token',u.fastMode,'id="fast-mode"')}${switchRow('Read replies aloud','',preferences.readAloud,'data-setting="readAloud"')}<p class="set-note">${esc(status.interactionModel||'')}${status.transport==='api'?'':' · Claude CLI, no API key'}<br>Today: ${u.modelCalls||0} model ${u.modelCalls===1?'call':'calls'}${u.costUsd?`, about ${cost(u.costUsd)}`:''}${m?.totalMs?` · Last reply: ${(m.totalMs/1000).toFixed(1)} s${m.costUsd!=null?`, ${cost(m.costUsd)}`:''}`:''}</p></section>`;
+ const u=status.inference||{},t=status.testModel,cost=usageCost;
+ return `<section class="set-group"><h3>Assistant</h3>${t?`<div class="set-row"><span><b>Model</b>${t.available?'':`<small>${esc(testLabel())} needs ${esc((t.missing||[]).join(' and '))} on the server</small>`}</span><span class="model-choice-slot">${modelChoiceMarkup()}</span></div>`:''}${switchRow('Fast replies','Quicker answers that cost about twice as much',u.fastMode,'id="fast-mode"')}${switchRow('Read replies aloud','',preferences.readAloud,'data-setting="readAloud"')}${u.costUsd?`<p class="set-note">Today so far: about ${cost(u.costUsd)}</p>`:''}</section>`;
 }
 function connectionSettingsMarkup(){
  const g=status.google||{},sync=status.sync||{},age=sync.lastSuccessAt?Math.floor((Date.now()/1000-sync.lastSuccessAt)/60):null;
@@ -965,13 +1070,14 @@ function connectionSettingsMarkup(){
  return `<section class="set-group"><h3>Google Calendar</h3><div class="set-row"><span><b>${g.calendar?esc(g.account||'Connected'):'Not connected'}</b><small>${line}</small></span><span class="set-buttons">${g.calendar?'<button data-action="sync">Sync</button>':''}<button data-action="about">${g.calendar?'Connection':'Connect'}</button></span></div></section>`;
 }
 function layoutSettingsMarkup(){
- const option=(value,label)=>`<button type="button" role="radio" aria-checked="${SURFACE===value}" ${SURFACE===value?'':'data-action="set-surface"'}>${label}</button>`;
- return `<section class="set-group"><h3>Layout</h3><div class="set-row"><span><b>${SURFACE==='canvas'?'Canvas':'Side panel'}</b><small>${SURFACE==='canvas'?'Answers on one line above the calendar':'Answers in a column beside the calendar'}</small></span><div class="model-choice" role="radiogroup" aria-label="Layout">${option('canvas','Canvas')}${option('docked','Side panel')}</div></div></section>`;
+ const option=(value,label)=>`<button type="button" role="radio" aria-checked="${SURFACE===value}" aria-label="Answers ${label.toLowerCase()} the calendar" ${SURFACE===value?'':'data-action="set-surface"'}>${label}</button>`;
+ return `<section class="set-group"><h3>Layout</h3><div class="set-row"><span><b>Answers appear</b><small>${SURFACE==='canvas'?'On one line above the calendar':'In a column beside the calendar'}</small></span><div class="model-choice" role="radiogroup" aria-label="Where answers appear">${option('canvas','Above')}${option('docked','Beside')}</div></div></section>`;
 }
 function settingsStatusMarkup(){return assistantSettingsMarkup()+connectionSettingsMarkup()+layoutSettingsMarkup();}
+const updatedLabel=()=>new Date(snapshot.lastSyncedAt?snapshot.lastSyncedAt*1000:snapshot.capturedAt).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 function moreSettingsMarkup(){
  const u=status.inference||{},hosted=received?.capabilitiesMarkup(status.capabilities)||'';
- return `<section class="set-group"><h3>More</h3><div class="set-links"><button data-action="activity">Memory and activity</button><button data-action="threads">History</button><button data-action="refresh-review">Refresh suggestions</button><button data-action="view-trace">Diagnostics</button></div>${hosted?`<details class="set-details"><summary>Account and connected assistant</summary>${hosted}<form id="assistant-settings-form" class="set-row"><span><b>Automatic reviews per day</b><small>Suggestions from a connected assistant</small></span><span class="set-buttons"><input id="automatic-limit" type="number" min="0" max="50" value="${u.maxAutomaticReviews??5}" aria-label="Automatic reviews per day"><button>Save</button></span></form></details>`:''}<p class="set-note">Primary calendar from ${dateLabel(snapshot.range.start)}. ${snapshot.lastSyncedAt?'Last sync '+new Date(snapshot.lastSyncedAt*1000).toLocaleString():'Snapshot from '+new Date(snapshot.capturedAt).toLocaleString()}. Other calendars and Slack are not connected.</p></section>`;
+ return `<section class="set-group"><h3>More</h3><div class="set-links"><button data-action="activity">Memory and activity</button><button data-action="threads">History</button><button data-action="refresh-review">Refresh suggestions</button><button data-action="view-trace">Troubleshooting</button></div>${hosted?`<details class="set-details"><summary>Account and connected assistant</summary>${hosted}<form id="assistant-settings-form" class="set-row"><span><b>Automatic reviews per day</b><small>Suggestions from a connected assistant</small></span><span class="set-buttons"><input id="automatic-limit" type="number" min="0" max="50" value="${u.maxAutomaticReviews??5}" aria-label="Automatic reviews per day"><button>Save</button></span></form></details>`:''}<p class="set-note">Showing your primary calendar from ${dateLabel(snapshot.range.start,{month:'short',day:'numeric'})}. Updated ${updatedLabel()}.</p></section>`;
 }
 function showSettings(refresh=true){if(refresh)api('/api/status').then(fresh=>{status=fresh;if(drawerType==='settings'){const section=$('#settings-live-status');if(section&&!section.contains(document.activeElement)&&!section.dataset.dirty){const replacement=document.createElement('div');replacement.innerHTML=settingsStatusMarkup();section.replaceChildren(...replacement.childNodes);}}}).catch(()=>{});openDrawer('Settings',`<div id="settings-live-status">${settingsStatusMarkup()}</div>${calendarSettingsMarkup()}${moreSettingsMarkup()}`,'settings');}
 async function receiveCalendar(data){
@@ -1026,18 +1132,20 @@ async function syncNow(){setStatus('Syncing…');const job=await api('/api/sync'
 const actions={
  tuck:()=>floating.tuck(),untuck:openEntry,'close-thread':()=>closeThread(),'apply-settings':()=>applySettings(),
  'pill-menu':showPillMenu,
- 'event-guests':()=>eventPanel('guests'),'event-description':()=>eventPanel('description'),'event-move':()=>eventPanel('move'),'event-options':()=>eventPanel('options'),'event-back':()=>inspect(state.inspected),
+ 'event-guests':()=>eventPanel('guests'),'event-description':()=>eventPanel('description'),'event-move':()=>eventPanel('move'),'event-options':()=>eventPanel('options'),'event-details':()=>eventPanel('details'),'event-back':()=>inspect(state.inspected),
  'discuss-event':()=>{const ref=state.inspected,days=[...state.days];if(state.created.some(e=>e.ref===ref)||state.edits[ref]){closeDrawer();floating.tuck(false,{focus:true});return;}newConversation();state.days=days;state.selected=[ref];current().title=eventByRef(ref)?.title||'Calendar';render();$('#command').focus();},
  'pin-conversation':()=>{pillPinned=floating.pin();closeDrawer();},
  mail:()=>mail.open(),
  'received-context':()=>received.queue(),
+ reload:()=>location.reload(),
  'sign-out':async()=>{await api('/auth/logout',{});localStorage.removeItem(STORE);localStorage.removeItem(PREFERENCES);location.assign('/login');},
  month:()=>setCalendarView('month'),'collapse-month':()=>backView(),'view-back':()=>backView(),day:()=>setCalendarView('day'),workweek:()=>setCalendarView('workweek'),fullweek:()=>setCalendarView('fullweek'),
  'back-week':()=>backView(),'today':()=>showWeek(weekDates(dayKey({start:new Date().toISOString()}))),
- 'view-trace':()=>openDrawer('View diagnostics',`<p>${CLIENT_BUILD} · Latest 50 transitions in this conversation</p><pre class="view-trace">${esc(JSON.stringify(state.interactionTrace||[],null,2))}</pre>`,'view-trace'),
+ 'view-trace':()=>{const u=status.inference||{},m=state.lastMetrics,row=(k,v)=>v?`<dt>${k}</dt><dd>${esc(v)}</dd>`:'';
+  openDrawer('Troubleshooting',`<dl>${row('Assistant',status.interactionModel)}${row('Reached through',status.transport==='api'?'API key':status.transport==='demo'?'Scripted demo':'Claude CLI')}${row('Today',`${u.modelCalls||0} ${u.modelCalls===1?'request':'requests'}${u.costUsd?`, about ${usageCost(u.costUsd)}`:''}`)}${row('Last reply',m?.totalMs?`${(m.totalMs/1000).toFixed(1)} s${m.costUsd!=null?`, ${usageCost(m.costUsd)}`:''}`:'')}${row('Calendar data',`${snapshot.lastSyncedAt?'Synced':'Snapshot from'} ${updatedLabel()}`)}${row('Build',CLIENT_BUILD)}</dl><h3>Recent view changes</h3><p>The latest 50 in this conversation.</p><pre class="view-trace">${esc(JSON.stringify(state.interactionTrace||[],null,2))}</pre>`,'view-trace');},
  'load-dates':()=>{if(!status.google?.calendar)return showAbout();for(const [key,job] of rangeLoads)if(job.status==='error')rangeLoads.delete(key);ensureVisibleCoverage();},
  'previous-week':()=>shiftCalendar(-1),'next-week':()=>shiftCalendar(1),
- 'toggle-selection-mode':()=>{selectionMode=!selectionMode;renderHeader();},
+ 'toggle-selection-mode':()=>{selectionMode=!selectionMode;selectionSticky=selectionMode;renderHeader();},
  undo:()=>apply([{op:'undo'}]),redo:()=>apply([{op:'redo'}]),compare:()=>apply([{op:'compare',mode:state.source?'scenario':'source'}]),
  'clear-selection':()=>{closeDrawer();selectionMode=false;apply([{op:'clear',mode:'selection'},{op:'clear',mode:'gaps'}]);},
  'show-blocked-steps':()=>{if(SURFACE==='canvas'){whyOpen=true;return renderHeadline();}$('#proposal-details').open=true;$('.step-warning')?.scrollIntoView({block:'center',behavior:'smooth'});},
@@ -1254,7 +1362,7 @@ document.addEventListener('submit',async e=>{
  if(id==='assistant-settings-form'){const saved=await api('/api/assistant-settings',{maxAutomaticReviews:+$('#automatic-limit').value});status.inference={...status.inference,...saved};showSettings();return;}
  if(id==='calendar-settings-form'){await saveCalendarSettings(e.target);return;}
  if(id==='preference-form'){await api('/api/memory',{body:$('#preference').value});await showActivity();}
- if(id==='connect-form'){const email=$('#gmail-permission').checked;if(!status.google.configured){await api('/api/google/configure',{client_id:$('#client-id').value.trim(),client_secret:$('#client-secret').value.trim()});status.google.configured=true;}const {url}=await api('/api/google/connect',{email});$('#oauth-link').innerHTML=`<a href="${esc(url)}" target="_blank" rel="noreferrer" class="oauth-button">Continue to Google ↗</a><p>Open in your regular browser and approve the requested connection. Return here when finished.</p>`;}
+ if(id==='connect-form'){const email=$('#gmail-permission').checked;if(!status.google.configured){await api('/api/google/configure',{client_id:$('#client-id').value.trim(),client_secret:$('#client-secret').value.trim()});status.google.configured=true;}const {url}=await api('/api/google/connect',{email});$('#oauth-link').innerHTML=`<a href="${esc(url)}" target="_blank" rel="noreferrer" class="oauth-button">Continue to Google <span class="ico ico-out" aria-hidden="true"></span></a><p>Open in your regular browser and approve the requested connection. Return here when finished.</p>`;}
  }catch(error){toast(error.message);}
 });
 document.addEventListener('keydown',e=>{
@@ -1323,7 +1431,9 @@ async function start(){
   for(const [id,d] of Object.entries(scopes))scopes[id]=hydrateDecision(snapshot,d);
   for(const d of Object.values(scopes)){d.state.pending=!!d.state.pendingJob;d.state.executionRunning=false;d.state.check=null;d.state.requestMessages||={};d.refs||=[];if(!d.state.edits||!Object.keys(d.state.edits).length){if(!d.state.created?.length&&!d.state.drafts?.length&&d.status==='open'&&!d.state.receivedContext&&d.state.threadType!=='decision')d.state.threadType='conversation';}saveProposalVersion(d);}
   lastConversationId=scopes[saved?.lastConversationId]&&isConversation(scopes[saved.lastConversationId])?saved.lastConversationId:HOME;activeId=saved?.uiVersion===7&&scopes[activeId]?activeId:lastConversationId;pruneConversations(scopes,40,[activeId,lastConversationId]);clearIdleFocus(current());state=current().state;state.inspected=null;navigateView(state,{mode:'workweek',date:snapshot.defaultDate||dayKey({start:new Date().toISOString()})},{remember:false});state.view.history=[];weekView=[...state.days];if(state.pendingJob)state.pendingJob.manualView=true;entryFresh=!!state.freshEntry;state.unread=false;$('#command').disabled=false;reading=preferences.readAloud;render();$('#command').value=state.composer||'';resizeComposer();if(!state.composer?.trim()&&!state.pending){entryFresh=true;state.freshEntry=true;renderAssistant();}floating.tuck(false,{focus:false});revealCalendar(Object.keys(state.edits));setStatus('');lastCalendarPoll=Date.now();requestAnimationFrame(()=>{initializeHostedTools().catch(()=>toast('Additional tools could not load. Reload to retry.'));});for(const d of Object.values(scopes))if(d.state.pendingJob){requests.set(d.id,d.state.pendingJob.seq);finishReply(d);}
- }catch(e){$('#assistant-title').textContent='Could not load the calendar';$('#assistant-detail').textContent=e.message;}
+ }catch(e){$('#assistant-title').textContent='Could not load the calendar';$('#assistant-detail').textContent=e.message;
+  if(!snapshot){$('.shell').classList.add('load-failed');$('#calendar').innerHTML=`<div class="load-error"><h2>Could not load the calendar</h2><p>${esc(e.message)}</p><button type="button" class="primary" data-action="reload">Try again</button></div>`;}}
+ finally{$('.shell').classList.remove('loading');}
 }
 window.addEventListener('focus',async()=>{if(!status)return;try{const fresh=await api('/api/status');status=fresh;renderHeader();pollCalendar();}catch{}});
 setInterval(()=>{if(received&&!document.hidden)received.poll().catch(()=>{});},30000);

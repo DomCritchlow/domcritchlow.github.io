@@ -5,11 +5,11 @@ import {dayKey} from './logic.js';
 const clone=v=>structuredClone(v);
 const sameMeaning=p=>JSON.stringify({mode:p.mode,description:p.description,categories:p.categories.map(({id,definition})=>({id,definition})),rules:p.rules?.length?p.rules:undefined});
 // Eight defaults that stay distinct in this order for common color vision deficiencies. Keep in step with calendar_appearance.PALETTE.
-export const palette=['#2a78d6','#eb6834','#1baf7a','#b8328a','#eda100','#6250d6','#0e9bb0','#d6455a'];
+export const palette=['#2a78d6','#dd5b25','#14995f','#b8328a','#eda100','#6250d6','#0591a5','#d6455a'];
 export const purposePolicy={mode:'semantic',description:'Color by the purpose of my time. Leave unclear events neutral.',categories:[
- {id:'focus',label:'Focus & preparation',color:'#1baf7a',definition:'Concentrated individual work, reading, writing and preparation.'},
+ {id:'focus',label:'Focus & preparation',color:'#14995f',definition:'Concentrated individual work, reading, writing and preparation.'},
  {id:'together',label:'Working together',color:'#2a78d6',definition:'Sessions to make, review, decide, solve or develop something together.'},
- {id:'coordination',label:'Updates & coordination',color:'#eb6834',definition:'Sharing status, aligning people, checking in or arranging work.'},
+ {id:'coordination',label:'Updates & coordination',color:'#dd5b25',definition:'Sharing status, aligning people, checking in or arranging work.'},
  {id:'life',label:'Life & logistics',color:'#b8328a',definition:'Breaks, personal appointments, travel and practical commitments.'}]};
 const STARTS=[['What my time is for','Color by the purpose of my time: focus, working together, coordination and life. Leave unclear events neutral.'],
  ['Who I am meeting','Color by who is in the meeting: my own team, other teams, people outside the company, and time on my own.'],
@@ -72,7 +72,7 @@ export function createAppearance({api,waitJob,snapshot,days,render,receive,openD
   const s=saved(),{groups,total}=blocks(),visible=groups.filter(g=>g.hours>0||g.id===filter);
   const intro=canvas()&&s.revision===0&&s.policy.mode==='audience'&&!introSeen();
   const block=g=>`<button type="button" class="mix-kind ${filter?(filter===g.id?'on':'off'):''}" data-mix="${esc(g.id)}" aria-pressed="${filter===g.id}" style="flex-grow:${Math.max(g.hours,.05).toFixed(2)};--c:${esc(g.color)};--on:${onColor(g.color)}" title="${esc(g.label)}: ${hoursLabel(g.hours)} in ${g.count} ${g.count===1?'meeting':'meetings'}${total?`, ${Math.round(g.hours/total*100)}% of booked time`:''}"><b>${esc(g.label)}</b><strong>${hoursLabel(g.hours)}</strong></button>`;
-  return `<button type="button" class="mix-all" data-mix="" aria-pressed="${!filter}" ${filter?'title="Show every category · Esc"':''}><small>${filter?'Show all':'Booked'}</small><strong>${hoursLabel(total)}</strong></button>
+  return `<button type="button" class="mix-all" data-mix="" aria-pressed="${!filter}" ${filter?'title="Show every category · Esc"':''}><small>${filter?'<span class="ico ico-close" aria-hidden="true"></span>Show all':'Booked'}</small><strong>${hoursLabel(total)}</strong></button>
   <div class="mix-stack" role="group" aria-label="Categories">${visible.length?visible.map(block).join(''):'<p class="mix-empty">Nothing booked on these dates.</p>'}</div>
   <div class="mix-foot">${intro?`<div class="mix-intro"><b>Color by what your time is for.</b><span><button type="button" class="primary" data-color-action="open">Set up</button><button type="button" data-color-action="later">Not now</button></span></div>`:''}<button type="button" class="mix-edit" data-color-action="open">Edit categories</button></div>`;
  }
@@ -97,14 +97,16 @@ export function createAppearance({api,waitJob,snapshot,days,render,receive,openD
  async function fill(){
   const s=saved();if(!s||s.policy.mode!=='semantic'||editing||filling)return;
   const dates=days(),range=dates.join(',');
-  if((tried.get(range)||0)>=3||!shown().some(item=>item.fact.state==='unclassified'))return;
-  tried.set(range,(tried.get(range)||0)+1);filling=true;drawRail();
+  // Attempts are remembered for the browser session, so reloading does not ask the model again for dates that keep failing.
+  const attempt=`dayweave-fill:${s.revision}:${range}`,count=()=>Math.max(tried.get(range)||0,+(sessionStorage.getItem(attempt)||0));
+  if(count()>=3||!shown().some(item=>item.fact.state==='unclassified'))return;
+  tried.set(range,count()+1);try{sessionStorage.setItem(attempt,String(count()));}catch{}filling=true;drawRail();
   try{
    const started=await api('/api/appearance-preview',{revision:s.revision,policy:s.policy,days:dates,redesign:false,draftToken:'fill'});
    await waitJob(started.jobId);
    if(editing||saved().revision!==s.revision)return;
    await receive(await api('/api/appearance',{action:'fill',revision:s.revision,jobId:started.jobId}));
-  }catch{tried.set(range,3);}
+  }catch{tried.set(range,3);try{sessionStorage.setItem(attempt,'3');}catch{}}
   finally{filling=false;refresh();}
  }
 
@@ -113,16 +115,16 @@ export function createAppearance({api,waitJob,snapshot,days,render,receive,openD
  const sorted=()=>draft.mode==='audience'||sameMeaning(draft)===sameMeaning(saved().policy)||(!!result&&sameMeaning(result.policy)===sameMeaning(draft));
  function editorMarkup(){
   const fixed=draft.mode==='audience',starting=fixed||restart,{groups}=blocks(),hours=id=>groups.find(g=>g.id===id)?.hours||0,loose=groups.at(-1);
-  const card=(c,i)=>`<section class="kind-card" data-kind="${esc(c.id)}" style="--c:${esc(c.color)};--on:${onColor(c.color)}"><div class="kind-top"><button type="button" class="kind-swatch" data-color-action="swatch" data-kind-id="${esc(c.id)}" aria-label="Color of ${esc(c.label||'new category')}" aria-expanded="${swatch===c.id}"></button><input data-kind-field="label" value="${esc(c.label)}" aria-label="Category name ${i+1}" maxlength="50" placeholder="Name" required><span class="kind-hours">${hoursLabel(hours(c.id))}</span>${fixed||draft.categories.length<2?'':`<button type="button" class="kind-remove" data-color-action="remove" data-kind-id="${esc(c.id)}" aria-label="Remove ${esc(c.label||'new category')}">×</button>`}</div>
-   ${swatch===c.id?`<div class="kind-colors" role="group" aria-label="Colors">${palette.map(color=>`<button type="button" data-color-action="color" data-kind-id="${esc(c.id)}" data-color="${color}" style="background:${color}" aria-label="${color}" aria-pressed="${color===c.color.toLowerCase()}"></button>`).join('')}<label title="Another color"><input type="color" data-kind-field="color" value="${esc(c.color)}" aria-label="Custom color for ${esc(c.label||'new category')}"></label></div>`:''}
+  const card=(c,i)=>`<section class="kind-card" data-kind="${esc(c.id)}" style="--c:${esc(c.color)};--on:${onColor(c.color)}"><div class="kind-top"><button type="button" class="kind-swatch" data-color-action="swatch" data-kind-id="${esc(c.id)}" aria-label="Color of ${esc(c.label||'new category')}" aria-expanded="${swatch===c.id}"><span class="ico ico-drop" aria-hidden="true"></span></button><input data-kind-field="label" value="${esc(c.label)}" aria-label="Category name ${i+1}" maxlength="50" placeholder="Name" required><span class="kind-hours">${hoursLabel(hours(c.id))}</span>${fixed||draft.categories.length<2?'':`<button type="button" class="kind-remove" data-color-action="remove" data-kind-id="${esc(c.id)}" aria-label="Remove ${esc(c.label||'new category')}"><span class="ico ico-close" aria-hidden="true"></span></button>`}</div>
+   ${swatch===c.id?`<div class="kind-colors" role="group" aria-label="Colors">${palette.map(color=>`<button type="button" data-color-action="color" data-kind-id="${esc(c.id)}" data-color="${color}" style="background:${color}" aria-label="${color}" aria-pressed="${color===c.color.toLowerCase()}"></button>`).join('')}<label title="Another color"><span class="ico ico-plus" aria-hidden="true"></span><input type="color" data-kind-field="color" value="${esc(c.color)}" aria-label="Custom color for ${esc(c.label||'new category')}"></label></div>`:''}
    ${fixed?`<p class="kind-fixed">${esc(c.definition)}</p>`:`<textarea data-kind-field="definition" rows="3" maxlength="500" aria-label="What belongs in ${esc(c.label||'the new category')}" placeholder="What belongs here" required>${esc(c.definition)}</textarea>`}</section>`;
-  return `<header class="kinds-head"><h2>Categories and colors</h2><button type="button" data-color-action="peek" class="kinds-peek">${peek?'Edit':'View calendar'}</button><button type="button" data-color-action="cancel" class="kinds-close" aria-label="Close without saving">×</button></header>
+  return `<header class="kinds-head"><h2>Categories and colors</h2><button type="button" data-color-action="peek" class="kinds-peek">${peek?'Edit':'View calendar'}</button><button type="button" data-color-action="cancel" class="kinds-close" aria-label="Close without saving"><span class="ico ico-close" aria-hidden="true"></span></button></header>
   <div class="kinds-body">
   <form id="kinds-ask" class="kinds-ask"><label for="kinds-instruction">${starting?'How should your time be sorted?':'What should change?'}</label><textarea id="kinds-instruction" rows="2" maxlength="500" placeholder="${starting?'By client, with internal work and personal time on their own':'Split 1:1s out of working together'}"></textarea><button type="submit" class="primary">${starting?'Sort my calendar':'Change'}</button></form>
   ${starting?`<div class="kinds-starts"><span>Or start from</span>${STARTS.map(([label],i)=>`<button type="button" data-color-action="start" data-start="${i}">${label}</button>`).join('')}</div>`:''}
   <p class="kinds-status" role="status" aria-live="polite"></p>
-  <fieldset class="kinds-list"><legend>${fixed?'Now: by who is invited':'Categories, first match wins'}</legend>${draft.categories.map(card).join('')}${loose.hours&&!fixed?`<p class="kinds-loose"><i></i>${hoursLabel(loose.hours)} not sorted. Open a meeting to set its category.</p>`:''}${fixed||draft.categories.length>=8?'':'<button type="button" class="kinds-add" data-color-action="add">＋ Add a category</button>'}</fieldset>
-  ${fixed?'':`<section class="kinds-rules"><h3>Rules</h3><p>A rule wins over the descriptions above.</p><ul>${(draft.rules||[]).map((rule,i)=>`<li><span>${esc(rule)}</span><button type="button" data-color-action="unrule" data-rule="${i}" aria-label="Remove rule: ${esc(rule)}">×</button></li>`).join('')}</ul><form id="kinds-rule"><input id="kinds-rule-text" maxlength="200" aria-label="New rule" placeholder="Lunch is always ${esc(draft.categories.at(-1).label)}" ${(draft.rules||[]).length>=20?'disabled':''}><button type="submit">Add rule</button></form></section>`}
+  <fieldset class="kinds-list"><legend>${fixed?'Now: by who is invited':'Categories, first match wins'}</legend>${draft.categories.map(card).join('')}${loose.hours&&!fixed?`<p class="kinds-loose"><i></i>${hoursLabel(loose.hours)} not sorted. Open a meeting to set its category.</p>`:''}${fixed||draft.categories.length>=8?'':'<button type="button" class="kinds-add" data-color-action="add"><span class="ico ico-plus" aria-hidden="true"></span> Add a category</button>'}</fieldset>
+  ${fixed?'':`<section class="kinds-rules"><h3>Rules</h3><p>A rule wins over the descriptions above.</p><ul>${(draft.rules||[]).map((rule,i)=>`<li><span>${esc(rule)}</span><button type="button" data-color-action="unrule" data-rule="${i}" aria-label="Remove rule: ${esc(rule)}"><span class="ico ico-close" aria-hidden="true"></span></button></li>`).join('')}</ul><form id="kinds-rule"><input id="kinds-rule-text" maxlength="200" aria-label="New rule" placeholder="Lunch is always ${esc(draft.categories.at(-1).label)}" ${(draft.rules||[]).length>=20?'disabled':''}><button type="submit">Add rule</button></form></section>`}
   <section class="kinds-markers"><h3>Markers on meetings</h3><div>${MARKERS.map(([id,label,fallback])=>`<label><input type="color" data-marker="${id}" value="${esc(snapshot().calendarSettings?.colors?.[id]||fallback)}" aria-label="${label} color"><span>${label}</span></label>`).join('')}</div><p>Saved as you pick. <button type="button" data-color-action="reset-markers">Reset</button></p></section>
   <div class="kinds-more">${fixed?'':'<button type="button" data-color-action="restart">Start over</button><button type="button" data-color-action="audience">Back to Internal, External, Solo</button>'}${saved().canUndo?'<button type="button" data-color-action="undo">Undo last saved change</button>':''}</div>
   </div>

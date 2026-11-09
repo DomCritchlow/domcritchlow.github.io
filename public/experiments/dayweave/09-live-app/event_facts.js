@@ -1,4 +1,4 @@
-export function canEdit(event){return !event?.locked&&!!(event?.organizerSelf||event?.guestsCanModify||event?.canModify);}
+export function canEdit(event){return !['fromGmail','birthday'].includes(event?.type)&&!event?.locked&&!!(event?.organizerSelf||event?.guestsCanModify||event?.canModify);}
 export function canRespond(event){return !!event&&!event.created&&!event.allDay&&!!event.attendees?.some(a=>a.self);}
 export function organizerLabel(event){if(event.organizerSelf)return 'You';const name=event.organizerName||event.organizer;if(!name)return 'Organizer unknown';return name.includes('@')?name.split('@')[0].replaceAll('.',' '):name;}
 export function permissionLabel(event){return event.locked?'Locked':canEdit(event)?'Can edit':'Ask organizer to change';}

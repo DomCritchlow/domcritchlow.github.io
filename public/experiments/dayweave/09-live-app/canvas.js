@@ -41,34 +41,51 @@ export function clearIdleFocus(scope){
  return changed;
 }
 
-// A lens {start,end,pixels} gives one time span (an opened event) exactly that much room,
-// so the event can show its whole card in place while the hours around it compress.
+// The fisheye. Hours in focus get up to `peak` times their room and ease back to normal over
+// `reach` minutes either side. The other hours give up a little, never below `floor` of their
+// size, so nothing is squeezed until it clips. The day always keeps its length: when a lot of it
+// is in focus, the focus gets what the rest can give.
+// A day in focus gets `day` times the width of the others; an opened meeting's day is at least `card` px wide.
+// Up to `peeks` selected meetings each show a little more of themselves; beyond that they only come forward.
+export const FISHEYE={peak:1.38,reach:45,floor:.84,day:1.42,card:320,peeks:4};
+// A lens {start,end,pixels} is a meeting that needs room for what it shows: a little for a selected
+// meeting's extra lines, more for an opened one. Its span gets at least that many pixels; the rest
+// give what the floor allows, and the day grows only by what is still missing.
 export function timeScale(from,to,focus=[],base=68,lens=null){
- const bands=[];let height=0;
- const cuts=[...new Set([...Array.from({length:Math.ceil((to-from)/30)},(_,i)=>from+i*30),...(lens?[lens.start,lens.end]:[])])].filter(v=>v>=from&&v<to).sort((a,b)=>a-b);
- for(let i=0;i<cuts.length;i++){
-  const start=cuts[i],end=Math.min(to,cuts[i+1]??to);
-  if(end<=start)continue;
-  const inLens=lens&&start>=lens.start&&end<=lens.end;
-  const near=focus.some(([a,b])=>start<b+30&&end>a-30);
-  const pixels=inLens?lens.pixels*(end-start)/(lens.end-lens.start):(end-start)/60*base*(lens?.5:focus.length?(near?1.65:.62):1);
-  bands.push({start,end,y:height,pixels});height+=pixels;
- }
- const at=value=>{const b=bands.find(b=>value<b.end)||bands.at(-1);return b?b.y+(value-b.start)/(b.end-b.start)*b.pixels:0;};
+ const lenses=(Array.isArray(lens)?lens:lens?[lens]:[]).filter(l=>l.end>l.start&&l.pixels>0);
+ const per=base/60,ease=t=>t*t*(3-2*t),ranges=[...focus,...lenses.map(l=>[l.start,l.end])];
+ const cuts=new Set();for(let m=from;m<to;m+=15)cuts.add(m);for(const l of lenses)for(const m of [l.start,l.end])if(m>from&&m<to)cuts.add(m);
+ const edges=[...cuts].sort((x,y)=>x-y),bands=edges.map((start,i)=>({start,end:edges[i+1]??to,stretch:1}));
+ const weight=(a,b)=>ranges.reduce((best,[start,end])=>{const gap=Math.max(0,start-b,a-end);return Math.max(best,gap>=FISHEYE.reach?0:ease(1-gap/FISHEYE.reach));},0);
+ let lit=0,slack=0;
+ for(const band of bands){band.w=weight(band.start,band.end);lit+=band.w*(band.end-band.start);slack+=(1-band.w)*(band.end-band.start);}
+ const peak=lit?Math.min(FISHEYE.peak,1+(1-FISHEYE.floor)*slack/lit):1;
+ let give=lit&&slack?Math.min(1-FISHEYE.floor,(peak-1)*lit/slack):0;
+ const size=band=>(band.end-band.start)*per*(1+(peak-1)*band.w-give*(1-band.w));
+ // Each lens stretches its own span to fit; where two overlap, the larger need wins.
+ for(const l of lenses){const inside=bands.filter(b=>b.start>=l.start&&b.end<=l.end),natural=inside.reduce((n,b)=>n+size(b)*b.stretch,0);if(natural&&natural<l.pixels)for(const b of inside)b.stretch*=l.pixels/natural;}
+ const extra=bands.reduce((n,b)=>n+size(b)*(b.stretch-1),0);
+ if(extra&&slack)give=Math.min(1-FISHEYE.floor,give+extra/(slack*per));
+ let height=0;
+ for(const band of bands){band.y=height;band.pixels=size(band)*band.stretch;height+=band.pixels;}
+ const at=value=>{const v=Math.min(to,Math.max(from,value)),b=bands.find(b=>v<b.end)||bands.at(-1);return b?b.y+(v-b.start)/(b.end-b.start)*b.pixels:0;};
  const minute=value=>{const b=bands.find(b=>value<b.y+b.pixels)||bands.at(-1);return b?b.start+(value-b.y)/b.pixels*(b.end-b.start):from;};
- return {height,at,minute,bands};
+ return {height,at,minute,from,to,bands};
 }
 
+// Which days and hours come forward: those of the meetings selected, highlighted, opened or being changed.
 export function focusGeometry(events,state,days){
  const refs=new Set([...state.selected,...state.highlighted,...Object.keys(state.edits||{})]);
  const focused=events.filter(e=>!e.allDay&&(refs.has(e.ref)||e.created));
- const focusDays=new Set([...focused.map(dayKey),...(state.attentionDays||[])]);
+ const named=new Set([...focused.map(dayKey),...(state.attentionDays||[])].filter(d=>days.includes(d)));
  // A draft can open hours (for example "afternoon") before any event is chosen.
  const times=[...focused.map(e=>[minutes(e.start),dayKey(e)!==dayKey({start:e.end})?1440:minutes(e.end)]),...(state.draftRanges||[])];
- // Quiet weekend days in a seven-day view give their room to the working week until they matter.
+ // Quiet weekend days in a seven-day view give their room to the working week until they hold something.
  const weekend=d=>[0,6].includes(new Date(d+'T12:00:00Z').getUTCDay()),busy=new Set(events.filter(e=>!e.allDay).map(dayKey));
  const rest=d=>days.length>=7&&weekend(d)&&!busy.has(d)&&!days.every(weekend)?.6:1;
- return {times,weights:days.map(d=>focusDays.size&&focusDays.size<days.length?(focusDays.has(d)?2.1:.72*rest(d)):rest(d))};
+ // When every day on screen is in focus there is nothing to set apart.
+ const focusDays=named.size&&named.size<days.length?named:new Set();
+ return {times,focusDays,weights:days.map(d=>rest(d)*(focusDays.has(d)?FISHEYE.day:1))};
 }
 
 const weekdays=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];

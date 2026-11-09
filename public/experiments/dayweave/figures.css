@@ -1,0 +1,97 @@
+/* Figures for "AI tools should answer where the work is". Small calendars that each show one idea. */
+@font-face{font-family:"Figtree";src:url("09-live-app/figtree.woff2") format("woff2");font-weight:300 900;font-display:swap}
+@font-face{font-family:"Bricolage Grotesque";src:url("09-live-app/bricolage.woff2") format("woff2");font-weight:200 800;font-stretch:75% 100%;font-display:swap}
+figure[data-dwf]{--paper:#f8f9f5;--paper-2:#f1f3ed;--rule:#e3e8de;--rule-2:#cdd6c8;--ink:#1d2a23;--ink-2:#56645b;--ink-3:#6f7c72;--accent:#2f5a45;--ease:cubic-bezier(.2,.9,.25,1);--t:.38s;
+ position:relative;left:50%;transform:translateX(-50%);width:min(760px,calc(100vw - 32px));margin:28px 0 34px;font-family:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+figure[data-dwf="walk"]{width:min(1160px,calc(100vw - 32px))}
+.dwf-stage{position:relative;overflow:hidden;border:1px solid var(--rule);border-radius:14px;background:var(--paper);box-shadow:0 1px 2px rgba(29,42,35,.05),0 14px 36px rgba(29,42,35,.09)}
+figure[data-dwf] figcaption{max-width:680px;margin:10px auto 0;padding:0 2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:.9rem;line-height:1.45;color:var(--gray,#666)}
+.dwf-bar{display:flex;flex-wrap:wrap;gap:6px;max-width:680px;margin:12px auto 0}
+.dwf-chip{font:600 12.5px/1.2 "Figtree",sans-serif;color:var(--ink-2);background:var(--paper);border:1px solid var(--rule-2);border-radius:999px;padding:7px 13px;cursor:pointer;transition:background .12s var(--ease),color .12s var(--ease),transform .12s var(--ease)}
+.dwf-chip:hover{color:var(--ink);border-color:var(--ink-3)}
+.dwf-chip:active{transform:scale(.97)}
+.dwf-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dwf-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dwf-readout{max-width:680px;min-height:2.9em;margin:10px auto 0;font:500 13.5px/1.45 "Figtree",sans-serif;color:var(--ink-2)}
+.dwf-readout b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+
+/* The small calendar */
+.dwf-grid{display:flex;flex-direction:column}
+.dwf-head{display:flex;border-bottom:1px solid var(--rule)}
+.dwf-corner{flex:0 0 44px}
+.dwf-cols,.dwf-tracks{position:relative;display:flex;flex:1;min-width:0}
+.dwf-day{flex:1 1 0;min-width:0;display:flex;align-items:baseline;justify-content:center;gap:6px;padding:9px 2px 8px;border-left:1px solid var(--rule);transition:flex-grow var(--t) var(--ease),background-color var(--t) var(--ease)}
+.dwf-day span{font:600 10px/1 "Figtree",sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.dwf-day b{font:600 16px/1 "Bricolage Grotesque","Figtree",sans-serif;font-variant-numeric:tabular-nums}
+.dwf-body{position:relative;display:flex;transition:height var(--t) var(--ease)}
+.dwf-axis{position:relative;flex:0 0 44px}
+.dwf-axis span{position:absolute;right:7px;transform:translateY(-50%);font:400 10px/1 "Figtree",sans-serif;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;transition:top var(--t) var(--ease)}
+.dwf-axis span:first-child{transform:translateY(3px)}
+.dwf-axis span:last-child{display:none}
+.dwf-rules{position:absolute;inset:0;pointer-events:none}
+.dwf-rules i{position:absolute;left:0;right:0;border-top:1px solid var(--rule);transition:top var(--t) var(--ease)}
+.dwf-track{position:relative;flex:1 1 0;min-width:0;border-left:1px solid var(--rule);transition:flex-grow var(--t) var(--ease),background-color var(--t) var(--ease)}
+.dwf-track.lit,.dwf-day.lit{background:color-mix(in srgb,#dfeadf 34%,transparent)}
+.dwf-gap{flex:0 0 34px;display:grid;place-items:start center;border-left:1px solid var(--rule);background:var(--paper-2)}
+.dwf-gap span{margin-top:9px;font:600 9.5px/1.1 "Figtree",sans-serif;color:var(--ink-3);text-align:center;width:30px}
+.dwf-ev{position:absolute;left:3px;right:3px;z-index:1;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;overflow:hidden;margin:0;padding:0;border:0;border-radius:9px;text-align:left;font:inherit;cursor:pointer;
+ background:color-mix(in srgb,var(--c) 15%,#fff);color:color-mix(in srgb,var(--c) 42%,#0d1a13);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 28%,transparent);
+ transition:top var(--t) var(--ease),height var(--t) var(--ease),opacity var(--t) var(--ease),filter var(--t) var(--ease),box-shadow var(--t) var(--ease)}
+.dwf-in{display:flex;flex-direction:column;gap:2px;padding:5px 8px 6px}
+.dwf-ev b{font:600 12px/1.25 "Figtree",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dwf-time,.dwf-sub,.dwf-line{font:400 11px/1.25 "Figtree",sans-serif;opacity:.78;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dwf-ev.small .dwf-in{padding:1px 8px}
+.dwf-ev.small .dwf-time{display:none}
+.dwf-ev.forward{z-index:3;box-shadow:0 0 0 1.5px var(--c),0 1px 2px rgba(29,42,35,.06),0 10px 26px rgba(29,42,35,.16)}
+.dwf-ev.back{opacity:.5;filter:saturate(.35)}
+.dwf-note{font:500 11.5px/1.3 "Figtree",sans-serif;color:var(--ink);white-space:normal}
+.dwf-tag{align-self:flex-start;margin-top:2px;padding:1px 7px;border-radius:999px;font:600 10px/1.4 "Figtree",sans-serif;background:color-mix(in srgb,var(--accent) 13%,#fff);color:var(--accent);white-space:nowrap}
+.dwf-ev.proposed{outline:2px dashed var(--accent);outline-offset:-2px;background-image:repeating-linear-gradient(135deg,color-mix(in srgb,var(--accent) 8%,transparent) 0 6px,transparent 6px 12px)}
+.dwf-ev.ghost{background:transparent;box-shadow:none;border:1.5px dashed var(--rule-2);color:var(--ink-3);cursor:default;z-index:0}
+.dwf-big{font:600 17px/1.2 "Bricolage Grotesque","Figtree",sans-serif !important;letter-spacing:-.02em;white-space:normal !important;margin-bottom:1px}
+.dwf-ev.open .dwf-in,.dwf-ev.details .dwf-in{padding:9px 11px 10px;gap:4px}
+.dwf-place{font:500 12.5px/1.3 "Figtree",sans-serif}
+.dwf-who{display:flex;align-items:center;font:400 11.5px/1.3 "Figtree",sans-serif;margin-top:3px}
+.dwf-who i{width:20px;height:20px;border-radius:50%;background:#e4eade;border:2px solid color-mix(in srgb,var(--c) 15%,#fff);margin-right:-6px}
+.dwf-who i+i{background:#e1e9f0;margin-right:8px}
+.dwf-about{font:400 12px/1.4 "Figtree",sans-serif;white-space:normal;margin-top:5px;padding-top:6px;border-top:1px solid color-mix(in srgb,currentColor 16%,transparent)}
+.dwf-file{font:500 11.5px/1.3 "Figtree",sans-serif;text-decoration:underline;text-underline-offset:2px}
+.dwf-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,currentColor 16%,transparent)}
+.dwf-actions u{text-decoration:none;font:600 11px/1 "Figtree",sans-serif;padding:6px 10px;border-radius:999px;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 26%,transparent)}
+.dwf-actions u.on{box-shadow:none;background:color-mix(in srgb,currentColor 11%,transparent)}
+.dwf-actions u.plain{box-shadow:none;margin-left:auto;cursor:pointer}
+.dwf-actions u.plain:first-child{margin-left:0;margin-right:auto}
+.dwf-measure{position:absolute !important;visibility:hidden;pointer-events:none;left:0;top:0;height:auto !important;right:auto}
+
+/* 1. The detail card of an ordinary calendar */
+.dwf-popover{position:absolute;z-index:5;width:228px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid var(--rule-2);box-shadow:0 1px 2px rgba(29,42,35,.06),0 14px 34px rgba(29,42,35,.2);display:none;flex-direction:column;gap:4px;font:400 12px/1.4 "Figtree",sans-serif;color:var(--ink-2)}
+.dwf-popover.on{display:flex}
+.dwf-popover b{font:600 15px/1.25 "Figtree",sans-serif;color:var(--ink)}
+.dwf-popover .dwf-about{color:var(--ink-3)}
+
+/* 2. A sentence becomes operations */
+.dwf-sentence{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:0 22px;padding:20px 22px 18px}
+.dwf-ask{grid-column:1/-1;margin:0 0 14px;font:500 19px/1.4 "Bricolage Grotesque","Figtree",sans-serif;letter-spacing:-.01em}
+.dwf-ask span{border-radius:5px;padding:1px 3px;margin:0 -3px;transition:background-color .3s var(--ease),box-shadow .3s var(--ease)}
+.dwf-ask span.on{background:#dfeadf;box-shadow:inset 0 -2px 0 var(--accent)}
+.dwf-ops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.dwf-ops li{padding:8px 11px;border-radius:9px;border:1px solid var(--rule);font:400 12.5px/1.4 "Figtree",sans-serif;color:var(--ink-2);opacity:.35;transform:translateY(4px);transition:opacity .35s var(--ease),transform .35s var(--ease),border-color .35s var(--ease)}
+.dwf-ops li.on{opacity:1;transform:none;border-color:var(--rule-2)}
+.dwf-ops code{display:inline-block;min-width:84px;font:600 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent);background:none;padding:0}
+.dwf-mini{border:1px solid var(--rule);border-radius:10px;overflow:hidden;align-self:start}
+
+/* 6. The request bar above the dates it refers to */
+.dwf-request{display:flex;align-items:center;gap:9px;margin:12px 12px 10px;padding:9px 13px;border-radius:10px;background:var(--paper-2);font:400 13.5px/1.3 "Figtree",sans-serif;color:var(--ink-2)}
+.dwf-request i{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
+/* 8. The whole app */
+.dwf-live{background:#e2e6da}
+.dwf-live iframe{position:absolute;top:0;left:0;border:0;transform-origin:0 0;background:#e2e6da}
+
+@media (max-width:640px){
+ .dwf-sentence{grid-template-columns:1fr;gap:14px}
+ .dwf-corner,.dwf-axis{flex-basis:34px}
+ .dwf-in{padding:4px 5px}
+ .dwf-day{flex-direction:column;align-items:center;gap:2px}
+}
+@media (prefers-reduced-motion:reduce){figure[data-dwf]{--t:0s}}

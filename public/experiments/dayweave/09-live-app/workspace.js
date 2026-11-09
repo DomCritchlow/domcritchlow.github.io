@@ -34,9 +34,15 @@ export function newState(snapshot){const state={snapshotKey:snapshot.snapshotKey
 export function scenario(state){return clone({edits:state.edits,created:state.created,drafts:state.drafts,reviewStatus:state.reviewStatus});}
 export function restoreScenario(state,s){Object.assign(state,clone(s));}
 export function checkpoint(state){state.undo.push(scenario(state));state.undo=state.undo.slice(-30);state.redo=[];}
-export function projectedEvents(events,state){return [...events,...state.created].map(e=>{
- const c=state.edits[e.ref];if(!c||unchangedTime(e,c))return {...e};
- return {...e,...(c.kind==='move'||c.kind==='resize'?{start:c.start,end:c.end}:{}),previewKind:c.kind,previewDeclined:['decline','remove','cancel'].includes(c.kind),previewAccepted:c.kind==='accept',previewTentative:c.kind==='tentative',pending:['move','resize'].includes(c.kind)&&!canEdit(e),original:e};
+export function projectedEvents(events,state){
+ // A whole-series move or resize shows on every loaded occurrence, shifted like the edited one.
+ const all=[...events,...state.created],series={};
+ for(const [ref,c] of Object.entries(state.edits))if(c.scope==='series'&&['move','resize'].includes(c.kind)){const e=all.find(x=>x.ref===ref);if(e?.seriesId&&!e.allDay)series[e.seriesId]={shift:Date.parse(c.start)-Date.parse(e.start),length:Date.parse(c.end)-Date.parse(c.start),kind:c.kind};}
+ return all.map(e=>{
+ let c=state.edits[e.ref];
+ if(!c&&series[e.seriesId]&&!e.allDay){const s=series[e.seriesId],start=new Date(Date.parse(e.start)+s.shift).toISOString();c={kind:s.kind,start,end:new Date(Date.parse(start)+s.length).toISOString(),scope:'series'};}
+ if(!c||unchangedTime(e,c))return {...e};
+ return {...e,...(c.kind==='move'||c.kind==='resize'?{start:c.start,end:c.end}:{}),...(c.kind==='update'?{title:c.set.title??e.title,location:c.set.location??e.location,description:c.set.description??e.description,transparent:c.set.showAs?c.set.showAs==='free':e.transparent}:{}),previewKind:c.kind,previewDeclined:['decline','remove','cancel'].includes(c.kind),previewAccepted:c.kind==='accept',previewTentative:c.kind==='tentative',pending:['move','resize'].includes(c.kind)&&!canEdit(e),original:e};
 });}
 export function blockingEvents(events,state){
  const projected=projectedEvents(events,state).filter(e=>!e.transparent&&(e.response!=='declined'||e.previewAccepted||e.previewTentative)&&!e.previewDeclined);
@@ -112,9 +118,9 @@ export function runOperations(original,operations,events,options={}){
   }else if(op.op==='view'){
    navigateView(state,op);state.guided=false;
   }else if(op.op==='edit'){
-   requireIds(ids,all);if(!['decline','accept','tentative','move','resize','remove','cancel','restore'].includes(op.action))throw Error('Unknown calendar change.');
+   requireIds(ids,all);if(!['decline','accept','tentative','move','resize','remove','cancel','restore','update'].includes(op.action))throw Error('Unknown calendar change.');
    for(const id of ids){const source=all.find(e=>e.ref===id),current=projectedEvents(all.filter(e=>!e.created),{...state,created:state.created}).find(e=>e.ref===id)||source;
-    if(source.allDay&&['move','resize'].includes(op.action))throw Error('All-day events cannot be moved here yet.');
+    if(['fromGmail','birthday'].includes(source.type)&&['move','resize'].includes(op.action))throw Error('Google sets the time of events from Gmail and birthdays; they cannot be moved.');
     if(op.action==='restore'){delete state.edits[id];continue;}
     const guests=source.attendees?.some(p=>!p.self&&!p.resource);
     if(op.action==='remove'&&source.organizerSelf&&guests)throw Error('This meeting has guests. Cancel it for everyone instead.');
@@ -122,8 +128,21 @@ export function runOperations(original,operations,events,options={}){
     if(source.created&&op.action==='remove'){state.created=state.created.filter(e=>e.ref!==id);delete state.edits[id];continue;}
     const change={kind:op.action,fromDecision:options.decisionId||null,stepId:op.stepId,after:op.after||[]};
     if(op.note&&['decline','accept','tentative'].includes(op.action))change.note=String(op.note).slice(0,500);
-    if(op.scope==='series'&&source.seriesId&&!['move','resize'].includes(op.action))change.scope='series';
-    if(['move','resize'].includes(op.action)){
+    if(op.scope==='series'&&source.seriesId)change.scope='series';
+    if(op.action==='update'){
+     if(!canEdit(source)&&!['fromGmail','birthday'].includes(source.type))throw Error('Only the organizer can change this meeting. Draft them a message instead.');
+     const set={};for(const [key,value] of Object.entries(op.set||{}))if(['title','description','location','showAs','visibility','colorId','addAttendees','removeAttendees','meet'].includes(key))set[key]=Array.isArray(value)?value.filter(v=>typeof v==='string'&&v.includes('@')).map(v=>v.trim().toLowerCase()).slice(0,50):value;
+     if(!Object.keys(set).length)throw Error('Choose what to change.');
+     change.set={...(state.edits[id]?.kind==='update'?state.edits[id].set:{}),...set};state.edits[id]=change;continue;
+    }
+    if(source.allDay&&op.action==='resize')throw Error('Move an all-day event to other dates instead of resizing it.');
+    if(source.allDay&&op.action==='move'){
+     // All-day events keep their length in days; time-of-day fields do not apply.
+     if(op.deltaDays!==undefined&&(!Number.isInteger(op.deltaDays)||Math.abs(op.deltaDays)>366))throw Error('Use a whole number of days within one year.');
+     const from=current.start.slice(0,10),length=Math.max(1,Math.round((Date.parse(current.end.slice(0,10)+'T12:00:00Z')-Date.parse(from+'T12:00:00Z'))/86400000));
+     const start=op.date||shiftDate(from,op.deltaDays||0);if(!validDate(start))throw Error('Choose a valid date.');
+     change.start=start;change.end=shiftDate(start,length);
+    }else if(['move','resize'].includes(op.action)){
      if(op.deltaDays!==undefined&&(!Number.isInteger(op.deltaDays)||Math.abs(op.deltaDays)>366))throw Error('Use a whole number of days within one year.');
      let start=current.start;
      if(op.date||op.time||op.deltaDays)start=localISO(op.date||shiftDate(dayKey(current),op.deltaDays||0),op.time||timeString(current.start));
@@ -135,11 +154,17 @@ export function runOperations(original,operations,events,options={}){
     if(unchangedTime(source,change))delete state.edits[id];else state.edits[id]=change;
    }state.source=false;state.guided=!!options.decisionId;
   }else if(op.op==='create'){
-   const duration=op.minutes||30;if(!Number.isInteger(duration)||duration<5||duration>1440)throw Error('Use a duration between 5 minutes and 24 hours.');
-   const start=localISO(op.date,op.time),ref='new-'+Math.random().toString(36).slice(2,10);
+   const allDay=!!op.allDay,duration=op.minutes||30,days=op.durationDays||1;
+   if(allDay&&(!validDate(op.date)||!Number.isInteger(days)||days<1||days>366))throw Error('Choose a date and between 1 and 366 days.');
+   if(!allDay&&(!Number.isInteger(duration)||duration<5||duration>1440))throw Error('Use a duration between 5 minutes and 24 hours.');
+   const start=allDay?op.date:localISO(op.date,op.time),ref='new-'+Math.random().toString(36).slice(2,10);
    const guests=[...new Set((op.attendees||[]).filter(a=>typeof a==='string'&&a.includes('@')).map(a=>a.trim().toLowerCase()))].slice(0,50);
-   const eventType=['focusTime','outOfOffice'].includes(op.eventType)&&!guests.length?op.eventType:'default';
-   const event={ref,id:ref,title:(op.title||(eventType==='outOfOffice'?'Out of office':'Focus')).slice(0,180),start,end:new Date(Date.parse(start)+duration*60000).toISOString(),allDay:false,transparent:false,organizerSelf:true,organizer:'You',peopleCount:1+guests.length,audience:guests.length?'unknown':'solo',format:guests.length?'meeting':'solo',created:true,fromDecision:options.decisionId||null,response:'accepted',attendees:guests.map(email=>({email,responseStatus:'needsAction'})),type:eventType,meet:!!op.meet&&guests.length>0,description:typeof op.description==='string'?op.description.slice(0,4000):''};
+   const eventType=['focusTime','outOfOffice','workingLocation'].includes(op.eventType)&&!guests.length?op.eventType:'default';
+   if(allDay&&['focusTime','outOfOffice'].includes(eventType))throw Error('Focus time and out of office need a time.');
+   if(eventType==='workingLocation'&&!['homeOffice','officeLocation','customLocation'].includes(op.workingLocation?.type))throw Error('Choose home, an office or another place.');
+   const place=eventType==='workingLocation'?{type:op.workingLocation.type,label:String(op.workingLocation.label||'').slice(0,200)}:null;
+   const title=op.title||(eventType==='outOfOffice'?'Out of office':eventType==='workingLocation'?(place.type==='homeOffice'?'Home':place.label||'Office'):'Focus');
+   const event={ref,id:ref,title:title.slice(0,180),start,end:allDay?shiftDate(start,days):new Date(Date.parse(start)+duration*60000).toISOString(),allDay,transparent:eventType==='workingLocation',...(place?{workingLocation:{type:place.type,[place.type]:place.type==='homeOffice'?{}:{label:place.label}}}:{}),...(op.repeat?{repeat:clone(op.repeat)}:{}),organizerSelf:true,organizer:'You',peopleCount:1+guests.length,audience:guests.length?'unknown':'solo',format:guests.length?'meeting':'solo',created:true,fromDecision:options.decisionId||null,response:'accepted',attendees:guests.map(email=>({email,responseStatus:'needsAction'})),type:eventType,meet:!!op.meet&&guests.length>0,description:typeof op.description==='string'?op.description.slice(0,4000):''};
    event.stepId=op.stepId;event.after=op.after||[];state.created.push(event);all.push(event);state.selected=[ref];state.source=false;
   }else if(op.op==='draft'){
    if(['remove','update'].includes(op.action)){

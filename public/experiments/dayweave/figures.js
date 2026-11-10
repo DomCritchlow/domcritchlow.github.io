@@ -196,36 +196,79 @@ const FIGURES = {
     const grid = Grid(el, {days: ['m1', 't1', 'w1'], hour: 46}); grid.s.dim = false;
     const set = v => { const s = grid.s;
       if (v === 'ask') { s.moved = {review: {day: 'w1', start: hm('11:00'), end: hm('12:00')}}; s.marks = {review: 'Proposed move'}; s.focus = new Set(['review']); out.innerHTML = 'Drawn at 11:00 on Wednesday. <b>Nothing has been written.</b> Monday 10:00 is still booked.'; }
-      if (v === 'yes') { s.marks = {}; s.focus = new Set(); out.innerHTML = 'Confirmed. <b>Now</b> the calendar changes, and Alex and Priya get an update.'; }
-      if (v === 'no') { s.moved = {}; s.marks = {}; s.focus = new Set(); out.innerHTML = 'Discarded. The calendar was never touched.'; }
+      if (v === 'yes') { if (!s.marks.review) { out.innerHTML = 'Nothing to confirm yet. Ask for the move first.'; return; } s.marks = {}; s.focus = new Set(); out.innerHTML = 'Confirmed. <b>Now</b> the calendar changes, and Alex and Priya get an update.'; }
+      if (v === 'no') { if (!s.marks.review) { out.innerHTML = s.moved.review ? 'Already confirmed. Ask again to move it back.' : 'Nothing to discard yet.'; return; } s.moved = {}; s.marks = {}; s.focus = new Set(); out.innerHTML = 'Discarded. The calendar was never touched.'; }
       requestAnimationFrame(() => grid.draw()); };
     chips(figure, [['Move project review to Wednesday at 11', 'ask'], ['Move meeting', 'yes'], ['Discard', 'no']], set);
     grid.draw(); out.innerHTML = 'Project review is on Monday at 10:00. Ask to move it.';
   },
-  // 8. The whole app, driven one step at a time.
+  // 7b. Another agent suggests; the app checks it and draws it like any other change.
+  agent(figure) {
+    const el = stage(figure), out = readout(figure);
+    const inbox = el.appendChild(h('div', 'dwf-inbox', '<span class="dwf-saved">Saved <b>0</b></span><div class="dwf-note-card"></div>'));
+    const grid = Grid(el, {days: ['h1', 'f1'], hour: 44}); grid.s.dim = false;
+    const card = inbox.querySelector('.dwf-note-card'), count = inbox.querySelector('.dwf-saved b');
+    const set = v => { const s = grid.s;
+      if (v === 'send') { count.textContent = '1'; inbox.classList.add('has'); s.moved = {}; s.marks = {}; s.focus = new Set();
+        card.innerHTML = '<b>Move Weekly reflection to Thursday afternoon</b><span>From a connected agent · source: team chat, Nov 8</span><span class="dwf-checked">Checked by the app: Thursday 2 to 3 is open.</span>';
+        out.innerHTML = 'The suggestion arrives over MCP and waits in Saved. <b>The calendar has not changed.</b>'; }
+      if (v === 'open') { if (count.textContent === '0') { out.innerHTML = 'Saved is empty. Send the suggestion first.'; return; } s.moved = {reflection: {day: 'h1', start: hm('14:00'), end: hm('15:00')}}; s.marks = {reflection: 'Suggested move'}; s.focus = new Set(['reflection']);
+        out.innerHTML = 'Opened, it is drawn like any other change: the new time hatched, the current time outlined. <b>Still nothing written.</b>'; }
+      if (v === 'yes') { if (!s.marks.reflection) { out.innerHTML = count.textContent === '0' ? 'Nothing to confirm yet. Send the suggestion first.' : 'Open it first, so you can see what would change.'; return; } s.marks = {}; s.focus = new Set(); count.textContent = '0'; inbox.classList.remove('has'); card.innerHTML = '';
+        out.innerHTML = 'Confirmed. <b>Now</b> the calendar changes.'; }
+      grid.draw(); };
+    chips(figure, [['The agent sends a suggestion', 'send'], ['Open it', 'open'], ['Move meeting', 'yes']], set);
+    grid.draw(); out.innerHTML = 'An agent connected to the calendar, reading sources the calendar cannot see. Send its suggestion.';
+  },
+  // 8. The whole app, driven one step at a time. Typing is shown key by key, and each step waits for its outcome.
   walk(figure) {
     const el = stage(figure); el.classList.add('dwf-live');
-    const frame = el.appendChild(h('iframe')); frame.title = 'Dayweave running on a fictional week'; frame.loading = 'lazy';
-    const out = readout(figure), doc = () => frame.contentDocument, q = sel => doc().querySelector(sel), wait = ms => new Promise(r => setTimeout(r, ms));
-    const ask = async text => { const box = q('#command'); box.focus(); box.value = text; box.dispatchEvent(new Event('input', {bubbles: true})); await wait(250); q('#composer').requestSubmit(); };
+    const frame = el.appendChild(h('iframe')); frame.title = 'Dayweave running on a fictional week';
+    const out = readout(figure), doc = () => frame.contentDocument, win = () => frame.contentWindow, q = sel => doc()?.querySelector(sel), wait = ms => new Promise(r => setTimeout(r, ms));
+    const until = async (test, ms = 8000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (test()) return true; } catch {} await wait(80); } return false; };
+    const idle = () => until(() => !q('.shell').classList.contains('thinking') && !q('#headline .headline-mark.working'));
+    const type = async text => { const box = q('#command'); box.focus(); box.value = ''; for (const ch of text) { box.value += ch; box.dispatchEvent(new Event('input', {bubbles: true})); await wait(34); } await wait(380); q('#composer').requestSubmit(); await until(() => q('.shell').classList.contains('thinking'), 1200); await idle(); await wait(500); };
     const find = title => [...doc().querySelectorAll('.event')].find(n => n.querySelector('.event-title')?.textContent === title);
     const click = (node, keys = {}) => node?.dispatchEvent(new MouseEvent('click', {bubbles: true, ...keys}));
-    const key = k => doc().dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true}));
+    const press = k => doc().dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true}));
+    const settle = async () => { await wait(450); await idle(); };
+    // An agent connected over MCP sends a suggestion. The demo receives it the way the app's server does.
+    const suggest = async () => {
+      const api = (path, body) => win().fetch(path, body ? {method: 'POST', body: JSON.stringify(body)} : undefined).then(r => r.json());
+      const snap = await api('/api/snapshot'), e = snap.events.find(x => x.title === 'Weekly reflection'), thu = snap.events.find(x => x.title === 'Customer call');
+      const start = new Date(Date.parse(thu.start) + 4 * 3600000).toISOString(), end = new Date(Date.parse(start) + 3600000).toISOString();
+      await api('/api/decisions/reconcile', {contributionId: 'agent-' + Date.now(), proposal: {title: 'Move Weekly reflection to Thursday afternoon', reply: 'Friday is full of shared meetings. Thursday from 2 is open, and the reflection has no guests.', proposalState: {origin: 'Connected agent', edits: {[e.ref]: {kind: 'move', start, end}}, highlighted: [e.ref]}}});
+      await until(() => /[1-9]/.test(q('#open-count')?.textContent || '') && !q('#open-count').classList.contains('empty'), 9000);
+    };
     const steps = [
-      ['The week at rest. Dates, one request bar, three views, and the hours added up by category.', async () => {}],
-      ['Ask a question. Three meetings come forward with the reason written inside each.', () => ask('Which meetings could I skip this week?')],
-      ['Ask for a change. Three declines are drafted on the calendar; nothing is sent yet.', () => ask('Decline those')],
-      ['Discard the draft. The week goes back to rest.', async () => { q('[data-action="close-thread"]')?.click(); await wait(300); key('Escape'); }],
-      ['Open one meeting. Its slot grows to hold its details.', async () => click(find('Project review'))],
-      ['Add a second and a third. Each shows where it is and who is in it; the bulk actions appear above.', async () => { click(find('Design exchange'), {metaKey: true, ctrlKey: true}); await wait(700); click(find('Board prep'), {metaKey: true, ctrlKey: true}); }],
-      ['Clear the selection, then compare two days. The day between them folds into a strip.', async () => { q('[data-action="clear-selection"]')?.click(); await wait(500); await ask('Compare Tuesday and Thursday'); }]
+      ['The week at rest: the dates, one request bar, three views, and the hours added up by category.', null, async () => {}],
+      ['A question. The meetings it is about come forward, each with its reason written inside it.', 'Which meetings could I skip this week?', null],
+      ['A change. Three declines are drafted on the calendar; nothing is sent until you confirm.', 'Decline those', null],
+      ['Discard. The draft goes and the week settles back.', null, async () => { q('#headline [data-action="close-thread"]')?.click(); await settle(); }],
+      ['An agent connected over MCP, which reads sources the calendar cannot see, sends a suggestion. It waits in Saved; the calendar does not change.', null, suggest],
+      ['Open it. The suggested move is drawn on the calendar with its reason, and the current time stays as an outline.', null, async () => { q('#open-count').click(); await until(() => q('#drawer .decision-card-main')); await wait(500); q('#drawer .decision-card-main').click(); await settle(); }],
+      ['Confirm. Only now is the calendar written.', null, async () => { q('#headline .primary')?.click(); await until(() => /Done|applied/i.test(q('#headline')?.textContent || ''), 6000); await wait(600); }],
+      ['Open one meeting. Its slot grows to hold its details, on its own color.', null, async () => { q('#headline [data-action="close-thread"]')?.click(); await settle(); click(find('Project review')); await settle(); }],
+      ['Close it and select three meetings with Command-click. Each shows where it is and who is in it, and the bulk actions appear above.', null, async () => { press('Escape'); await settle(); for (const t of ['Project review', 'Design exchange', 'Board prep']) { click(find(t), {metaKey: true, ctrlKey: true}); await wait(650); } }],
+      ['Compare two days. The day between them folds into a strip.', 'Compare Tuesday and Thursday', async () => { q('[data-action="clear-selection"]')?.click(); await settle(); }]
     ];
     let at = 0, busy = false;
-    const go = async i => { if (busy || !doc()?.querySelector('#command:not([disabled])')) return; busy = true; at = i; out.innerHTML = `<b>${i + 1} of ${steps.length}.</b> ${steps[i][0]}`; bar.querySelector('[data-value=next]').textContent = i === steps.length - 1 ? 'Start over' : 'Next step'; try { await steps[i][1](); } finally { await wait(600); busy = false; } };
-    const bar = chips(figure, [['Next step', 'next']], () => { if (at === steps.length - 1) { frame.src = frame.src; at = 0; out.innerHTML = `<b>1 of ${steps.length}.</b> ${steps[0][0]}`; bar.querySelector('[data-value=next]').textContent = 'Next step'; } else go(at + 1); });
+    const show = (i, typing) => { out.innerHTML = `<b>${i + 1} of ${steps.length}.</b> ${steps[i][0]}${typing ? `<span class="dwf-typed">Typed: “${typing}”</span>` : ''}`; };
+    const next = bar => bar.querySelector('[data-value=next]');
+    const go = async i => {
+      if (busy || !q('#command:not([disabled])')) return; busy = true; at = i; const [, text, before] = steps[i];
+      const button = next(bar); button.disabled = true; show(i, text);
+      try { if (i > 3) { const t = q('#toast'); if (t) t.hidden = true; } if (before) await before(); if (text) await type(text); } catch (error) { console.error(error); }
+      button.disabled = false; button.textContent = i === steps.length - 1 ? 'Start over' : 'Next step'; busy = false;
+    };
+    // The demo keeps its state in this tab's storage; a fresh start clears it.
+    const reset = () => { try { sessionStorage.removeItem('dayweave-demo-v2'); for (const k of Object.keys(localStorage)) if (/^calendar-(decisions|settings)|^dayweave-/.test(k)) localStorage.removeItem(k); } catch {} };
+    const load = () => { reset(); at = 0; show(0); next(bar).textContent = 'Next step'; next(bar).disabled = true; frame.src = '/public/experiments/dayweave/09-live-app/index.html?walk=' + Date.now(); };
+    frame.addEventListener('load', () => until(() => q('#command:not([disabled])'), 15000).then(() => { next(bar).disabled = false; }));
+    const bar = chips(figure, [['Next step', 'next']], () => { if (busy) return; if (at === steps.length - 1) load(); else go(at + 1); });
     const size = () => { const w = el.clientWidth, phone = w < 700; frame.style.width = phone ? '100%' : '1280px'; frame.style.height = phone ? '640px' : '780px'; frame.style.transform = phone ? 'none' : `scale(${w / 1280})`; el.style.height = (phone ? 640 : Math.round(780 * w / 1280)) + 'px'; };
-    size(); addEventListener('resize', size); out.innerHTML = `<b>1 of ${steps.length}.</b> ${steps[0][0]}`;
-    onSeen(figure, () => { frame.src = '/public/experiments/dayweave/09-live-app/index.html'; }, '400px');
+    size(); addEventListener('resize', size); show(0);
+    onSeen(figure, load, '400px');
   }
 };
 function onSeen(node, run, margin = '0px') {

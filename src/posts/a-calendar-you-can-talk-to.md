@@ -26,6 +26,7 @@ If the calendar can draw whatever those steps describe, the answer does not need
 3. Any days side by side
 4. The view as the subject of the conversation
 5. Changes drawn before they are made
+6. Suggestions from other agents, drawn the same way
 
 These ideas are not new. [DateLens](https://www.cs.umd.edu/~bederson/images/pubs_pdfs/p618-bederson.pdf), a fisheye calendar from 2003, already gave the important day more room and kept the rest of the week in view. A language model makes them practical; it can decide what to show from a sentence.
 
@@ -73,17 +74,21 @@ A sentence saying the meeting has been moved gives you nothing to check. A propo
 
 The button names what will happen, because actions that look alike are different. Declining, removing and canceling are three different operations in Google Calendar, and only canceling emails every guest. The first test runs showed the model escalating a decline into a cancel. The instructions now forbid that, and the app rejects a plan that confuses the three.
 
+## Suggestions from other agents
+
+The calendar is not the only place a scheduling problem shows up. An agent connected over MCP (Model Context Protocol, a standard way for one AI tool to read from and write to another) can read calendar context, and it can send a suggestion with its source. The suggestion waits in Saved; publishing it never writes to the calendar. The app's own model checks each new one against the current calendar and decides whether it becomes a decision, an alternative to work already open, or nothing.
+
+<figure data-dwf="agent"><figcaption>A suggestion from another agent, checked by the app, then drawn like any other change.</figcaption></figure>
+
+Checking costs model calls, so the app does at most five automatic checks a day by default. The rest wait until you open them.
+
 ## The pieces together
 
 This is the app itself, running in the page on a fictional week with scripted replies. Step through it, or click and type in it yourself.
 
-<figure data-dwf="walk"><figcaption>Seven steps through the app. The <a href="/public/experiments/dayweave/09-live-app/">full demo</a> opens it on its own page.</figcaption></figure>
+<figure data-dwf="walk"><figcaption>Ten steps through the app, including a suggestion sent by a connected agent. The <a href="/public/experiments/dayweave/09-live-app/">full demo</a> opens it on its own page.</figcaption></figure>
 
-## What is still rough
-
-- Meetings at the same hour on other days stretch along with an opened meeting, because the hour is shared across the week.
-- On a phone an opened meeting is still a sheet over the calendar.
-- Four selected meetings showing detail at once is a guess. I have not used it long enough to know the right number.
+Each of these pieces works without a model; DateLens had a fisheye in 2003. What a model adds is the choice of which piece to use, made from one sentence, so the calendar can answer in its own terms instead of in a paragraph beside it. I expect the same holds for other tools where the work is already a picture, like a spreadsheet, a map or a project plan, but I have only built this one.
 
 <link rel="stylesheet" href="/public/experiments/dayweave/figures.css">
 <script type="module" src="/public/experiments/dayweave/figures.js"></script>

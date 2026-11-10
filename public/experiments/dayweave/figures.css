@@ -13,6 +13,8 @@ figure[data-dwf] figcaption{max-width:680px;margin:10px auto 0;padding:0 2px;fon
 .dwf-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .dwf-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .dwf-readout{max-width:680px;min-height:2.9em;margin:10px auto 0;font:500 13.5px/1.45 "Figtree",sans-serif;color:var(--ink-2)}
+.dwf-typed{display:block;margin-top:4px;font:500 13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent)}
+.dwf-chip:disabled{opacity:.5;cursor:default}
 .dwf-readout b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
 
 /* The small calendar */
@@ -83,6 +85,15 @@ figure[data-dwf] figcaption{max-width:680px;margin:10px auto 0;padding:0 2px;fon
 /* 6. The request bar above the dates it refers to */
 .dwf-request{display:flex;align-items:center;gap:9px;margin:12px 12px 10px;padding:9px 13px;border-radius:10px;background:var(--paper-2);font:400 13.5px/1.3 "Figtree",sans-serif;color:var(--ink-2)}
 .dwf-request i{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
+/* 7b. A suggestion from another agent */
+.dwf-inbox{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-bottom:1px solid var(--rule);min-height:64px}
+.dwf-saved{flex:0 0 auto;padding:6px 11px;border-radius:999px;background:var(--paper-2);font:600 12px/1.2 "Figtree",sans-serif;color:var(--ink-2);transition:background-color .3s var(--ease),color .3s var(--ease)}
+.dwf-inbox.has .dwf-saved{background:#f6ead3;color:#7a5413}
+.dwf-note-card{display:flex;flex-direction:column;gap:2px;font:400 12px/1.4 "Figtree",sans-serif;color:var(--ink-2);opacity:0;transform:translateY(-4px);transition:opacity .35s var(--ease),transform .35s var(--ease)}
+.dwf-inbox.has .dwf-note-card{opacity:1;transform:none}
+.dwf-note-card b{font:600 13.5px/1.3 "Figtree",sans-serif;color:var(--ink)}
+.dwf-checked{color:var(--accent);font-weight:600}
 
 /* 8. The whole app */
 .dwf-live{background:#e2e6da}

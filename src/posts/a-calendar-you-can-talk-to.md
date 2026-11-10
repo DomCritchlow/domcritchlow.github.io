@@ -79,11 +79,7 @@ This is the app itself, running in the page on a fictional week with scripted re
 
 <figure data-dwf="walk"><figcaption>Seven steps through the app. The <a href="/public/experiments/dayweave/09-live-app/">full demo</a> opens it on its own page.</figcaption></figure>
 
-## What is still rough
-
-- Meetings at the same hour on other days stretch along with an opened meeting, because the hour is shared across the week.
-- On a phone an opened meeting is still a sheet over the calendar.
-- Four selected meetings showing detail at once is a guess. I have not used it long enough to know the right number.
+Each of these pieces works without a model; DateLens had a fisheye in 2003. What a model adds is the choice of which piece to use, made from one sentence, so the calendar can answer in its own terms instead of in a paragraph beside it. I expect the same holds for other tools where the work is already a picture, like a spreadsheet, a map or a project plan, but I have only built this one.
 
 <link rel="stylesheet" href="/public/experiments/dayweave/figures.css">
 <script type="module" src="/public/experiments/dayweave/figures.js"></script>

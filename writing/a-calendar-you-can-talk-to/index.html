@@ -48,6 +48,7 @@
 <li>Any days side by side</li>
 <li>The view as the subject of the conversation</li>
 <li>Changes drawn before they are made</li>
+<li>Suggestions from other agents, drawn the same way</li>
 </ol>
 <p>These ideas are not new. <a href="https://www.cs.umd.edu/~bederson/images/pubs_pdfs/p618-bederson.pdf">DateLens</a>, a fisheye calendar from 2003, already gave the important day more room and kept the rest of the week in view. A language model makes them practical; it can decide what to show from a sentence.</p>
 <p>I built Dayweave to test them. Each figure below isolates one piece on a fictional week, and the layout math in them is the app's own code.</p>
@@ -75,15 +76,14 @@
 <p>A sentence saying the meeting has been moved gives you nothing to check. A proposed change is drawn where it would land, the current time stays as an outline, and nothing is written to the calendar until you confirm.</p>
 <figure data-dwf="draft"><figcaption>Ask for the move, then confirm or discard it.</figcaption></figure>
 <p>The button names what will happen, because actions that look alike are different. Declining, removing and canceling are three different operations in Google Calendar, and only canceling emails every guest. The first test runs showed the model escalating a decline into a cancel. The instructions now forbid that, and the app rejects a plan that confuses the three.</p>
+<h2 id="suggestions-from-other-agents" tabindex="-1">Suggestions from other agents <a class="header-anchor" href="#suggestions-from-other-agents" aria-hidden="true">#</a></h2>
+<p>The calendar is not the only place a scheduling problem shows up. An agent connected over MCP (Model Context Protocol, a standard way for one AI tool to read from and write to another) can read calendar context, and it can send a suggestion with its source. The suggestion waits in Saved; publishing it never writes to the calendar. The app's own model checks each new one against the current calendar and decides whether it becomes a decision, an alternative to work already open, or nothing.</p>
+<figure data-dwf="agent"><figcaption>A suggestion from another agent, checked by the app, then drawn like any other change.</figcaption></figure>
+<p>Checking costs model calls, so the app does at most five automatic checks a day by default. The rest wait until you open them.</p>
 <h2 id="the-pieces-together" tabindex="-1">The pieces together <a class="header-anchor" href="#the-pieces-together" aria-hidden="true">#</a></h2>
 <p>This is the app itself, running in the page on a fictional week with scripted replies. Step through it, or click and type in it yourself.</p>
-<figure data-dwf="walk"><figcaption>Seven steps through the app. The <a href="/public/experiments/dayweave/09-live-app/">full demo</a> opens it on its own page.</figcaption></figure>
-<h2 id="what-is-still-rough" tabindex="-1">What is still rough <a class="header-anchor" href="#what-is-still-rough" aria-hidden="true">#</a></h2>
-<ul>
-<li>Meetings at the same hour on other days stretch along with an opened meeting, because the hour is shared across the week.</li>
-<li>On a phone an opened meeting is still a sheet over the calendar.</li>
-<li>Four selected meetings showing detail at once is a guess. I have not used it long enough to know the right number.</li>
-</ul>
+<figure data-dwf="walk"><figcaption>Ten steps through the app, including a suggestion sent by a connected agent. The <a href="/public/experiments/dayweave/09-live-app/">full demo</a> opens it on its own page.</figcaption></figure>
+<p>Each of these pieces works without a model; DateLens had a fisheye in 2003. What a model adds is the choice of which piece to use, made from one sentence, so the calendar can answer in its own terms instead of in a paragraph beside it. I expect the same holds for other tools where the work is already a picture, like a spreadsheet, a map or a project plan, but I have only built this one.</p>
 <link rel="stylesheet" href="/public/experiments/dayweave/figures.css">
 <script type="module" src="/public/experiments/dayweave/figures.js"></script>
 

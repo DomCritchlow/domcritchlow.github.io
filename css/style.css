@@ -503,6 +503,21 @@ a:hover {
   border-radius: 3px;
 }
 
+.post-content ul,
+.post-content ol {
+  margin: 0 0 var(--space-md);
+  padding-left: 1.6em;
+}
+
+.post-content li {
+  margin-bottom: 0.35em;
+  padding-left: 0.2em;
+}
+
+.post-content li:last-child {
+  margin-bottom: 0;
+}
+
 .post-content pre {
   background-color: var(--surface-2);
   padding: var(--space-md);

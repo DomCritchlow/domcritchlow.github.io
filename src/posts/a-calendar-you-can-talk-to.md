@@ -1,35 +1,45 @@
 ---
 title: "Show me, don’t tell me"
 date: 2026-11-22
-description: "I want to point at Friday, try Thursday, and see what happens to both days. A calendar you can try."
+description: "I’m a visual person, and chatbots answer in paragraphs. A calendar you type or talk to, where every answer is drawn on the calendar."
 categories: Design
 permalink: /writing/a-calendar-you-can-talk-to/
 templateEngineOverride: njk
 ---
-<!DOCTYPE html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Show me, don’t tell me · Dominic Critchlow</title><meta name="description" content="{{ description | escape }}"><link rel="stylesheet" href="/public/experiments/dayweave/article.css"><div class="mast"><a href="https://critchlow.us/">Dominic Critchlow</a><a href="https://critchlow.us/writing/">Writing ↗</a></div>
+<!DOCTYPE html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Show me, don’t tell me · Dominic Critchlow</title><meta name="description" content="{{ description | escape }}"><link rel="stylesheet" href="/public/experiments/calendar-ask/ask.css"><div class="mast"><a href="https://critchlow.us/">Dominic Critchlow</a><a href="https://critchlow.us/writing/">Writing ↗</a></div>
 <header class="title"><h1>Show me, don’t tell me</h1><small>Dominic Critchlow &nbsp;·&nbsp; November 22, 2026</small></header>
-<p class="opening">I’ll gladly ask an LLM to go through twenty meetings and tell me which ones I can skip. Doing that myself means opening every invite. But if I’m going to move something, I want my calendar in front of me. I’m a visual learner. I want to point at Friday, try Thursday, and see what I’ve done to both days. I built this because getting that view usually takes me more clicks than moving the meeting.</p>
-<figure class="lead" data-dwf="sentence"><figcaption>Pick any meeting to ask about it. Try Friday’s Weekly reflection to see what moving it would do. The outlined slot is the original booking. The striped slot is a move you can try before changing the week.</figcaption></figure>
-<div class="layout"><nav aria-label="Article sections"><a href="#intent">Interpreting a request</a><a href="#attention">Directing attention</a><a href="#detail">Opening the detail</a><a href="#view">Choosing the view</a><a href="#context">Reading the context</a><a href="#draft">Previewing a change</a><a href="#suggestion">Receiving a suggestion</a><a href="#beyond">Beyond the calendar</a></nav><main><section id="intent">
-<p>I might ask this out loud. I might just click the Friday hold. Either way, once I see it sitting right up against Thursday lunch, I have a better question: do I want Friday morning free badly enough to give up that break?</p></section>
-<h2 id="attention">Give the answer room</h2>
-<p>Ask which meetings you could skip. Three come forward. Each carries its own reason. The vendor demo will be recorded. Roadmap office hours are a drop-in. Notes from all hands come out Monday. You can weigh those reasons against the rest of your week while you read them.</p>
-<figure data-dwf="fisheye"><figcaption>Watch the space around the three meetings as their reasons appear.</figcaption></figure>
-<details class="editor-note"><summary>Design note · How much can the week shrink?</summary><p>The hard part was deciding how much the rest of the week should give way. My first pass squeezed some hours down to 26 pixels and cut off their text. I could read everything about the meeting I’d picked and too little about the one right after it. The version above keeps surrounding hours at least 84% of their usual height.</p></details>
-<h2 id="detail">Open the detail in place</h2><p>The same principle applies inside a meeting. I may only need to know who’s coming. If I need the agenda too, the meeting can grow another line or two in the place I already found it.</p>
-<figure data-dwf="depths"><figcaption>Open Monday’s project review one level at a time. The rest of Monday stays in sight.</figcaption></figure>
-<h2 id="view">Let the question choose the view</h2>
-<p>Suppose I’m choosing between this Tuesday and next Thursday. A week view makes me flip back and forth, remembering the first day while I inspect the second. Put them next to each other and I can compare them directly. The narrow strip between them matters. It tells me how much time I’ve folded away.</p>
-<figure data-dwf="compare"><figcaption>The folded interval preserves the distance between two days that now share an edge.</figcaption></figure>
-<h2 id="context">Let the screen finish the question</h2><p>Now run that idea backwards. Once I’ve put two days on screen, I should be able to ask a question about “these” and have the system use the view I just made. Choosing what to look at is already part of telling the computer what I mean.</p>
-<figure data-dwf="scope"><figcaption>Keep the question fixed and change the view. Watch which meetings “these” refers to.</figcaption></figure>
-<h2 id="draft">Draw the change while it’s still a choice</h2>
-<p>Move Monday’s project review to Wednesday at eleven. For a moment I need to see that meeting twice. Monday tells me what I’d free up. Wednesday tells me what I’d be putting next to it. An outline can hold the old time while I inspect the new one.</p>
-<figure data-dwf="draft"><figcaption>The original and proposed times stay visible together until you decide.</figcaption></figure>
-<p>The final button needs a precise verb. Moving a meeting updates the guests. Declining an invitation tells its organizer I won’t attend. Canceling my own meeting takes it off everyone’s calendar. In early tests the model sometimes turned a decline into a cancellation. That distinction belongs in the application’s rules as well as on the button.</p>
-<h2 id="suggestion">A suggestion can start somewhere else</h2>
-<p>A teammate flags a packed Friday in a conversation. An assistant reading that thread suggests moving my weekly reflection. It has a reason to suggest Thursday. The calendar has the information to check whether Thursday is still free. I want to see both before I decide.</p>
-<figure data-dwf="agent"><figcaption>The source stays attached as the calendar checks the suggested hour.</figcaption></figure>
-<h2 id="beyond">Beyond the calendar</h2><p>Fisheye calendars go back at least to DateLens in 2003. Selecting, comparing, and previewing changes are familiar interactions too. What used to be hard was knowing <em>when</em> to use each one. “Could I skip this?” calls for reasons attached to meetings. “What if we moved it?” calls for a picture of two possible Wednesdays. The same calendar can answer both if it has a way to draw the difference.</p>
-<p>I’d ask the same of a spreadsheet. If I ask why a forecast fell, take me to the months that changed and the assumption they share. If I ask what happens at the old renewal rate, let me try it in those cells and see the total move. That’s what I mean by <em>show me</em>. I want to be able to point at the answer and ask the next question there.</p>
-</main></div><script src="/public/experiments/dayweave/article.js"></script></html>
+<p class="opening">I’m a very visual person, and LLM chatbots answer me in paragraphs. I just want to be able to talk to my calendar and it shows me what I care about at the right time.</p>
+<figure class="cc-fig wide" data-cc="hero"><figcaption>A made-up week. Pick any sentence to stop the tour and try it; ones with a microphone are spoken. The buttons in each answer work.</figcaption></figure>
+<div class="layout"><nav aria-label="Article sections"><a href="#settings">Settings</a><a href="#marks">Pointing at meetings</a><a href="#layers">How full the week is</a><a href="#side">Days and people side by side</a><a href="#drafts">Drafting a change</a><a href="#asks">When it has to ask</a><a href="#chat">From a conversation</a></nav><main>
+
+<h2 id="settings">Settings</h2>
+<p>Starting with settings, because they’re the part I expected to still need a menu for. Every row in the Settings panel has a sentence: show the weekend, use 24-hour time, start my day at 8, add London time, make the rows roomier, show what I declined. The change applies at once with an Undo, and nothing waits to be accepted because nothing leaves my screen. When the calendar runs as a desktop app, the window settings work the same way, so “keep this window on top” pins it.</p>
+<figure class="cc-fig" data-cc="settings"><figcaption>The panel under the calendar is the one you would click. Each sentence lights the control it changed.</figcaption></figure>
+
+<h2 id="marks">Pointing at meetings</h2>
+<p>Ask which meetings I could skip and three come forward with the reason written inside each. Their days widen to fit the words, and the rest of the week fades but stays readable, so I can check each reason against what sits around it. Prep uses the same marks. With meeting notes connected, asking what we decided opens the meeting in place with the decisions and drafts time for the item that’s mine.</p>
+<figure class="cc-fig" data-cc="point"><figcaption>Decline all 3 turns the marks into declines. Declined meetings leave the grid unless Settings shows them.</figcaption></figure>
+
+<h2 id="layers">How full the week is</h2>
+<p>How busy a week is shouldn’t tell me a number but show me where and why it’s busy. The layers count the real events: a bar under each date with meetings and hours, open stretches of 15 minutes or more with the longest called out, overlaps, and invitations still waiting on me. The sentence on top stays short because the counts are already drawn. Asking where I’m double-booked shows the overlap and, when there’s room, drafts the move.</p>
+<figure class="cc-fig" data-cc="layers"><figcaption>The layers are computed from the events on screen, so the numbers under each date are the ones the answer used.</figcaption></figure>
+
+<h2 id="side">Days and people side by side</h2>
+<p>Comparing two days in a week view means remembering one while looking at the other. Asked for Friday next to next Thursday, the calendar puts the two days edge to edge and folds the days between into a strip that says how many. Asked how my Wednesday compares with Sam’s, the day splits into a column for each of us, counted separately. Sam’s column shows for that answer only and never joins my list.</p>
+<figure class="cc-fig" data-cc="side"><figcaption>The toolbar names what’s on screen, and Back returns to the week you were on.</figcaption></figure>
+
+<h2 id="drafts">Drafting a change</h2>
+<p>A change is drawn where it would land before anything happens. A move leaves the current time as an outline. Three times for a meeting with Sam share a group, and picking one clears the others. The button names the verb and who hears about it: moving updates the guests, declining tells the organizer, canceling takes the meeting off everyone’s calendar. In early tests the model sometimes turned a decline into a cancellation, so that rule lives in the app as well as on the button.</p>
+<p>Two more rules hold for anything drafted. Text the model wrote for someone outside my company, like an invite or a note to an outside organizer, is never part of Accept; it names every outside address and I accept it on its own. Email always opens as a draft that I edit and send.</p>
+<figure class="cc-fig" data-cc="change"><figcaption>Pick an option by clicking it on the grid or its button. Undo puts the week back.</figcaption></figure>
+
+<h2 id="asks">When it has to ask</h2>
+<p>Some requests have two right answers. I work with two Sams, so “find time with Sam” comes back as a question with a button for each, and the pick carries into the draft. Pick the Sam at Northwind and the draft says the invite goes outside the company. “These” means what I have selected: shift-click two meetings, say decline these, and the line names what the request is about before I send it.</p>
+<figure class="cc-fig" data-cc="ask"><figcaption>The label in the ask line shows what “these” refers to.</figcaption></figure>
+
+<h2 id="chat">From a conversation</h2>
+<p>The same answers can start in a chat somewhere else. An assistant in a separate conversation can read my calendar and send its answer to the calendar instead of into the chat. The calendar draws it, and the chat gets one line.</p>
+<figure class="cc-fig" data-cc="chat"><figcaption>The conversation and the calendar are separate windows. The answer lands on the calendar either way.</figcaption></figure>
+
+<p>This is an interesting way to think about a calendar, and potentially about other interfaces in the future: email, and the other productivity tools you can imagine.</p>
+</main></div><script src="/public/experiments/calendar-ask/ask.js"></script></html>
